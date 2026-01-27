@@ -23,15 +23,20 @@ import EditCategory from './components/Categories/EditCategory'
 import Subcategories from './components/Categories/Subcategories'
 import AddSubcategory from './components/Categories/AddSubcategory'
 import EditSubcategory from './components/Categories/EditSubcategory'
+import Banners from './components/Banners/Banners'
+import AddBanner from './components/Banners/AddBanner'
+import EditBanner from './components/Banners/EditBanner'
+import { SocketProvider } from './context/SocketContext'
+
 
 // Public route wrapper (redirects to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  
+
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
   }
-  
+
   return children;
 };
 
@@ -44,32 +49,32 @@ function AppContent() {
           <Login />
         </PublicRoute>
       } />
-      
+
       {/* All other routes are protected */}
       <Route path="/" element={
         <PrivateRoute>
           <Dashboard />
         </PrivateRoute>
       } />
-      
+
       <Route path="/products" element={
         <PrivateRoute>
           <Product />
         </PrivateRoute>
       } />
-      
+
       <Route path="/products/add" element={
         <PrivateRoute>
           <AddProduct />
         </PrivateRoute>
       } />
-      
+
       <Route path="/products/view/:id" element={
         <PrivateRoute>
           <ProductView />
         </PrivateRoute>
       } />
-      
+
       <Route path="/products/edit/:id" element={
         <PrivateRoute>
           <ProductEdit />
@@ -77,11 +82,11 @@ function AppContent() {
       } />
 
       <Route path="/categories/add" element={
-    <PrivateRoute>
-      <AddCategory />
-    </PrivateRoute>
-  } />
-      
+        <PrivateRoute>
+          <AddCategory />
+        </PrivateRoute>
+      } />
+
       <Route path="/categories" element={
         <PrivateRoute>
           <Categories />
@@ -103,67 +108,93 @@ function AppContent() {
           <AddSubcategory />
         </PrivateRoute>
       } />
-      
+
       <Route path="/subcategories/edit/:id" element={
         <PrivateRoute>
-          <EditSubcategory  />
+          <EditSubcategory />
         </PrivateRoute>
       } />
-      
+
       <Route path="/orders" element={
         <PrivateRoute>
           <Orders />
         </PrivateRoute>
       } />
-      
+
       <Route path="/orders/view/:id" element={
         <PrivateRoute>
           <OrderView />
         </PrivateRoute>
       } />
-      
+
       <Route path="/orders/update/:id" element={
         <PrivateRoute>
           <OrderUpdate />
         </PrivateRoute>
       } />
-      
+
       <Route path="/invoices" element={
         <PrivateRoute>
           <Invoices />
         </PrivateRoute>
       } />
-      
+
       <Route path="/invoices/view/:id" element={
         <PrivateRoute>
           <InvoiceView />
         </PrivateRoute>
       } />
-      
+
       <Route path="/users" element={
         <PrivateRoute>
           <Users />
         </PrivateRoute>
       } />
-      
+
       <Route path="/users/add" element={
         <PrivateRoute>
           <UserAdd />
         </PrivateRoute>
       } />
-      
+
       <Route path="/users/edit/:id" element={
         <PrivateRoute>
           <UserEdit />
         </PrivateRoute>
       } />
-      
+
+      <Route path="/banners" element={
+        <PrivateRoute>
+          <Banners />
+        </PrivateRoute>
+      } />
+
+      <Route path="/banners/add" element={
+        <PrivateRoute>
+          <AddBanner />
+        </PrivateRoute>
+      } />
+
+      <Route path="/banners/edit/:id" element={
+        <PrivateRoute>
+          <EditBanner />
+        </PrivateRoute>
+      } />
+
+      <Route path="/banners/view/:id" element={
+        <PrivateRoute>
+          <EditBanner />
+        </PrivateRoute>
+      } />
+
+
+
       <Route path="/my-profile" element={
         <PrivateRoute>
           <MyProfile />
         </PrivateRoute>
       } />
-      
+
       {/* Catch all route - redirect to login if route doesn't exist */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
@@ -173,11 +204,13 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <AppContent />
-        </div>
-      </AuthProvider>
+      <SocketProvider>
+        <AuthProvider>
+          <div className="min-h-screen bg-gray-50">
+            <AppContent />
+          </div>
+        </AuthProvider>
+      </SocketProvider>
     </Router>
   )
 }

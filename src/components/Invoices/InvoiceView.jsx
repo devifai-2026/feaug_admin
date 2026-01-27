@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  PrinterIcon, 
-  ArrowDownTrayIcon, 
+import {
+  PrinterIcon,
+  ArrowDownTrayIcon,
   ArrowLeftIcon,
   CheckCircleIcon,
   ClockIcon,
@@ -32,12 +32,12 @@ const InvoiceView = () => {
 
   // Sample invoice data - updated with rupee amounts
   const sampleInvoices = [
-    { 
-      id: 'INV-001', 
-      client: 'Tech Corp Inc.', 
+    {
+      id: 'INV-001',
+      client: 'Tech Corp Inc.',
       clientEmail: 'billing@techcorp.com',
       clientAddress: '123 Tech Street, San Francisco, CA 94107',
-      date: '2024-01-15', 
+      date: '2024-01-15',
       dueDate: '2024-02-15',
       amount: '₹1,250.00',
       tax: '₹112.50',
@@ -51,12 +51,12 @@ const InvoiceView = () => {
       paymentMethod: 'Credit Card',
       paymentDate: '2024-01-20'
     },
-    { 
-      id: 'INV-002', 
-      client: 'Global Retail', 
+    {
+      id: 'INV-002',
+      client: 'Global Retail',
       clientEmail: 'accounts@globalretail.com',
       clientAddress: '456 Retail Ave, New York, NY 10001',
-      date: '2024-01-14', 
+      date: '2024-01-14',
       dueDate: '2024-02-14',
       amount: '₹890.50',
       tax: '₹80.14',
@@ -70,12 +70,12 @@ const InvoiceView = () => {
       paymentMethod: 'Bank Transfer',
       paymentDate: null
     },
-    { 
-      id: 'INV-003', 
-      client: 'Innovate Solutions', 
+    {
+      id: 'INV-003',
+      client: 'Innovate Solutions',
       clientEmail: 'finance@innovatesolutions.com',
       clientAddress: '789 Innovation Blvd, Austin, TX 73301',
-      date: '2024-01-13', 
+      date: '2024-01-13',
       dueDate: '2024-02-13',
       amount: '₹2,340.00',
       tax: '₹210.60',
@@ -89,12 +89,12 @@ const InvoiceView = () => {
       paymentMethod: 'PayPal',
       paymentDate: '2024-01-18'
     },
-    { 
-      id: 'INV-004', 
-      client: 'Startup Ventures', 
+    {
+      id: 'INV-004',
+      client: 'Startup Ventures',
       clientEmail: 'accounts@startupventures.com',
       clientAddress: '101 Startup Lane, Boston, MA 02108',
-      date: '2024-01-12', 
+      date: '2024-01-12',
       dueDate: '2024-01-31',
       amount: '₹560.75',
       tax: '₹50.47',
@@ -108,12 +108,12 @@ const InvoiceView = () => {
       paymentMethod: 'Check',
       paymentDate: null
     },
-    { 
-      id: 'INV-005', 
-      client: 'Enterprise Ltd.', 
+    {
+      id: 'INV-005',
+      client: 'Enterprise Ltd.',
       clientEmail: 'invoices@enterprise.com',
       clientAddress: '222 Business Park, Chicago, IL 60601',
-      date: '2024-01-11', 
+      date: '2024-01-11',
       dueDate: '2024-02-11',
       amount: '₹3,780.20',
       tax: '₹340.22',
@@ -175,10 +175,10 @@ const InvoiceView = () => {
     if (!invoice) return;
 
     setDownloadingPDF(true);
-    
+
     try {
       const pdf = new jsPDF('p', 'mm', 'a4');
-      
+
       // Set metadata
       pdf.setProperties({
         title: `${invoice.id} - ${invoice.client}`,
@@ -214,7 +214,7 @@ const InvoiceView = () => {
       pdf.setFont('helvetica', 'bold');
       pdf.text('Invoice Details:', 150, 40);
       pdf.setFont('helvetica', 'normal');
-      
+
       pdf.text(`Invoice #: ${invoice.id}`, 150, 45);
       pdf.text(`Date: ${formatDate(invoice.date)}`, 150, 50);
       pdf.text(`Due Date: ${formatDate(invoice.dueDate)}`, 150, 55);
@@ -256,20 +256,20 @@ const InvoiceView = () => {
       pdf.setDrawColor(200, 200, 200);
       pdf.line(140, yPos, 190, yPos);
       yPos += 5;
-      
+
       pdf.setFontSize(12);
       pdf.text('Subtotal:', 140, yPos);
       pdf.text(invoice.subtotal, 170, yPos);
-      
+
       yPos += 8;
       pdf.text('Tax (10%):', 140, yPos);
       pdf.text(invoice.tax, 170, yPos);
-      
+
       yPos += 8;
       pdf.setDrawColor(200, 200, 200);
       pdf.line(140, yPos, 190, yPos);
       yPos += 10;
-      
+
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(59, 130, 246);
@@ -283,7 +283,7 @@ const InvoiceView = () => {
       pdf.setFont('helvetica', 'bold');
       pdf.text('Notes:', 20, yPos);
       pdf.setFont('helvetica', 'normal');
-      
+
       // Split notes into multiple lines if too long
       const notesLines = pdf.splitTextToSize(invoice.notes, 170);
       pdf.text(notesLines, 20, yPos + 5);
@@ -301,7 +301,7 @@ const InvoiceView = () => {
 
       // Show success message
       alert(`PDF generated successfully: Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, '_')}.pdf`);
-      
+
     } catch (error) {
       console.error('PDF generation error:', error);
       alert('Error generating PDF. Please try again.');
@@ -312,9 +312,9 @@ const InvoiceView = () => {
 
   const printInvoice = () => {
     if (!invoice) return;
-    
+
     setPrinting(true);
-    
+
     try {
       // Create a print-friendly version
       const printWindow = window.open('', '_blank');
@@ -571,7 +571,7 @@ const InvoiceView = () => {
       `);
 
       printWindow.document.close();
-      
+
     } catch (error) {
       console.error('Print error:', error);
       alert('Error printing invoice. Please try again.');
@@ -594,8 +594,8 @@ const InvoiceView = () => {
         text: `Invoice ${invoice.id} for ${invoice.client} - Amount: ${invoice.amount}`,
         url: window.location.href,
       })
-      .then(() => console.log('Invoice shared successfully'))
-      .catch((error) => console.log('Error sharing invoice:', error));
+        .then(() => console.log('Invoice shared successfully'))
+        .catch((error) => console.log('Error sharing invoice:', error));
     } else {
       navigator.clipboard.writeText(window.location.href)
         .then(() => alert('Invoice link copied to clipboard!'))
@@ -621,7 +621,7 @@ const InvoiceView = () => {
           <div className="text-6xl mb-4">📄</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Invoice Not Found</h2>
           <p className="text-gray-600 mb-6">The invoice you're looking for doesn't exist.</p>
-          <button 
+          <button
             onClick={() => navigate('/invoices')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -635,11 +635,11 @@ const InvoiceView = () => {
   return (
     <div className="flex h-screen">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        
-        <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
+
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           <div className="mx-auto max-w-6xl">
             {/* Header with back button */}
             <div className="mb-8">
@@ -650,7 +650,7 @@ const InvoiceView = () => {
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />
                 Back to Invoices
               </button>
-              
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">Invoice {invoice.id}</h1>
@@ -658,14 +658,13 @@ const InvoiceView = () => {
                     For {invoice.client} • Issued {formatDate(invoice.date)}
                   </p>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={generatePDF}
                     disabled={downloadingPDF}
-                    className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors ${
-                      downloadingPDF ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-                    }`}
+                    className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors ${downloadingPDF ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+                      }`}
                   >
                     {downloadingPDF ? (
                       <>
@@ -679,35 +678,15 @@ const InvoiceView = () => {
                       </>
                     )}
                   </button>
-                  <button
-                    onClick={printInvoice}
-                    disabled={printing}
-                    className={`flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg transition-colors border border-gray-300 ${
-                      printing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-200'
-                    }`}
-                  >
-                    {printing ? (
-                      <>
-                        <div className="animate-spin h-5 w-5 mr-2 border-2 border-gray-400 border-t-transparent rounded-full"></div>
-                        Preparing...
-                      </>
-                    ) : (
-                      <>
-                        <PrinterIcon className="h-5 w-5 mr-2" />
-                        Print Invoice
-                      </>
-                    )}
-                  </button>
                 </div>
               </div>
             </div>
 
             {/* Invoice Status Banner */}
-            <div className={`mb-8 p-6 rounded-xl ${getStatusColor(invoice.status)} border-l-4 ${
-              invoice.status === 'Paid' ? 'border-green-500' :
-              invoice.status === 'Pending' ? 'border-yellow-500' :
-              'border-red-500'
-            }`}>
+            <div className={`mb-8 p-6 rounded-xl ${getStatusColor(invoice.status)} border-l-4 ${invoice.status === 'Paid' ? 'border-green-500' :
+                invoice.status === 'Pending' ? 'border-yellow-500' :
+                  'border-red-500'
+              }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   {getStatusIcon(invoice.status)}
@@ -715,8 +694,8 @@ const InvoiceView = () => {
                     <h3 className="text-lg font-semibold">Invoice Status: {invoice.status}</h3>
                     <p className="text-sm mt-1">
                       {invoice.status === 'Paid' ? `Paid on ${formatDate(invoice.paymentDate)} via ${invoice.paymentMethod}` :
-                       invoice.status === 'Pending' ? `Due on ${formatDate(invoice.dueDate)}` :
-                       `Overdue since ${formatDate(invoice.dueDate)}`}
+                        invoice.status === 'Pending' ? `Due on ${formatDate(invoice.dueDate)}` :
+                          `Overdue since ${formatDate(invoice.dueDate)}`}
                     </p>
                   </div>
                 </div>
@@ -846,9 +825,8 @@ const InvoiceView = () => {
                   <button
                     onClick={generatePDF}
                     disabled={downloadingPDF}
-                    className={`w-full flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg transition-colors border border-green-200 ${
-                      downloadingPDF ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-100'
-                    }`}
+                    className={`w-full flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg transition-colors border border-green-200 ${downloadingPDF ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-100'
+                      }`}
                   >
                     {downloadingPDF ? (
                       <>
@@ -862,13 +840,7 @@ const InvoiceView = () => {
                       </>
                     )}
                   </button>
-                  <button
-                    onClick={printInvoice}
-                    className="w-full flex items-center justify-center px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
-                  >
-                    <PrinterIcon className="h-5 w-5 mr-2" />
-                    Print Invoice
-                  </button>
+
                   <button
                     onClick={shareInvoice}
                     className="w-full flex items-center justify-center px-4 py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200"

@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Base configuration
-const API_BASE_URL = 'http://localhost:5000/api/v1'; // Update if your backend uses /api/v1
+const API_BASE_URL = 'http://localhost:5001/api/v1'; // Update if your backend uses /api/v1
 // If your backend routes are directly at root, use: 'http://localhost:5000'
 
 // Create axios instance with default config

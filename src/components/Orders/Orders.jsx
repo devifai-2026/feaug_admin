@@ -28,7 +28,7 @@ const Orders = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { showToast } = useToast();
-  
+
   // State management
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,51 +76,51 @@ const Orders = () => {
     }
   }, [filters, searchQuery]);
 
- // In your Orders component, update the fetchOrders function:
-const fetchOrders = useCallback(async () => {
-  try {
-    setLoading(true);
-    const params = {
-      page: pagination.page,
-      limit: pagination.limit,
-      sort: sortBy,
-      ...filters,
-    };
-    
-    if (searchQuery) {
-      params.search = searchQuery;
+  // In your Orders component, update the fetchOrders function:
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        sort: sortBy,
+        ...filters,
+      };
+
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
+
+      const response = await orderApi.getAllOrders(params);
+      console.log("Orders response:", response); // Debug log
+
+      setOrders(response.data.orders || []);
+
+      // Ensure total is a number and calculate totalPages safely
+      const total = Number(response.total) || 0;
+      const limit = Number(pagination.limit) || 10;
+      const totalPages = Math.ceil(total / limit) || 1;
+
+      setPagination(prev => ({
+        ...prev,
+        total: total,
+        totalPages: totalPages,
+        page: total > 0 ? Math.min(prev.page, totalPages) : 1 // Ensure page is valid
+      }));
+
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      showToast("Error fetching orders", "error");
+    } finally {
+      setLoading(false);
     }
-    
-    const response = await orderApi.getAllOrders(params);
-    console.log("Orders response:", response); // Debug log
-    
-    setOrders(response.data.orders || []);
-    
-    // Ensure total is a number and calculate totalPages safely
-    const total = Number(response.total) || 0;
-    const limit = Number(pagination.limit) || 10;
-    const totalPages = Math.ceil(total / limit) || 1;
-    
-    setPagination(prev => ({
-      ...prev,
-      total: total,
-      totalPages: totalPages,
-      page: total > 0 ? Math.min(prev.page, totalPages) : 1 // Ensure page is valid
-    }));
-    
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    showToast("Error fetching orders", "error");
-  } finally {
-    setLoading(false);
-  }
-}, [pagination.page, pagination.limit, sortBy, filters, searchQuery, showToast]);
+  }, [pagination.page, pagination.limit, sortBy, filters, searchQuery, showToast]);
 
   const fetchStatistics = useCallback(async () => {
     try {
       const response = await orderApi.getOrdersByStatusCount();
       const counts = response.data.counts;
-      
+
       setStats({
         pending: counts.pending || { count: 0, revenue: 0 },
         processing: counts.processing || { count: 0, revenue: 0 },
@@ -276,7 +276,7 @@ const fetchOrders = useCallback(async () => {
   const handlePrintOrder = async (order) => {
     try {
       const response = await orderApi.generateInvoice(order._id);
-      
+
       // Create blob and download
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -287,7 +287,7 @@ const fetchOrders = useCallback(async () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       showToast("Invoice downloaded successfully", "success");
     } catch (error) {
       console.error("Error generating invoice:", error);
@@ -298,18 +298,18 @@ const fetchOrders = useCallback(async () => {
   const handleExportOrders = async (exportOptions) => {
     try {
       const response = await orderApi.exportOrders(exportOptions);
-      
+
       // Convert to CSV
       const headers = Object.keys(response.data.orders[0] || {});
       const csvRows = [
         headers.join(','),
-        ...response.data.orders.map(row => 
-          headers.map(header => 
+        ...response.data.orders.map(row =>
+          headers.map(header =>
             JSON.stringify(row[header] || '')
           ).join(',')
         )
       ];
-      
+
       const csvString = csvRows.join('\n');
       const blob = new Blob([csvString], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
@@ -320,7 +320,7 @@ const fetchOrders = useCallback(async () => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       showToast("Orders exported successfully", "success");
       setIsExportModalOpen(false);
     } catch (error) {
@@ -353,9 +353,7 @@ const fetchOrders = useCallback(async () => {
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
         <main
-          className={`flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:ml-64" : "lg:ml-16"
-          }`}
+          className="flex-1 overflow-y-auto p-4 md:p-6"
         >
           <div className="mx-auto max-w-7xl">
             {/* Header */}
@@ -396,7 +394,7 @@ const fetchOrders = useCallback(async () => {
                     />
                   </div>
                 </form>
-                
+
                 <div className="flex items-center gap-2">
                   <FunnelIcon className="h-5 w-5 text-gray-500" />
                   <select
@@ -411,7 +409,7 @@ const fetchOrders = useCallback(async () => {
                     <option value="delivered">Delivered</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
-                  
+
                   {(filters.status || filters.startDate || filters.endDate) && (
                     <button
                       onClick={clearFilters}
@@ -563,7 +561,7 @@ const fetchOrders = useCallback(async () => {
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
                           </th>
-                          <th 
+                          <th
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
                             onClick={() => handleSortChange('orderId')}
                           >
@@ -576,7 +574,7 @@ const fetchOrders = useCallback(async () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Customer
                           </th>
-                          <th 
+                          <th
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
                             onClick={() => handleSortChange('createdAt')}
                           >
@@ -586,7 +584,7 @@ const fetchOrders = useCallback(async () => {
                               {sortBy === '-createdAt' && ' ↑'}
                             </div>
                           </th>
-                          <th 
+                          <th
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
                             onClick={() => handleSortChange('grandTotal')}
                           >
@@ -688,58 +686,58 @@ const fetchOrders = useCallback(async () => {
                       </tbody>
                     </table>
                   </div>
-                  
+
                   {/* Pagination */}
-                {/* Simpler Pagination */}
-{pagination.total > 0 && (
-  <div className="bg-white px-6 py-3 border-t border-gray-200">
-    <div className="flex flex-col md:flex-row md:items-center justify-between">
-      <div className="mb-4 md:mb-0">
-        <p className="text-sm text-gray-700">
-          Showing{" "}
-          <span className="font-medium">
-            {Math.max(1, (pagination.page - 1) * pagination.limit + 1)}
-          </span>{" "}
-          to{" "}
-          <span className="font-medium">
-            {Math.min(
-              pagination.page * pagination.limit,
-              pagination.total
-            )}
-          </span>{" "}
-          of <span className="font-medium">{pagination.total}</span>{" "}
-          results
-        </p>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
-          disabled={pagination.page <= 1}
-          className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronLeftIcon className="h-4 w-4 mr-1" />
-          Previous
-        </button>
-        
-        <div className="flex items-center space-x-1">
-          <span className="text-sm text-gray-500 px-2">
-            Page {pagination.page} of {pagination.totalPages || 1}
-          </span>
-        </div>
-        
-        <button
-          onClick={() => handlePageChange(Math.min(pagination.totalPages || 1, pagination.page + 1))}
-          disabled={pagination.page >= (pagination.totalPages || 1)}
-          className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-          <ChevronRightIcon className="h-4 w-4 ml-1" />
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                  {/* Simpler Pagination */}
+                  {pagination.total > 0 && (
+                    <div className="bg-white px-6 py-3 border-t border-gray-200">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between">
+                        <div className="mb-4 md:mb-0">
+                          <p className="text-sm text-gray-700">
+                            Showing{" "}
+                            <span className="font-medium">
+                              {Math.max(1, (pagination.page - 1) * pagination.limit + 1)}
+                            </span>{" "}
+                            to{" "}
+                            <span className="font-medium">
+                              {Math.min(
+                                pagination.page * pagination.limit,
+                                pagination.total
+                              )}
+                            </span>{" "}
+                            of <span className="font-medium">{pagination.total}</span>{" "}
+                            results
+                          </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
+                            disabled={pagination.page <= 1}
+                            className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <ChevronLeftIcon className="h-4 w-4 mr-1" />
+                            Previous
+                          </button>
+
+                          <div className="flex items-center space-x-1">
+                            <span className="text-sm text-gray-500 px-2">
+                              Page {pagination.page} of {pagination.totalPages || 1}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => handlePageChange(Math.min(pagination.totalPages || 1, pagination.page + 1))}
+                            disabled={pagination.page >= (pagination.totalPages || 1)}
+                            className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Next
+                            <ChevronRightIcon className="h-4 w-4 ml-1" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -754,13 +752,12 @@ const fetchOrders = useCallback(async () => {
                   recentActivities.slice(0, 5).map((activity) => (
                     <div key={activity.id} className="flex items-center">
                       <div
-                        className={`h-3 w-3 rounded-full ${
-                          activity.action === 'create' ? 'bg-purple-500' :
-                          activity.action === 'update' ? 'bg-blue-500' :
-                          activity.action === 'payment' ? 'bg-green-200' :
-                          activity.action === 'delivered' ? 'bg-green-500' :
-                          'bg-yellow-500'
-                        } mr-3`}
+                        className={`h-3 w-3 rounded-full ${activity.action === 'create' ? 'bg-purple-500' :
+                            activity.action === 'update' ? 'bg-blue-500' :
+                              activity.action === 'payment' ? 'bg-green-200' :
+                                activity.action === 'delivered' ? 'bg-green-500' :
+                                  'bg-yellow-500'
+                          } mr-3`}
                       ></div>
                       <div className="flex-1">
                         <span className="font-medium text-sm">{activity.orderId}</span>

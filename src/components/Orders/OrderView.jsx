@@ -146,7 +146,7 @@ const OrderView = () => {
     const diffMinutes = Math.floor(diffMs / (1000 * 60))
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    
+
     if (diffMinutes < 1) return 'Just now'
     if (diffMinutes < 60) return `${diffMinutes} min${diffMinutes === 1 ? '' : 's'} ago`
     if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
@@ -167,7 +167,7 @@ const OrderView = () => {
     if (!order?.addresses) return null
     const shippingAddr = order.addresses.find(addr => addr.type === 'shipping')
     if (!shippingAddr) return null
-    
+
     return `${shippingAddr.addressLine1 || ''}${shippingAddr.addressLine2 ? `, ${shippingAddr.addressLine2}` : ''}, ${shippingAddr.city || ''}, ${shippingAddr.state || ''} ${shippingAddr.pincode || ''}, ${shippingAddr.country || ''}`
   }
 
@@ -175,7 +175,7 @@ const OrderView = () => {
     if (!order?.addresses) return null
     const billingAddr = order.addresses.find(addr => addr.type === 'billing')
     if (!billingAddr) return getShippingAddress() // Fallback to shipping address
-    
+
     return `${billingAddr.addressLine1 || ''}${billingAddr.addressLine2 ? `, ${billingAddr.addressLine2}` : ''}, ${billingAddr.city || ''}, ${billingAddr.state || ''} ${billingAddr.pincode || ''}, ${billingAddr.country || ''}`
   }
 
@@ -198,11 +198,11 @@ const OrderView = () => {
 
   const handlePrintInvoice = async () => {
     if (!order) return
-    
+
     try {
       showToast("Generating invoice...", "info")
       const response = await orderApi.generateInvoice(order._id)
-      
+
       // Create blob and download
       const blob = new Blob([response.data], { type: 'application/pdf' })
       const url = window.URL.createObjectURL(blob)
@@ -213,7 +213,7 @@ const OrderView = () => {
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-      
+
       showToast("Invoice downloaded successfully", "success")
     } catch (error) {
       console.error("Error generating invoice:", error)
@@ -233,7 +233,7 @@ const OrderView = () => {
 
   const handleSendInvoiceEmail = async () => {
     if (!order) return
-    
+
     try {
       setUpdating(true)
       const emailData = {
@@ -241,7 +241,7 @@ const OrderView = () => {
         subject: `Invoice for Order ${order.orderId}`,
         message: `Dear ${getCustomerName()},\n\nPlease find attached the invoice for your order ${order.orderId}.\n\nThank you for your business!`
       }
-      
+
       await orderApi.sendInvoiceEmail(order._id, emailData)
       showToast("Invoice email sent successfully", "success")
     } catch (error) {
@@ -258,7 +258,7 @@ const OrderView = () => {
         <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-          <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
+          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -277,13 +277,13 @@ const OrderView = () => {
         <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-          <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
+          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <ExclamationCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
                 <div className="text-lg font-medium text-gray-900 mb-2">Order not found</div>
                 <p className="text-gray-600 mb-6">The order you're looking for doesn't exist or has been removed.</p>
-                <button 
+                <button
                   onClick={() => navigate('/orders')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
@@ -300,11 +300,11 @@ const OrderView = () => {
   return (
     <div className="flex h-screen">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        
-        <main className={`flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6 transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'}`}>
+
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
           <div className="mx-auto max-w-7xl">
             {/* Header */}
             <div className="mb-6 md:mb-8">
@@ -322,7 +322,7 @@ const OrderView = () => {
                     <p className="text-sm text-gray-500">Placed on {formatDate(order.createdAt)}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center">
                     {getStatusIcon(order.status)}
@@ -331,21 +331,21 @@ const OrderView = () => {
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button 
+                    <button
                       onClick={handleUpdateStatus}
                       className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
                       title="Update Status"
                     >
                       <ArrowPathIcon className="h-5 w-5 text-gray-600" />
                     </button>
-                    <button 
+                    <button
                       onClick={handlePrintInvoice}
                       className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
                       title="Download Invoice"
                     >
                       <PrinterIcon className="h-5 w-5 text-gray-600" />
                     </button>
-                    <button 
+                    <button
                       onClick={handleSendInvoiceEmail}
                       disabled={updating}
                       className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
@@ -371,16 +371,16 @@ const OrderView = () => {
                       Total items: {order.items?.reduce((sum, item) => sum + (item.quantity || 1), 0) || 0}
                     </div>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {order.items && order.items.length > 0 ? (
                       order.items.map((item) => (
                         <div key={item._id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div className="flex items-center">
                             {item.product?.images?.[0] ? (
-                              <img 
-                                src={item.product.images[0]} 
-                                alt={item.productName || item.product?.name} 
+                              <img
+                                src={item.product.images[0]}
+                                alt={item.productName || item.product?.name}
                                 className="h-16 w-16 rounded-lg object-cover mr-4"
                               />
                             ) : (
@@ -457,15 +457,14 @@ const OrderView = () => {
                     <div className="space-y-4">
                       {timeline.slice(0, 5).map((event, index) => (
                         <div key={event.id || index} className="flex items-start">
-                          <div className={`h-3 w-3 rounded-full mt-2 ${
-                            event.type === 'order_created' ? 'bg-blue-500' :
+                          <div className={`h-3 w-3 rounded-full mt-2 ${event.type === 'order_created' ? 'bg-blue-500' :
                             event.type === 'status_change' ? 'bg-green-500' :
-                            event.type === 'shipping_update' ? 'bg-purple-500' :
-                            event.type === 'payment_received' ? 'bg-green-500' :
-                            event.type === 'order_shipped' ? 'bg-blue-500' :
-                            event.type === 'order_delivered' ? 'bg-green-500' :
-                            'bg-gray-500'
-                          } mr-3`}></div>
+                              event.type === 'shipping_update' ? 'bg-purple-500' :
+                                event.type === 'payment_received' ? 'bg-green-500' :
+                                  event.type === 'order_shipped' ? 'bg-blue-500' :
+                                    event.type === 'order_delivered' ? 'bg-green-500' :
+                                      'bg-gray-500'
+                            } mr-3`}></div>
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">{event.description}</div>
                             <div className="flex items-center text-sm text-gray-500 mt-1">
@@ -486,7 +485,7 @@ const OrderView = () => {
                       ))}
                     </div>
                     {timeline.length > 5 && (
-                      <button 
+                      <button
                         onClick={() => navigate(`/orders/${id}/timeline`)}
                         className="mt-4 text-sm text-blue-600 hover:text-blue-800"
                       >
@@ -555,11 +554,10 @@ const OrderView = () => {
                         <CreditCardIcon className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
                         <div>
                           <span className="text-sm text-gray-600">{getPaymentMethodText(order.paymentMethod)}</span>
-                          <div className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${
-                            order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
+                          <div className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${order.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
                             order.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
+                              'bg-red-100 text-red-800'
+                            }`}>
                             {order.paymentStatus?.charAt(0).toUpperCase() + order.paymentStatus?.slice(1) || 'Unknown'}
                           </div>
                         </div>

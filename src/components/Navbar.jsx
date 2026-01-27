@@ -1,4 +1,4 @@
-import { 
+import {
   MagnifyingGlassIcon,
   BellIcon,
   Bars3Icon,
@@ -18,7 +18,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(true) // Start as logged in for demo
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const handleProfile = () => {
     navigate('/my-profile');
@@ -87,7 +87,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
       color: 'bg-pink-500'
     }
   ])
-  
+
   const dropdownRef = useRef(null)
   const notificationRef = useRef(null)
 
@@ -99,7 +99,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
   const toggleNotifications = () => {
     setIsNotificationOpen(!isNotificationOpen)
     setIsDropdownOpen(false)
-    
+
     // Mark all notifications as read when opening
     if (!isNotificationOpen) {
       const updatedNotifications = notifications.map(notification => ({
@@ -149,7 +149,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false)
       }
-      
+
       // Close notification panel
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setIsNotificationOpen(false)
@@ -193,7 +193,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
         {/* Notifications - Only show when logged in */}
         {isLoggedIn && (
           <div className="relative" ref={notificationRef}>
-            <button 
+            <button
               onClick={toggleNotifications}
               className="relative rounded-full p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
             >
@@ -207,13 +207,13 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
 
             {/* Notification Panel */}
             {isNotificationOpen && (
-              <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[500px] overflow-hidden">
+              <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[calc(100vh-100px)] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
                     <p className="text-xs text-gray-500">
-                      {unreadCount > 0 
+                      {unreadCount > 0
                         ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
                         : 'All caught up!'
                       }
@@ -230,7 +230,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                 </div>
 
                 {/* Notifications List */}
-                <div className="overflow-y-auto max-h-[400px]">
+                <div className="flex-1 overflow-y-auto min-h-0">
                   {notifications.length === 0 ? (
                     <div className="p-8 text-center">
                       <div className="h-12 w-12 mx-auto mb-4 flex items-center justify-center rounded-full bg-gray-100">
@@ -244,9 +244,8 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                            !notification.read ? 'bg-blue-50' : ''
-                          }`}
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50' : ''
+                            }`}
                           onClick={() => markAsRead(notification.id)}
                         >
                           <div className="flex items-start">
@@ -255,9 +254,8 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between">
-                                <p className={`text-sm font-medium truncate ${
-                                  !notification.read ? 'text-blue-900' : 'text-gray-900'
-                                }`}>
+                                <p className={`text-sm font-medium truncate ${!notification.read ? 'text-blue-900' : 'text-gray-900'
+                                  }`}>
                                   {notification.title}
                                 </p>
                                 <button
@@ -290,7 +288,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
 
                 {/* Footer */}
                 {notifications.length > 0 && (
-                  <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+                  <div className="flex-shrink-0 px-4 py-3 border-t border-gray-100 bg-gray-50">
                     <button
                       onClick={() => {
                         navigate('/notifications');
@@ -310,7 +308,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
         {/* User dropdown or Login button */}
         {isLoggedIn ? (
           <div className="relative" ref={dropdownRef}>
-            <button 
+            <button
               onClick={toggleDropdown}
               className="flex items-center space-x-2 rounded-full p-1 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
             >
@@ -339,7 +337,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Dropdown items */}
                 <div className="py-1">
                   <button
@@ -352,9 +350,9 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                       <div className="text-xs text-gray-500">View and edit your profile</div>
                     </div>
                   </button>
-                  
+
                   <div className="border-t border-gray-100 my-1"></div>
-                  
+
                   <button
                     onClick={handleLogout}
                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
