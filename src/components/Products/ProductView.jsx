@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
+import {
   ArrowLeftIcon,
   ShoppingCartIcon,
   CurrencyRupeeIcon,
@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
+import productApi from '../../api/product.api';
 
 const ProductView = () => {
   const { id } = useParams();
@@ -34,128 +35,51 @@ const ProductView = () => {
     generateStockHistory();
   }, [id]);
 
-  const loadProduct = () => {
+  const loadProduct = async () => {
     setLoading(true);
     try {
-      const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-      
-      const dummyProducts = [
-        { 
-          id: 1, 
-          name: 'Wireless Headphones', 
-          category: 'Electronics', 
-          price: '₹99.99', 
-          cost: '₹45.00',
-          stock: 45, 
-          minStock: 10,
-          status: 'In Stock', 
-          image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=400&fit=crop',
-          description: 'Premium wireless headphones with noise cancellation and 30-hour battery life.',
-          brand: 'SoundMax',
-          sku: 'SM-WH001',
-          supplier: 'Tech Suppliers Inc.',
-          supplierContact: 'supplier@tech.com',
-          rating: 4.5,
-          reviews: 128,
-          weight: '0.5 kg',
-          dimensions: '18 x 15 x 8 cm',
-          location: 'Warehouse A, Shelf 12',
-          features: ['Noise Cancelling', 'Bluetooth 5.0', '30-hour battery', 'Water resistant'],
-          isDummy: true,
-          createdAt: '2024-01-15',
-          lastRestocked: '2024-03-10',
-          totalSold: 245,
-          revenue: '₹24,497.55',
-          margin: '55%',
-          images: [
-            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=400&fit=crop',
-            'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=300&h=300&fit=crop'
-          ]
-        },
-        { 
-          id: 2, 
-          name: 'Running Shoes', 
-          category: 'Sports', 
-          price: '₹129.99', 
-          cost: '₹65.00',
-          stock: 23, 
-          minStock: 15,
-          status: 'Low Stock', 
-          image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop',
-          description: 'Lightweight running shoes with enhanced cushioning for maximum comfort.',
-          brand: 'RunPro',
-          sku: 'RP-RS202',
-          supplier: 'Sport Gear Co.',
-          supplierContact: 'contact@sportgear.com',
-          rating: 4.2,
-          reviews: 89,
-          weight: '0.8 kg',
-          dimensions: '30 x 20 x 12 cm',
-          location: 'Warehouse B, Shelf 5',
-          features: ['Breathable mesh', 'Shock absorption', 'Non-slip sole', 'Lightweight'],
-          isDummy: true,
-          createdAt: '2024-02-10',
-          lastRestocked: '2024-03-05',
-          totalSold: 189,
-          revenue: '₹24,568.11',
-          margin: '50%',
-          images: [
-            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop',
-            'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=300&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=300&h=300&fit=crop'
-          ]
-        },
-        { 
-          id: 3, 
-          name: 'Coffee Maker', 
-          category: 'Home & Kitchen', 
-          price: '₹79.99', 
-          cost: '₹35.00',
-          stock: 0, 
-          minStock: 5,
-          status: 'Out of Stock', 
-          image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=400&fit=crop',
-          description: 'Programmable coffee maker with thermal carafe and built-in grinder.',
-          brand: 'BrewMaster',
-          sku: 'BM-CM300',
-          supplier: 'Home Appliances Ltd.',
-          supplierContact: 'sales@homeappliances.com',
-          rating: 4.7,
-          reviews: 256,
-          weight: '3.2 kg',
-          dimensions: '25 x 35 x 30 cm',
-          location: 'Warehouse A, Shelf 8',
-          features: ['Programmable', 'Built-in grinder', 'Thermal carafe', '24-hour timer'],
-          isDummy: true,
-          createdAt: '2024-01-20',
-          lastRestocked: '2024-02-28',
-          totalSold: 156,
-          revenue: '₹12,478.44',
-          margin: '56%',
-          images: [
-            'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=400&fit=crop',
-            'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e7?w=300&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1518834103326-9fd4c5fff6d1?w=300&h=300&fit=crop'
-          ]
-        },
-        // ... rest of the dummy products with images arrays
-      ];
+      const response = await productApi.getProduct(id);
 
-      const userProducts = savedProducts.filter(p => !p.isDummy);
-      const allProducts = [...dummyProducts, ...userProducts];
-      
-      const foundProduct = allProducts.find(p => p.id.toString() === id);
-      
-      if (foundProduct) {
-        setProduct(foundProduct);
+      if (response && response.data && response.data.product) {
+        const foundProduct = response.data.product;
+        // Transform API product to match component state structure if necessary
+        // or just use it directly if keys match. 
+        // Backend returns: name, category (obj or string), sellingPrice, stockQuantity, etc.
+
+        // We might need to map some fields to match the UI expectations if they differ
+        const mappedProduct = {
+          ...foundProduct,
+          price: `₹${foundProduct.sellingPrice}`,
+          basePrice: foundProduct.basePrice ? `₹${foundProduct.basePrice}` : null,
+          cost: foundProduct.basePrice ? `₹${foundProduct.basePrice}` : null,
+          stock: foundProduct.stockQuantity,
+          minStock: foundProduct.lowStockThreshold || 10,
+          status: foundProduct.stockQuantity === 0 ? 'Out of Stock' :
+            foundProduct.stockQuantity <= (foundProduct.lowStockThreshold || 10) ? 'Low Stock' : 'In Stock',
+          category: foundProduct.category?.name || foundProduct.category || 'Uncategorized',
+          subCategory: foundProduct.subCategory?.name || foundProduct.subCategory || 'N/A',
+          margin: foundProduct.basePrice && foundProduct.sellingPrice ?
+            `${Math.round(((foundProduct.sellingPrice - foundProduct.basePrice) / foundProduct.sellingPrice) * 100)}%` : '0%',
+          dimensions: foundProduct.dimensions ?
+            `${foundProduct.dimensions.length || '-'} x ${foundProduct.dimensions.width || '-'} x ${foundProduct.dimensions.height || '-'} cm` : 'N/A',
+        };
+
+        setProduct(mappedProduct);
+
         // Set image gallery
         if (foundProduct.images && foundProduct.images.length > 0) {
-          setImageGallery(foundProduct.images);
+          // Extract URLs from image objects
+          const urls = foundProduct.images.map(img => img.url);
+          setImageGallery(urls);
+
+          const primaryIndex = foundProduct.images.findIndex(img => img.isPrimary);
+          if (primaryIndex !== -1) setSelectedImage(primaryIndex);
+        } else if (foundProduct.image) {
+          setImageGallery([foundProduct.image]); // Legacy support if applicable
         } else {
-          // Create gallery from single image
-          setImageGallery([foundProduct.image]);
+          setImageGallery([]);
         }
+
       } else {
         navigate('/products');
       }
@@ -202,7 +126,7 @@ const ProductView = () => {
         status: product.stock + parseInt(quantity) > product.minStock ? 'In Stock' : 'Low Stock'
       };
       setProduct(updatedProduct);
-      
+
       // In a real app, you would update localStorage here
       alert(`Restocked ${quantity} units successfully.`);
     }
@@ -246,10 +170,10 @@ const ProductView = () => {
   return (
     <div className="flex h-screen">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        
+
         <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
           <div className="mx-auto max-w-7xl">
             {/* Header with Breadcrumbs */}
@@ -261,25 +185,32 @@ const ProductView = () => {
                 <span className="mx-2">/</span>
                 <span className="text-gray-900 font-medium">{product.name}</span>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Product Details</h1>
                   <p className="text-gray-600">View and analyze product performance</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Link 
-                    to="/products" 
+                  <Link
+                    to="/products"
                     className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
                     <ArrowLeftIcon className="h-5 w-5 mr-2" />
                     Back to Products
                   </Link>
-                  
-                  {product.isDummy && (
-                    <span className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full">
-                      Demo Product
-                    </span>
+
+                  {product.isFeatured && (
+                    <span className="px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-full font-medium">Featured</span>
+                  )}
+                  {product.isNewArrival && (
+                    <span className="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-full font-medium">New Arrival</span>
+                  )}
+                  {product.isBestSeller && (
+                    <span className="px-3 py-1 text-sm bg-pink-100 text-pink-800 rounded-full font-medium">Bestseller</span>
+                  )}
+                  {!product.isActive && (
+                    <span className="px-3 py-1 text-sm bg-gray-100 text-gray-800 rounded-full font-medium italic">Hidden (Inactive)</span>
                   )}
                 </div>
               </div>
@@ -298,18 +229,16 @@ const ProductView = () => {
                 <div className="mt-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Min. Stock: {product.minStock || 10}</span>
-                    <span className={`font-medium ${
-                      product.stock <= (product.minStock || 10) ? 'text-red-600' : 'text-green-600'
-                    }`}>
+                    <span className={`font-medium ${product.stock <= (product.minStock || 10) ? 'text-red-600' : 'text-green-600'
+                      }`}>
                       {product.status}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        product.stock > (product.minStock || 10) * 2 ? 'bg-green-500' : 
+                    <div
+                      className={`h-2 rounded-full ${product.stock > (product.minStock || 10) * 2 ? 'bg-green-500' :
                         product.stock > (product.minStock || 10) ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
+                        }`}
                       style={{ width: `${Math.min((product.stock / ((product.minStock || 10) * 3)) * 100, 100)}%` }}
                     ></div>
                   </div>
@@ -348,7 +277,7 @@ const ProductView = () => {
                     <span className="text-gray-600">Price: {product.price}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
+                    <div
                       className="h-2 rounded-full bg-purple-500"
                       style={{ width: product.margin ? parseFloat(product.margin) + '%' : '0%' }}
                     ></div>
@@ -370,10 +299,10 @@ const ProductView = () => {
                   </div>
                   <div className="flex mt-1">
                     {[...Array(5)].map((_, i) => (
-                      <svg 
-                        key={i} 
+                      <svg
+                        key={i}
                         className={`h-4 w-4 ${i < Math.floor(product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`}
-                        fill="currentColor" 
+                        fill="currentColor"
                         viewBox="0 0 20 20"
                       >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -398,8 +327,8 @@ const ProductView = () => {
                     <div className="mb-6">
                       <div className="bg-gray-100 rounded-lg overflow-hidden h-96 flex items-center justify-center">
                         {imageGallery.length > 0 ? (
-                          <img 
-                            src={imageGallery[selectedImage]} 
+                          <img
+                            src={imageGallery[selectedImage]}
                             alt={`${product.name} - View ${selectedImage + 1}`}
                             className="w-full h-full object-contain"
                             onError={(e) => {
@@ -424,14 +353,13 @@ const ProductView = () => {
                             <button
                               key={index}
                               onClick={() => setSelectedImage(index)}
-                              className={`relative rounded-lg overflow-hidden border-2 transition-all ${
-                                selectedImage === index 
-                                  ? 'border-blue-500 ring-2 ring-blue-200' 
-                                  : 'border-gray-200 hover:border-gray-300'
-                              }`}
+                              className={`relative rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
+                                ? 'border-blue-500 ring-2 ring-blue-200'
+                                : 'border-gray-200 hover:border-gray-300'
+                                }`}
                             >
-                              <img 
-                                src={img} 
+                              <img
+                                src={img}
                                 alt={`Thumbnail ${index + 1}`}
                                 className="h-20 w-full object-cover"
                                 onError={(e) => {
@@ -473,52 +401,91 @@ const ProductView = () => {
                     <h2 className="text-lg font-semibold text-gray-900">Product Information</h2>
                   </div>
                   <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                          <div className="text-lg font-semibold">{product.name}</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                      <div className="space-y-6">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Product Name</label>
+                          <div className="text-xl font-bold text-gray-900">{product.name}</div>
                         </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                          <div className="text-gray-600">{product.description || 'No description available.'}</div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Short Description</label>
+                          <div className="text-gray-600 leading-relaxed">{product.shortDescription || 'No short description provided.'}</div>
                         </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                          <div className="flex items-center">
-                            <TagIcon className="h-4 w-4 text-gray-400 mr-2" />
-                            <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                              {product.category}
-                            </span>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Full Description</label>
+                          <div className="text-gray-600 whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            {product.description || 'No detailed description available.'}
                           </div>
                         </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                          <div className="flex items-center">
-                            <span className="text-gray-600">{product.brand || 'Unknown'}</span>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Category</label>
+                            <div className="flex items-center">
+                              <span className="px-3 py-1.5 bg-blue-50 text-blue-600 font-bold text-xs rounded-lg border border-blue-100">
+                                {product.category}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Sub-Category</label>
+                            <div className="text-sm font-semibold text-gray-700">{product.subCategory}</div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Material</label>
+                            <div className="text-sm font-bold text-gray-900 capitalize">{product.material || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Purity</label>
+                            <div className="text-sm font-bold text-gray-900 uppercase">{product.purity || 'N/A'}</div>
                           </div>
                         </div>
                       </div>
-                      
-                      <div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-                          <div className="font-mono text-gray-900">{product.sku || `PROD-${product.id.toString().padStart(5, '0')}`}</div>
-                        </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                          <div className="flex items-center">
-                            <CubeIcon className="h-4 w-4 text-gray-400 mr-2" />
-                            <span className="text-gray-600">{product.location || 'Not specified'}</span>
+
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">SKU</label>
+                            <div className="font-mono text-sm text-gray-900 font-bold bg-gray-100 px-3 py-1.5 rounded-lg inline-block">{product.sku || 'N/A'}</div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Gender</label>
+                            <div className="text-sm font-bold text-gray-900 capitalize italic">{product.gender || 'unisex'}</div>
                           </div>
                         </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions</label>
-                          <div className="text-gray-600">{product.dimensions || 'N/A'}</div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Brand</label>
+                          <div className="text-sm font-bold text-gray-900">{product.brand || 'Unbranded'}</div>
                         </div>
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Weight</label>
-                          <div className="text-gray-600">{product.weight || 'N/A'}</div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Dimensions (L x W x H)</label>
+                            <div className="text-sm font-bold text-gray-900 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100 inline-block">{product.dimensions}</div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Weight</label>
+                            <div className="text-sm font-bold text-gray-900">{product.weight ? `${product.weight} kg` : 'N/A'}</div>
+                          </div>
+                        </div>
+
+                        {/* SEO Section */}
+                        <div className="pt-6 border-t border-gray-100">
+                          <label className="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">Search & SEO</label>
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase">Meta Title</p>
+                              <p className="text-sm text-gray-700">{product.metaTitle || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase">Tags</p>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {product.tags && product.tags.length > 0 ? product.tags.map((tag, i) => (
+                                  <span key={i} className="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase">#{tag}</span>
+                                )) : <span className="text-xs text-gray-400 italic">No tags</span>}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -570,14 +537,14 @@ const ProductView = () => {
                         <p className="text-sm text-gray-600 mt-1">Compared to last period</p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-4">
                       {salesData.map((item, index) => (
                         <div key={index} className="flex items-center">
                           <div className="w-16 text-sm text-gray-600">{item.month}</div>
                           <div className="flex-1">
                             <div className="w-full bg-gray-200 rounded-full h-4">
-                              <div 
+                              <div
                                 className="h-4 rounded-full bg-blue-500"
                                 style={{ width: `${(item.sales / 70) * 100}%` }}
                               ></div>
@@ -621,7 +588,7 @@ const ProductView = () => {
                   </div>
                   <div className="p-6">
                     <div className="space-y-3">
-                      <button 
+                      <button
                         onClick={restockProduct}
                         className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                       >
@@ -666,14 +633,13 @@ const ProductView = () => {
                           const balance = stockHistory
                             .slice(0, index + 1)
                             .reduce((sum, hist) => sum + hist.quantity, 0);
-                          
+
                           return (
                             <tr key={index}>
                               <td className="px-4 py-3 text-sm text-gray-900">{item.date}</td>
                               <td className="px-4 py-3">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  item.action === 'Sold' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                }`}>
+                                <span className={`px-2 py-1 text-xs rounded-full ${item.action === 'Sold' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                  }`}>
                                   {item.action}
                                 </span>
                               </td>
@@ -706,12 +672,12 @@ const ProductView = () => {
                         {product.status === 'Out of Stock' ? 'Out of Stock Alert' : 'Low Stock Alert'}
                       </h3>
                       <p className="text-red-700 mb-3">
-                        {product.status === 'Out of Stock' 
+                        {product.status === 'Out of Stock'
                           ? 'This product is currently out of stock. Consider restocking immediately.'
                           : `Current stock (${product.stock} units) is below minimum threshold (${product.minStock || 10} units).`}
                       </p>
                       <div className="flex space-x-3">
-                        <button 
+                        <button
                           onClick={restockProduct}
                           className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                         >

@@ -6,9 +6,13 @@ const productApi = {
     axiosInstance.get('/admin/products', { params })
       .then(response => response.data),
 
-  // Create a new product
   createProduct: (data) =>
     axiosInstance.post('/admin/products', data)
+      .then(response => response.data),
+
+  // Get single product
+  getProduct: (productId) =>
+    axiosInstance.get(`/admin/products/${productId}`)
       .then(response => response.data),
 
   // Update a product

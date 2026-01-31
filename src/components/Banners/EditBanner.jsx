@@ -5,7 +5,11 @@ import {
   PhotoIcon,
   CloudArrowUpIcon,
   XMarkIcon,
+  ArrowUpTrayIcon,
+  CheckIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
+import { useRef } from 'react';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
 import bannerApi from '../../api/banners.api';
@@ -20,12 +24,13 @@ const EditBanner = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
-    subtitle: '',
-    image: '',
-    mobileImage: '',
+    subheader: '', // Adjusted to match model 'subheader'
+    body: '',
+    footer: '',
     bannerType: 'header',
     linkType: 'none',
     linkTarget: '',
@@ -39,7 +44,11 @@ const EditBanner = () => {
     textColor: '',
     buttonText: '',
     buttonColor: '',
+    primaryImage: ''
   });
+
+  const [images, setImages] = useState([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   const [errors, setErrors] = useState({});
 
@@ -55,9 +64,9 @@ const EditBanner = () => {
 
       setFormData({
         title: banner.title || '',
-        subtitle: banner.subtitle || '',
-        image: banner.image || '',
-        mobileImage: banner.mobileImage || '',
+        subheader: banner.subheader || banner.subtitle || '', // Fallback to subtitle if subheader missing
+        body: banner.body || '',
+        footer: banner.footer || '',
         bannerType: banner.bannerType || 'header',
         linkType: banner.linkType || 'none',
         linkTarget: banner.linkTarget || '',
@@ -71,7 +80,15 @@ const EditBanner = () => {
         textColor: banner.textColor || '',
         buttonText: banner.buttonText || '',
         buttonColor: banner.buttonColor || '',
+        primaryImage: banner.images?.find(img => img.isPrimary)?.url || banner.images?.[0]?.url || ''
       });
+
+      if (banner.images) {
+        setImages(banner.images.map(img => ({
+          url: img.url,
+          subheader: img.subheader || ''
+        })));
+      }
     } catch (error) {
       console.error('Error fetching banner:', error);
       showToast('Error fetching banner details', 'error');
@@ -96,57 +113,67 @@ const EditBanner = () => {
     }
   };
 
-  const handleImageUpload = async (e, type = 'desktop') => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleAddImageUrl = () => {
+    if (!newImageUrl.trim()) return;
+    setImages(prev => [...prev, { url: newImageUrl.trim(), subheader: '' }]);
+    setNewImageUrl('');
+  };
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Please upload an image file', 'error');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Image size should be less than 5MB', 'error');
-      return;
-    }
-
-    try {
-      setUploading(true);
-
-      const presignedResponse = await s3Api.getPresignedUrl({
-        fileName: file.name,
-        fileType: file.type,
-        folder: 'banners',
-      });
-
-      await fetch(presignedResponse.data.uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (type === 'desktop') {
-        setFormData(prev => ({ ...prev, image: presignedResponse.data.fileUrl }));
-      } else {
-        setFormData(prev => ({ ...prev, mobileImage: presignedResponse.data.fileUrl }));
-      }
-
-      showToast('Image uploaded successfully', 'success');
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      showToast('Error uploading image', 'error');
-    } finally {
-      setUploading(false);
+  const removeImage = (index) => {
+    const removedImage = images[index];
+    setImages(prev => prev.filter((_, i) => i !== index));
+    if (removedImage.url === formData.primaryImage) {
+      setFormData(prev => ({ ...prev, primaryImage: '' }));
     }
   };
 
-  const removeImage = (type = 'desktop') => {
-    if (type === 'desktop') {
-      setFormData(prev => ({ ...prev, image: '' }));
-    } else {
-      setFormData(prev => ({ ...prev, mobileImage: '' }));
+  const handleImageSubheaderChange = (index, subheader) => {
+    setImages(prev => {
+      const newImages = [...prev];
+      newImages[index] = { ...newImages[index], subheader };
+      return newImages;
+    });
+  };
+
+  const handleSetPrimaryImage = (url) => {
+    setFormData(prev => ({ ...prev, primaryImage: url }));
+  };
+
+  const handleFileUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Get presigned URL
+        const presignedResponse = await s3Api.getPresignedUrl(
+          file.name,
+          file.type,
+          'banners'
+        );
+
+        // Upload to S3
+        await fetch(presignedResponse.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+
+        const uploadedUrl = presignedResponse.fileUrl;
+        setImages(prev => [...prev, { url: uploadedUrl, subheader: '' }]);
+      }
+      showToast('Images uploaded successfully', 'success');
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      showToast('Error uploading images', 'error');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -157,7 +184,7 @@ const EditBanner = () => {
       newErrors.title = 'Title is required';
     }
 
-    if (!formData.image) {
+    if (images.length === 0) {
       newErrors.image = 'Banner image is required';
     }
 
@@ -183,15 +210,23 @@ const EditBanner = () => {
       const bannerData = {
         ...formData,
         displayOrder: parseInt(formData.displayOrder) || 0,
+        name: formData.title.toLowerCase().replace(/\s+/g, '-'),
+        images: images.map((img, index) => ({
+          url: img.url,
+          subheader: img.subheader || '',
+          isPrimary: img.url === (formData.primaryImage || images[0]?.url),
+          alt: formData.title
+        }))
       };
 
-      // Remove empty optional fields
+      delete bannerData.primaryImage;
+
       if (!bannerData.endDate) delete bannerData.endDate;
-      if (!bannerData.mobileImage) delete bannerData.mobileImage;
       if (!bannerData.backgroundColor) delete bannerData.backgroundColor;
       if (!bannerData.textColor) delete bannerData.textColor;
       if (!bannerData.buttonText) delete bannerData.buttonText;
       if (!bannerData.buttonColor) delete bannerData.buttonColor;
+      if (!bannerData.subheader) delete bannerData.subheader;
 
       await bannerApi.updateBanner(id, bannerData);
       showToast('Banner updated successfully', 'success');
@@ -255,9 +290,8 @@ const EditBanner = () => {
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.title ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.title ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="Enter banner title"
                     />
                     {errors.title && (
@@ -267,15 +301,43 @@ const EditBanner = () => {
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Subtitle
+                      Subheader
                     </label>
                     <input
                       type="text"
-                      name="subtitle"
-                      value={formData.subtitle}
+                      name="subheader"
+                      value={formData.subheader}
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter banner subtitle (optional)"
+                      placeholder="Enter banner subheader (optional)"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Body Content
+                    </label>
+                    <textarea
+                      name="body"
+                      value={formData.body}
+                      onChange={handleInputChange}
+                      rows="3"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter main banner content (optional)"
+                    ></textarea>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Footer Text
+                    </label>
+                    <input
+                      type="text"
+                      name="footer"
+                      value={formData.footer}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter footer text (optional)"
                     />
                   </div>
 
@@ -349,101 +411,127 @@ const EditBanner = () => {
                 </div>
               </div>
 
-              {/* Images */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Banner Images</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Desktop Image */}
+              {/* Media Management (Banners) */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                  <h2 className="text-lg font-bold text-gray-900 flex items-center">
+                    <PhotoIcon className="h-5 w-5 mr-2 text-blue-600" />
+                    Media Management
+                  </h2>
+                </div>
+                <div className="p-6 space-y-6">
+                  {/* Image URL Input */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Desktop Image *
-                    </label>
-                    {formData.image ? (
-                      <div className="relative">
-                        <img
-                          src={formData.image}
-                          alt="Banner preview"
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage('desktop')}
-                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                        >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 ${
-                        errors.image ? 'border-red-500' : 'border-gray-300'
-                      }`}>
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          {uploading ? (
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                          ) : (
-                            <>
-                              <CloudArrowUpIcon className="w-10 h-10 text-gray-400 mb-2" />
-                              <p className="text-sm text-gray-500">Click to upload desktop image</p>
-                              <p className="text-xs text-gray-400">PNG, JPG up to 5MB</p>
-                            </>
-                          )}
-                        </div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Add Image via URL</label>
+                    <div className="flex gap-4">
+                      <div className="flex-1 relative">
                         <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, 'desktop')}
-                          disabled={uploading}
+                          type="text"
+                          value={newImageUrl}
+                          onChange={(e) => setNewImageUrl(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                          placeholder="Paste banner image URL here..."
                         />
-                      </label>
-                    )}
-                    {errors.image && (
-                      <p className="mt-1 text-sm text-red-600">{errors.image}</p>
-                    )}
+                        <PhotoIcon className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddImageUrl}
+                        className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+                      >
+                        Add URL
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Mobile Image */}
+                  {/* File Upload UI */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Mobile Image (Optional)
-                    </label>
-                    {formData.mobileImage ? (
-                      <div className="relative">
-                        <img
-                          src={formData.mobileImage}
-                          alt="Mobile banner preview"
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeImage('mobile')}
-                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                        >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Upload Images</label>
+                    <div className="p-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 flex flex-col items-center justify-center transition-colors hover:bg-gray-50 hover:border-blue-300">
+                      <div className="p-3 bg-white rounded-full shadow-sm mb-4">
+                        <ArrowUpTrayIcon className="h-6 w-6 text-blue-500" />
                       </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          {uploading ? (
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-                          ) : (
-                            <>
-                              <PhotoIcon className="w-10 h-10 text-gray-400 mb-2" />
-                              <p className="text-sm text-gray-500">Click to upload mobile image</p>
-                              <p className="text-xs text-gray-400">Optimized for mobile devices</p>
-                            </>
+                      <div className="text-center">
+                        <label className="relative cursor-pointer group">
+                          <span className="text-blue-600 font-bold group-hover:text-blue-700 transition-colors underline">Click to upload files</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            className="sr-only"
+                            onChange={handleFileUpload}
+                            ref={fileInputRef}
+                            disabled={uploading}
+                          />
+                        </label>
+                        <p className="text-sm text-gray-500 mt-1 font-medium italic">or drag and drop images here</p>
+                      </div>
+                      {uploading && (
+                        <div className="mt-4 flex items-center text-blue-600 font-bold text-sm animate-pulse">
+                          <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          Uploading Assets...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {errors.image && <p className="text-sm text-red-500 font-medium">{errors.image}</p>}
+
+                  {/* Image Gallery */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+                    {images.map((img, index) => (
+                      <div
+                        key={index}
+                        className={`group relative flex flex-col bg-white rounded-xl overflow-hidden border-2 transition-all shadow-sm ${formData.primaryImage === img.url || (!formData.primaryImage && index === 0)
+                          ? 'border-blue-500 ring-2 ring-blue-100'
+                          : 'border-gray-100 hover:border-blue-300'
+                          }`}
+                      >
+                        <div className="relative aspect-video">
+                          <img
+                            src={img.url}
+                            alt="Banner"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimaryImage(img.url)}
+                              className={`p-2 rounded-lg transition-colors ${formData.primaryImage === img.url || (!formData.primaryImage && index === 0) ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-gray-100'}`}
+                              title="Set as Primary"
+                            >
+                              <CheckIcon className="h-5 w-5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="p-2 bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors shadow-sm"
+                              title="Remove Image"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </div>
+                          {(formData.primaryImage === img.url || (!formData.primaryImage && index === 0)) && (
+                            <div className="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded uppercase tracking-wider">
+                              Primary
+                            </div>
                           )}
                         </div>
-                        <input
-                          type="file"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={(e) => handleImageUpload(e, 'mobile')}
-                          disabled={uploading}
-                        />
-                      </label>
-                    )}
+                        <div className="p-3 bg-gray-50 border-t border-gray-100">
+                          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Image Subheader (Optional)</label>
+                          <input
+                            type="text"
+                            value={img.subheader}
+                            onChange={(e) => handleImageSubheaderChange(index, e.target.value)}
+                            className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="e.g., Shop our summer deals"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -480,9 +568,8 @@ const EditBanner = () => {
                         name="linkTarget"
                         value={formData.linkTarget}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.linkTarget ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.linkTarget ? 'border-red-500' : 'border-gray-300'
+                          }`}
                         placeholder={formData.linkType === 'url' ? 'https://example.com' : 'Enter ID'}
                       />
                       {errors.linkTarget && (
@@ -611,9 +698,8 @@ const EditBanner = () => {
                 <button
                   type="submit"
                   disabled={saving || uploading}
-                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${
-                    saving || uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-                  }`}
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${saving || uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+                    }`}
                 >
                   {saving ? (
                     <>

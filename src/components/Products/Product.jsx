@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import productApi from "../../api/product.api";
+import categoryApi from "../../api/categories.api";
 
 const Products = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -27,6 +28,22 @@ const Products = () => {
     total: 0,
     totalPages: 0,
   });
+  const [categoriesList, setCategoriesList] = useState([]);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryApi.getAllCategories();
+        if (response && response.data && response.data.categories) {
+          setCategoriesList(response.data.categories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
 
   // Load products from API
@@ -205,10 +222,9 @@ const Products = () => {
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Categories</option>
-                <option value="electronics">Electronics</option>
-                <option value="fashion">Fashion</option>
-                <option value="home-kitchen">Home & Kitchen</option>
-                <option value="jewelry">Jewelry</option>
+                {categoriesList.map(cat => (
+                  <option key={cat._id} value={cat._id}>{cat.name}</option>
+                ))}
               </select>
               <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                 <FunnelIcon className="h-5 w-5 mr-2" />

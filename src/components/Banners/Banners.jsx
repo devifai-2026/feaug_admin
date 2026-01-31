@@ -329,7 +329,11 @@ const Banners = () => {
                                 <div className="h-16 w-24 flex-shrink-0">
                                   <img
                                     className="h-16 w-24 object-cover rounded-lg"
-                                    src={banner.image || 'https://via.placeholder.com/150'}
+                                    src={
+                                      banner.images?.find(img => img.isPrimary)?.url ||
+                                      banner.images?.[0]?.url ||
+                                      'https://via.placeholder.com/150'
+                                    }
                                     alt={banner.title}
                                     onError={(e) => {
                                       e.target.onerror = null;
@@ -342,7 +346,7 @@ const Banners = () => {
                                     {banner.title}
                                   </div>
                                   <div className="text-sm text-gray-500 truncate max-w-xs">
-                                    {banner.subtitle || 'No subtitle'}
+                                    {banner.subheader || banner.body || 'No description'}
                                   </div>
                                 </div>
                               </div>
@@ -359,8 +363,8 @@ const Banners = () => {
                               <button
                                 onClick={() => handleToggleStatus(banner)}
                                 className={`px-3 py-1 text-xs font-medium rounded-full ${banner.isActive
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
                                   }`}
                               >
                                 {banner.isActive ? 'Active' : 'Inactive'}
