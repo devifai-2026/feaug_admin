@@ -9,158 +9,168 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
-  EnvelopeIcon
-} from '@heroicons/react/24/outline'
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+  EnvelopeIcon,
+} from "@heroicons/react/24/outline";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = ({ sidebarOpen, toggleSidebar }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(true) // Start as logged in for demo
+  const { user, logout, isAuthenticated } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleProfile = () => {
-    navigate('/my-profile');
+    navigate("/my-profile");
     setIsDropdownOpen(false);
   };
 
   const [notifications, setNotifications] = useState([
     {
       id: 1,
-      title: 'New Order Received',
-      message: 'Order #ORD-00123 has been placed by John Doe',
-      type: 'order',
-      time: '2 minutes ago',
+      title: "New Order Received",
+      message: "Order #ORD-00123 has been placed by John Doe",
+      type: "order",
+      time: "2 minutes ago",
       read: false,
       icon: CheckCircleIcon,
-      color: 'bg-green-500'
+      color: "bg-green-500",
     },
     {
       id: 2,
-      title: 'Payment Successful',
-      message: 'Payment of $1,250.00 received for Invoice #INV-001',
-      type: 'payment',
-      time: '1 hour ago',
+      title: "Payment Successful",
+      message: "Payment of $1,250.00 received for Invoice #INV-001",
+      type: "payment",
+      time: "1 hour ago",
       read: false,
       icon: CheckCircleIcon,
-      color: 'bg-blue-500'
+      color: "bg-blue-500",
     },
     {
       id: 3,
-      title: 'Stock Alert',
+      title: "Stock Alert",
       message: 'Product "Wireless Headphones" is running low on stock',
-      type: 'alert',
-      time: '3 hours ago',
+      type: "alert",
+      time: "3 hours ago",
       read: true,
       icon: ExclamationTriangleIcon,
-      color: 'bg-yellow-500'
+      color: "bg-yellow-500",
     },
     {
       id: 4,
-      title: 'New User Registered',
-      message: 'Jane Smith has registered as a new customer',
-      type: 'user',
-      time: '5 hours ago',
+      title: "New User Registered",
+      message: "Jane Smith has registered as a new customer",
+      type: "user",
+      time: "5 hours ago",
       read: true,
       icon: UserIcon,
-      color: 'bg-purple-500'
+      color: "bg-purple-500",
     },
     {
       id: 5,
-      title: 'System Update Available',
-      message: 'New system update v2.1.0 is available for installation',
-      type: 'system',
-      time: '1 day ago',
+      title: "System Update Available",
+      message: "New system update v2.1.0 is available for installation",
+      type: "system",
+      time: "1 day ago",
       read: true,
       icon: InformationCircleIcon,
-      color: 'bg-indigo-500'
+      color: "bg-indigo-500",
     },
     {
       id: 6,
-      title: 'New Message',
-      message: 'You have received a new message from Support Team',
-      type: 'message',
-      time: '2 days ago',
+      title: "New Message",
+      message: "You have received a new message from Support Team",
+      type: "message",
+      time: "2 days ago",
       read: true,
       icon: EnvelopeIcon,
-      color: 'bg-pink-500'
-    }
-  ])
+      color: "bg-pink-500",
+    },
+  ]);
 
-  const dropdownRef = useRef(null)
-  const notificationRef = useRef(null)
+  const dropdownRef = useRef(null);
+  const notificationRef = useRef(null);
 
   const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen)
-    setIsNotificationOpen(false)
-  }
+    setIsDropdownOpen(!isDropdownOpen);
+    setIsNotificationOpen(false);
+  };
 
   const toggleNotifications = () => {
-    setIsNotificationOpen(!isNotificationOpen)
-    setIsDropdownOpen(false)
+    setIsNotificationOpen(!isNotificationOpen);
+    setIsDropdownOpen(false);
 
     // Mark all notifications as read when opening
     if (!isNotificationOpen) {
-      const updatedNotifications = notifications.map(notification => ({
+      const updatedNotifications = notifications.map((notification) => ({
         ...notification,
-        read: true
-      }))
-      setNotifications(updatedNotifications)
+        read: true,
+      }));
+      setNotifications(updatedNotifications);
     }
-  }
+  };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    alert('Logged out successfully!');
-    setIsDropdownOpen(false);
-  }
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setIsDropdownOpen(false);
+      navigate("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
 
   const handleLogin = () => {
-    navigate('/login');
-  }
+    navigate("/login");
+  };
 
   const markAsRead = (id) => {
-    const updatedNotifications = notifications.map(notification =>
-      notification.id === id ? { ...notification, read: true } : notification
-    )
-    setNotifications(updatedNotifications)
-  }
+    const updatedNotifications = notifications.map((notification) =>
+      notification.id === id ? { ...notification, read: true } : notification,
+    );
+    setNotifications(updatedNotifications);
+  };
 
   const clearAllNotifications = () => {
-    if (window.confirm('Are you sure you want to clear all notifications?')) {
-      setNotifications([])
-      setIsNotificationOpen(false)
+    if (window.confirm("Are you sure you want to clear all notifications?")) {
+      setNotifications([]);
+      setIsNotificationOpen(false);
     }
-  }
+  };
 
   const deleteNotification = (id, e) => {
-    e.stopPropagation()
-    const updatedNotifications = notifications.filter(notification => notification.id !== id)
-    setNotifications(updatedNotifications)
-  }
+    e.stopPropagation();
+    const updatedNotifications = notifications.filter(
+      (notification) => notification.id !== id,
+    );
+    setNotifications(updatedNotifications);
+  };
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Close user dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false)
+        setIsDropdownOpen(false);
       }
 
       // Close notification panel
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setIsNotificationOpen(false)
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setIsNotificationOpen(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm relative">
@@ -191,7 +201,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
       {/* Right side: Icons and User */}
       <div className="flex items-center space-x-3">
         {/* Notifications - Only show when logged in */}
-        {isLoggedIn && (
+        {isAuthenticated && (
           <div className="relative" ref={notificationRef}>
             <button
               onClick={toggleNotifications}
@@ -200,7 +210,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
               <BellIcon className="h-5 w-5" />
               {unreadCount > 0 && (
                 <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-red-500 text-xs text-white flex items-center justify-center font-medium">
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                  {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
@@ -211,12 +221,13 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Notifications
+                    </h3>
                     <p className="text-xs text-gray-500">
                       {unreadCount > 0
-                        ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
-                        : 'All caught up!'
-                      }
+                        ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`
+                        : "All caught up!"}
                     </p>
                   </div>
                   {notifications.length > 0 && (
@@ -236,30 +247,44 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                       <div className="h-12 w-12 mx-auto mb-4 flex items-center justify-center rounded-full bg-gray-100">
                         <BellIcon className="h-6 w-6 text-gray-400" />
                       </div>
-                      <p className="text-gray-900 font-medium mb-1">No notifications</p>
-                      <p className="text-sm text-gray-500">You're all caught up!</p>
+                      <p className="text-gray-900 font-medium mb-1">
+                        No notifications
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        You're all caught up!
+                      </p>
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-100">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.read ? 'bg-blue-50' : ''
-                            }`}
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${
+                            !notification.read ? "bg-blue-50" : ""
+                          }`}
                           onClick={() => markAsRead(notification.id)}
                         >
                           <div className="flex items-start">
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${notification.color}`}>
+                            <div
+                              className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${notification.color}`}
+                            >
                               <notification.icon className="h-4 w-4 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between">
-                                <p className={`text-sm font-medium truncate ${!notification.read ? 'text-blue-900' : 'text-gray-900'
-                                  }`}>
+                                <p
+                                  className={`text-sm font-medium truncate ${
+                                    !notification.read
+                                      ? "text-blue-900"
+                                      : "text-gray-900"
+                                  }`}
+                                >
                                   {notification.title}
                                 </p>
                                 <button
-                                  onClick={(e) => deleteNotification(notification.id, e)}
+                                  onClick={(e) =>
+                                    deleteNotification(notification.id, e)
+                                  }
                                   className="ml-2 flex-shrink-0 text-gray-400 hover:text-red-500"
                                 >
                                   <XMarkIcon className="h-4 w-4" />
@@ -291,7 +316,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                   <div className="flex-shrink-0 px-4 py-3 border-t border-gray-100 bg-gray-50">
                     <button
                       onClick={() => {
-                        navigate('/notifications');
+                        navigate("/notifications");
                         setIsNotificationOpen(false);
                       }}
                       className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -306,7 +331,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
         )}
 
         {/* User dropdown or Login button */}
-        {isLoggedIn ? (
+        {isAuthenticated ? (
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={toggleDropdown}
@@ -315,13 +340,18 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
               <div className="relative">
                 <img
                   className="h-8 w-8 rounded-full border-2 border-gray-200"
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                  src={
+                    user?.profileImage ||
+                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.firstName || "Admin"}`
+                  }
                   alt="User"
                 />
                 <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-green-500 border-2 border-white"></div>
               </div>
               {/* Hide dropdown chevron on mobile, show on desktop */}
-              <ChevronDownIcon className={`hidden md:block h-4 w-4 text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon
+                className={`hidden md:block h-4 w-4 text-gray-500 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {/* Dropdown Menu */}
@@ -329,8 +359,12 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-40">
                 {/* User info */}
                 <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900">Admin User</p>
-                  <p className="text-xs text-gray-500 truncate">admin@example.com</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user?.email}
+                  </p>
                   <div className="mt-1">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                       Administrator
@@ -347,7 +381,9 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                     <UserIcon className="h-4 w-4 mr-3 text-gray-400" />
                     <div className="text-left">
                       <div className="font-medium">My Profile</div>
-                      <div className="text-xs text-gray-500">View and edit your profile</div>
+                      <div className="text-xs text-gray-500">
+                        View and edit your profile
+                      </div>
                     </div>
                   </button>
 
@@ -360,7 +396,9 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                     <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3" />
                     <div className="text-left">
                       <div className="font-medium">Logout</div>
-                      <div className="text-xs text-red-500">Sign out from your account</div>
+                      <div className="text-xs text-red-500">
+                        Sign out from your account
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -379,7 +417,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
         )}
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;
