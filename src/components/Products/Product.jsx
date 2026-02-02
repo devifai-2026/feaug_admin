@@ -127,7 +127,7 @@ const Products = () => {
         setProducts(updatedProducts);
       } catch (err) {
         console.error("Error deleting product:", err);
-        alert("Failed to delete product. Please try again.");
+        alert(err.response?.data?.message || "Failed to delete product. Please try again.");
       }
     }
   };

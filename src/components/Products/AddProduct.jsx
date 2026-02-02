@@ -9,13 +9,30 @@ import {
   ExclamationCircleIcon,
   PlusIcon,
   TrashIcon,
-  ArrowUpTrayIcon
+  ArrowUpTrayIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline'
+import ReactQuill from 'react-quill-new';
+import 'quill/dist/quill.snow.css';
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
 import categoryApi from '../../api/categories.api'
 import productApi from '../../api/product.api'
+
+const modules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    [{ 'script': 'sub' }, { 'script': 'super' }],
+    [{ 'indent': '-1' }, { 'indent': '+1' }],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    ['link', 'image'],
+    ['clean']
+  ],
+};
 
 const AddProduct = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -566,14 +583,15 @@ const AddProduct = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Full Description * (Min 50 chars)</label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows="5"
-                      className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.description ? 'border-red-300' : 'border-gray-200'}`}
-                      placeholder="Detailed product information..."
-                    />
+                    <div className="bg-white">
+                      <ReactQuill
+                        theme="snow"
+                        value={formData.description}
+                        onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                        modules={modules}
+                        className={`h-64 mb-12 ${errors.description ? 'border-red-300' : ''}`}
+                      />
+                    </div>
                     {errors.description && <p className="mt-1.5 text-xs text-red-600 font-medium">{errors.description}</p>}
                   </div>
                 </div>

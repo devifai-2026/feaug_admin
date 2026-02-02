@@ -413,9 +413,10 @@ const ProductView = () => {
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Full Description</label>
-                          <div className="text-gray-600 whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            {product.description || 'No detailed description available.'}
-                          </div>
+                          <div
+                            className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: product.description || '<p>No detailed description available.</p>' }}
+                          />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>

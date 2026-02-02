@@ -18,6 +18,22 @@ import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
 import productApi from '../../api/product.api';
 import categoryApi from '../../api/categories.api';
+import ReactQuill from 'react-quill-new';
+import 'quill/dist/quill.snow.css';
+
+const modules = {
+  toolbar: [
+    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    [{ 'script': 'sub' }, { 'script': 'super' }],
+    [{ 'indent': '-1' }, { 'indent': '+1' }],
+    [{ 'color': [] }, { 'background': [] }],
+    [{ 'align': [] }],
+    ['link', 'image'],
+    ['clean']
+  ],
+};
 
 const ProductEdit = () => {
   const { id } = useParams();
@@ -353,7 +369,7 @@ const ProductEdit = () => {
         navigate('/products');
       } catch (error) {
         console.error('Error deleting product:', error);
-        alert('Error deleting product. Please try again.');
+        alert(error.response?.data?.message || 'Error deleting product. Please try again.');
       }
     }
   };
@@ -704,15 +720,15 @@ const ProductEdit = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Full Description * (Min 50 chars)</label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows="5"
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      placeholder="Detailed product information..."
-                      required
-                    />
+                    <div className="bg-white">
+                      <ReactQuill
+                        theme="snow"
+                        value={formData.description}
+                        onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                        modules={modules}
+                        className="h-64 mb-12"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

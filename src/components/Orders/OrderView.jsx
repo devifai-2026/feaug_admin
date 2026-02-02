@@ -16,7 +16,11 @@ import {
   ShoppingBagIcon,
   ExclamationCircleIcon,
   CalendarIcon,
-  CurrencyRupeeIcon
+  CurrencyRupeeIcon,
+  PaperAirplaneIcon,
+  DocumentDuplicateIcon,
+  XMarkIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
@@ -34,6 +38,16 @@ const OrderView = () => {
   const [timeline, setTimeline] = useState([])
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
   const [updating, setUpdating] = useState(false)
+
+  // Shipment management states
+  const [shipmentLoading, setShipmentLoading] = useState(false)
+  const [couriers, setCouriers] = useState([])
+  const [showCourierModal, setShowCourierModal] = useState(false)
+  const [showTrackingModal, setShowTrackingModal] = useState(false)
+  const [trackingData, setTrackingData] = useState(null)
+  const [selectedCourier, setSelectedCourier] = useState(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [showCancelModal, setShowCancelModal] = useState(false)
 
   useEffect(() => {
     if (id) {
@@ -250,6 +264,164 @@ const OrderView = () => {
     } finally {
       setUpdating(false)
     }
+  }
+
+  // =====================================================
+  // SHIPROCKET SHIPMENT MANAGEMENT HANDLERS
+  // =====================================================
+
+  const handleCreateShipment = async () => {
+    if (!order) return
+
+    try {
+      setShipmentLoading(true)
+      showToast("Creating shipment...", "info")
+      const response = await orderApi.createShipment(order._id)
+      showToast("Shipment created successfully!", "success")
+      fetchOrderDetails() // Refresh order data
+    } catch (error) {
+      console.error("Error creating shipment:", error)
+      showToast(error.response?.data?.message || "Error creating shipment", "error")
+    } finally {
+      setShipmentLoading(false)
+    }
+  }
+
+  const handleGetCouriers = async () => {
+    if (!order) return
+
+    try {
+      setShipmentLoading(true)
+      const response = await orderApi.getAvailableCouriers(order._id, 0.5) // Default weight 0.5kg
+      setCouriers(response.data?.couriers || [])
+      setShowCourierModal(true)
+    } catch (error) {
+      console.error("Error fetching couriers:", error)
+      showToast(error.response?.data?.message || "Error fetching available couriers", "error")
+    } finally {
+      setShipmentLoading(false)
+    }
+  }
+
+  const handleGenerateAWB = async (courierId = null) => {
+    if (!order) return
+
+    try {
+      setShipmentLoading(true)
+      showToast("Generating AWB...", "info")
+      const courierToUse = courierId || selectedCourier
+      const response = await orderApi.generateAWB(order._id, courierToUse)
+      showToast("AWB generated successfully!", "success")
+      setShowCourierModal(false)
+      setSelectedCourier(null)
+      fetchOrderDetails()
+    } catch (error) {
+      console.error("Error generating AWB:", error)
+      showToast(error.response?.data?.message || "Error generating AWB", "error")
+    } finally {
+      setShipmentLoading(false)
+    }
+  }
+
+  const handleSchedulePickup = async () => {
+    if (!order) return
+
+    try {
+      setShipmentLoading(true)
+      showToast("Scheduling pickup...", "info")
+      const response = await orderApi.schedulePickup(order._id)
+      showToast("Pickup scheduled successfully!", "success")
+      fetchOrderDetails()
+    } catch (error) {
+      console.error("Error scheduling pickup:", error)
+      showToast(error.response?.data?.message || "Error scheduling pickup", "error")
+    } finally {
+      setShipmentLoading(false)
+    }
+  }
+
+  const handleTrackShipment = async () => {
+    if (!order) return
+
+    try {
+      setShipmentLoading(true)
+      const response = await orderApi.trackShipment(order._id)
+      setTrackingData(response.data?.tracking || response.data)
+      setShowTrackingModal(true)
+    } catch (error) {
+      console.error("Error tracking shipment:", error)
+      showToast(error.response?.data?.message || "Error tracking shipment", "error")
+    } finally {
+      setShipmentLoading(false)
+    }
+  }
+
+  const handlePrintLabel = async () => {
+    if (!order) return
+
+    try {
+      setShipmentLoading(true)
+      showToast("Generating shipping label...", "info")
+      const response = await orderApi.getShippingLabel(order._id)
+
+      // Open label URL in new tab
+      if (response.data?.labelUrl) {
+        window.open(response.data.labelUrl, '_blank')
+        showToast("Shipping label opened in new tab", "success")
+      } else {
+        showToast("Label URL not available", "error")
+      }
+    } catch (error) {
+      console.error("Error printing label:", error)
+      showToast(error.response?.data?.message || "Error generating shipping label", "error")
+    } finally {
+      setShipmentLoading(false)
+    }
+  }
+
+  const handleCancelShipment = async () => {
+    if (!order || !cancelReason.trim()) {
+      showToast("Please provide a cancellation reason", "error")
+      return
+    }
+
+    try {
+      setShipmentLoading(true)
+      showToast("Cancelling shipment...", "info")
+      await orderApi.cancelShipment(order._id, cancelReason)
+      showToast("Shipment cancelled successfully", "success")
+      setShowCancelModal(false)
+      setCancelReason('')
+      fetchOrderDetails()
+    } catch (error) {
+      console.error("Error cancelling shipment:", error)
+      showToast(error.response?.data?.message || "Error cancelling shipment", "error")
+    } finally {
+      setShipmentLoading(false)
+    }
+  }
+
+  const getShipmentStatusBadge = () => {
+    if (!order) return null
+
+    if (order.shiprocketOrderId && order.shiprocketAWB) {
+      return (
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+          AWB: {order.shiprocketAWB}
+        </span>
+      )
+    } else if (order.shiprocketOrderId) {
+      return (
+        <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+          Shipment Created
+        </span>
+      )
+    }
+    return (
+      <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+        Not Shipped
+      </span>
+    )
   }
 
   if (loading) {
@@ -643,6 +815,146 @@ const OrderView = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Shipment Management */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">Shipment Management</h2>
+                    {getShipmentStatusBadge()}
+                  </div>
+
+                  {/* Shiprocket Info */}
+                  {order.shiprocketOrderId && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Shiprocket Order:</span>
+                          <span className="font-medium">{order.shiprocketOrderId}</span>
+                        </div>
+                        {order.shiprocketShipmentId && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Shipment ID:</span>
+                            <span className="font-medium">{order.shiprocketShipmentId}</span>
+                          </div>
+                        )}
+                        {order.shiprocketAWB && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">AWB Number:</span>
+                            <span className="font-medium text-blue-600">{order.shiprocketAWB}</span>
+                          </div>
+                        )}
+                        {order.courierName && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Courier:</span>
+                            <span className="font-medium">{order.courierName}</span>
+                          </div>
+                        )}
+                        {order.pickupScheduled && (
+                          <div className="flex items-center text-green-600">
+                            <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            <span>Pickup Scheduled</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Shipment Actions */}
+                  <div className="space-y-2">
+                    {/* Step 1: Create Shipment */}
+                    {!order.shiprocketOrderId && (
+                      <button
+                        onClick={handleCreateShipment}
+                        disabled={shipmentLoading || ['delivered', 'cancelled', 'returned', 'refunded'].includes(order.status)}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <PaperAirplaneIcon className="h-4 w-4 mr-2" />
+                        Create Shipment
+                      </button>
+                    )}
+
+                    {/* Step 2: Select Courier & Generate AWB */}
+                    {order.shiprocketOrderId && !order.shiprocketAWB && (
+                      <button
+                        onClick={handleGetCouriers}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                      >
+                        <TruckIcon className="h-4 w-4 mr-2" />
+                        Select Courier & Generate AWB
+                      </button>
+                    )}
+
+                    {/* Step 3: Schedule Pickup */}
+                    {order.shiprocketAWB && !order.pickupScheduled && (
+                      <button
+                        onClick={handleSchedulePickup}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                      >
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        Schedule Pickup
+                      </button>
+                    )}
+
+                    {/* Track Shipment */}
+                    {order.shiprocketAWB && (
+                      <button
+                        onClick={handleTrackShipment}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        <MapPinIcon className="h-4 w-4 mr-2" />
+                        Track Shipment
+                      </button>
+                    )}
+
+                    {/* Print Label */}
+                    {order.shiprocketAWB && (
+                      <button
+                        onClick={handlePrintLabel}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      >
+                        <PrinterIcon className="h-4 w-4 mr-2" />
+                        Print Shipping Label
+                      </button>
+                    )}
+
+                    {/* Cancel Shipment */}
+                    {order.shiprocketOrderId && !['delivered', 'cancelled', 'returned'].includes(order.shippingStatus) && (
+                      <button
+                        onClick={() => setShowCancelModal(true)}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        <XCircleIcon className="h-4 w-4 mr-2" />
+                        Cancel Shipment
+                      </button>
+                    )}
+
+                    {/* Tracking URL */}
+                    {order.trackingUrl && (
+                      <a
+                        href={order.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        <DocumentDuplicateIcon className="h-4 w-4 mr-2" />
+                        Open Tracking Page
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Loading indicator */}
+                  {shipmentLoading && (
+                    <div className="mt-4 flex items-center justify-center text-sm text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                      Processing...
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -658,6 +970,238 @@ const OrderView = () => {
           currentStatus={order.status}
           onStatusUpdated={handleStatusUpdated}
         />
+      )}
+
+      {/* Courier Selection Modal */}
+      {showCourierModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Select Courier</h3>
+              <button
+                onClick={() => {
+                  setShowCourierModal(false)
+                  setSelectedCourier(null)
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {couriers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <TruckIcon className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p>No couriers available for this delivery location</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {couriers.map((courier) => (
+                    <div
+                      key={courier.courier_company_id}
+                      onClick={() => setSelectedCourier(courier.courier_company_id)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedCourier === courier.courier_company_id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-gray-900">{courier.courier_name}</h4>
+                          <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                            <span>Est. {courier.etd || courier.estimated_delivery_days || 'N/A'} days</span>
+                            {courier.rating && (
+                              <span className="flex items-center">
+                                ⭐ {courier.rating}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-900">
+                            ₹{courier.freight_charge || courier.rate || 'N/A'}
+                          </div>
+                          {courier.cod_charges > 0 && (
+                            <div className="text-xs text-gray-500">
+                              COD: ₹{courier.cod_charges}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-3 p-4 border-t bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowCourierModal(false)
+                  setSelectedCourier(null)
+                }}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleGenerateAWB(selectedCourier)}
+                disabled={!selectedCourier || shipmentLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {shipmentLoading ? 'Generating...' : 'Generate AWB'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tracking Modal */}
+      {showTrackingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Shipment Tracking</h3>
+              <button
+                onClick={() => {
+                  setShowTrackingModal(false)
+                  setTrackingData(null)
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {trackingData ? (
+                <div className="space-y-4">
+                  {/* Current Status */}
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center">
+                      <TruckIcon className="h-8 w-8 text-blue-600 mr-3" />
+                      <div>
+                        <h4 className="font-medium text-gray-900">
+                          {trackingData.current_status || trackingData.shipment_status || 'Status Unknown'}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          AWB: {order.shiprocketAWB || trackingData.awb_code || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tracking Activities */}
+                  {trackingData.tracking_data?.shipment_track_activities || trackingData.activities ? (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-900">Tracking History</h4>
+                      {(trackingData.tracking_data?.shipment_track_activities || trackingData.activities || []).map((activity, index) => (
+                        <div key={index} className="flex items-start border-l-2 border-gray-200 pl-4 pb-4">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full -ml-[22px] mt-1"></div>
+                          <div className="ml-4">
+                            <p className="font-medium text-gray-900">{activity.activity || activity.status}</p>
+                            <p className="text-sm text-gray-600">{activity.location || ''}</p>
+                            <p className="text-xs text-gray-500">{activity.date || activity.timestamp || ''}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-500">
+                      <InformationCircleIcon className="h-10 w-10 mx-auto mb-2 text-gray-400" />
+                      <p>No tracking activities available yet</p>
+                    </div>
+                  )}
+
+                  {/* EDD */}
+                  {(trackingData.edd || trackingData.expected_delivery) && (
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <div className="flex items-center">
+                        <CalendarIcon className="h-5 w-5 text-green-600 mr-2" />
+                        <span className="text-sm text-gray-700">
+                          Expected Delivery: <strong>{trackingData.edd || trackingData.expected_delivery}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                  <p>Loading tracking information...</p>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-end p-4 border-t bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowTrackingModal(false)
+                  setTrackingData(null)
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Shipment Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Cancel Shipment</h3>
+              <button
+                onClick={() => {
+                  setShowCancelModal(false)
+                  setCancelReason('')
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start">
+                  <ExclamationCircleIcon className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
+                  <p className="text-sm text-yellow-800">
+                    This action will cancel the shipment with Shiprocket. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cancellation Reason *
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Enter reason for cancellation..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 p-4 border-t bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowCancelModal(false)
+                  setCancelReason('')
+                }}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Keep Shipment
+              </button>
+              <button
+                onClick={handleCancelShipment}
+                disabled={!cancelReason.trim() || shipmentLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {shipmentLoading ? 'Cancelling...' : 'Cancel Shipment'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

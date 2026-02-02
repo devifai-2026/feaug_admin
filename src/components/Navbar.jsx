@@ -14,11 +14,18 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useSocket } from "../context/SocketContext";
+import notificationsApi from "../api/notifications.api";
+import { transformNotification, getNotificationRoute } from "../utils/notificationUtils";
 
 const Navbar = ({ sidebarOpen, toggleSidebar }) => {
   const { user, logout, isAuthenticated } = useAuth();
+  const { notifications: socketNotifications, connected: socketConnected } = useSocket();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleProfile = () => {
@@ -26,68 +33,77 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
     setIsDropdownOpen(false);
   };
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "New Order Received",
-      message: "Order #ORD-00123 has been placed by John Doe",
-      type: "order",
-      time: "2 minutes ago",
-      read: false,
-      icon: CheckCircleIcon,
-      color: "bg-green-500",
-    },
-    {
-      id: 2,
-      title: "Payment Successful",
-      message: "Payment of $1,250.00 received for Invoice #INV-001",
-      type: "payment",
-      time: "1 hour ago",
-      read: false,
-      icon: CheckCircleIcon,
-      color: "bg-blue-500",
-    },
-    {
-      id: 3,
-      title: "Stock Alert",
-      message: 'Product "Wireless Headphones" is running low on stock',
-      type: "alert",
-      time: "3 hours ago",
-      read: true,
-      icon: ExclamationTriangleIcon,
-      color: "bg-yellow-500",
-    },
-    {
-      id: 4,
-      title: "New User Registered",
-      message: "Jane Smith has registered as a new customer",
-      type: "user",
-      time: "5 hours ago",
-      read: true,
-      icon: UserIcon,
-      color: "bg-purple-500",
-    },
-    {
-      id: 5,
-      title: "System Update Available",
-      message: "New system update v2.1.0 is available for installation",
-      type: "system",
-      time: "1 day ago",
-      read: true,
-      icon: InformationCircleIcon,
-      color: "bg-indigo-500",
-    },
-    {
-      id: 6,
-      title: "New Message",
-      message: "You have received a new message from Support Team",
-      type: "message",
-      time: "2 days ago",
-      read: true,
-      icon: EnvelopeIcon,
-      color: "bg-pink-500",
-    },
-  ]);
+  // Fetch notifications from API
+  const fetchNotifications = async () => {
+    if (!isAuthenticated) return;
+
+    try {
+      setLoading(true);
+      const response = await notificationsApi.getRecentNotifications(10);
+
+      if (response.status === 'success' && response.data?.notifications) {
+        const transformedNotifications = response.data.notifications.map(transformNotification);
+        setNotifications(transformedNotifications);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    if (!isAuthenticated) return;
+
+    try {
+      const response = await notificationsApi.getUnreadCount();
+
+      if (response.status === 'success' && response.data?.unreadCount !== undefined) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  // Load notifications on mount and when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications();
+      fetchUnreadCount();
+    }
+  }, [isAuthenticated]);
+
+  // Merge socket notifications with API notifications
+  useEffect(() => {
+    if (socketNotifications && socketNotifications.length > 0) {
+      // Get the latest socket notification
+      const latestSocketNotification = socketNotifications[0];
+
+      // Check if this notification is already in our list
+      const exists = notifications.some(n =>
+        n.id === latestSocketNotification.id ||
+        (n.data?.orderId === latestSocketNotification.data?.orderId &&
+          n.type === latestSocketNotification.type)
+      );
+
+      if (!exists) {
+        // Add to the beginning of notifications list
+        setNotifications(prev => [latestSocketNotification, ...prev].slice(0, 10));
+        // Increment unread count
+        setUnreadCount(prev => prev + 1);
+
+        // Optional: Play notification sound or show browser notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification(latestSocketNotification.title, {
+            body: latestSocketNotification.message,
+            icon: '/favicon.ico'
+          });
+        }
+      }
+    }
+  }, [socketNotifications]);
 
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
@@ -97,18 +113,11 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
     setIsNotificationOpen(false);
   };
 
-  const toggleNotifications = () => {
+  const toggleNotifications = async () => {
     setIsNotificationOpen(!isNotificationOpen);
     setIsDropdownOpen(false);
 
-    // Mark all notifications as read when opening
-    if (!isNotificationOpen) {
-      const updatedNotifications = notifications.map((notification) => ({
-        ...notification,
-        read: true,
-      }));
-      setNotifications(updatedNotifications);
-    }
+    // Don't mark all as read automatically - let user click individual notifications
   };
 
   const handleLogout = async () => {
@@ -125,29 +134,74 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
     navigate("/login");
   };
 
-  const markAsRead = (id) => {
-    const updatedNotifications = notifications.map((notification) =>
-      notification.id === id ? { ...notification, read: true } : notification,
-    );
-    setNotifications(updatedNotifications);
-  };
+  const markAsRead = async (id) => {
+    try {
+      // Optimistically update UI
+      const updatedNotifications = notifications.map((notification) =>
+        notification.id === id ? { ...notification, read: true } : notification,
+      );
+      setNotifications(updatedNotifications);
 
-  const clearAllNotifications = () => {
-    if (window.confirm("Are you sure you want to clear all notifications?")) {
-      setNotifications([]);
-      setIsNotificationOpen(false);
+      // Update unread count
+      const wasUnread = notifications.find(n => n.id === id && !n.read);
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      // Call API
+      await notificationsApi.markAsRead(id);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      // Revert on error
+      fetchNotifications();
+      fetchUnreadCount();
     }
   };
 
-  const deleteNotification = (id, e) => {
-    e.stopPropagation();
-    const updatedNotifications = notifications.filter(
-      (notification) => notification.id !== id,
-    );
-    setNotifications(updatedNotifications);
+  const clearAllNotifications = async () => {
+    if (window.confirm("Are you sure you want to clear all notifications?")) {
+      try {
+        // Optimistically update UI
+        setNotifications([]);
+        setUnreadCount(0);
+        setIsNotificationOpen(false);
+
+        // Call API
+        await notificationsApi.clearAllNotifications();
+      } catch (error) {
+        console.error('Error clearing notifications:', error);
+        // Revert on error
+        fetchNotifications();
+        fetchUnreadCount();
+      }
+    }
   };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const deleteNotification = async (id, e) => {
+    e.stopPropagation();
+
+    try {
+      // Optimistically update UI
+      const wasUnread = notifications.find(n => n.id === id && !n.read);
+      const updatedNotifications = notifications.filter(
+        (notification) => notification.id !== id,
+      );
+      setNotifications(updatedNotifications);
+
+      // Update unread count if it was unread
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      // Call API
+      await notificationsApi.deleteNotification(id);
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      // Revert on error
+      fetchNotifications();
+      fetchUnreadCount();
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -259,9 +313,8 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                            !notification.read ? "bg-blue-50" : ""
-                          }`}
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.read ? "bg-blue-50" : ""
+                            }`}
                           onClick={() => markAsRead(notification.id)}
                         >
                           <div className="flex items-start">
@@ -273,11 +326,10 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between">
                                 <p
-                                  className={`text-sm font-medium truncate ${
-                                    !notification.read
-                                      ? "text-blue-900"
-                                      : "text-gray-900"
-                                  }`}
+                                  className={`text-sm font-medium truncate ${!notification.read
+                                    ? "text-blue-900"
+                                    : "text-gray-900"
+                                    }`}
                                 >
                                   {notification.title}
                                 </p>
