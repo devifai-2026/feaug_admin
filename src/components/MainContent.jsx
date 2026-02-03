@@ -20,7 +20,7 @@ const MainContent = ({ sidebarOpen }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedPeriod, setSelectedPeriod] = useState("yearly");
+  const [targetPeriod, setTargetPeriod] = useState("monthly");
   const [selectedGrowthPeriod, setSelectedGrowthPeriod] = useState("8weeks");
   const { user } = useAuth();
 
@@ -37,10 +37,10 @@ const MainContent = ({ sidebarOpen }) => {
     fetchUserGrowthData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (period = targetPeriod) => {
     try {
       setLoading(true);
-      const response = await dashboardApi.getDashboardStats();
+      const response = await dashboardApi.getDashboardStats(period);
       setDashboardData(response.data);
       setError(null);
     } catch (err) {
@@ -108,17 +108,23 @@ const MainContent = ({ sidebarOpen }) => {
 
   const handleSetTarget = async () => {
     try {
-      const targetAmount = prompt("Enter monthly target amount:");
+      const targetAmount = prompt(`Enter ${targetPeriod} target amount:`);
       if (targetAmount) {
         await dashboardApi.setMonthlyTarget({
           targetValue: parseFloat(targetAmount),
+          period: targetPeriod,
         });
-        fetchDashboardData(); // Refresh data
+        fetchDashboardData(targetPeriod); // Refresh data
       }
     } catch (err) {
       console.error("Error setting target:", err);
       alert("Failed to set target. Please try again.");
     }
+  };
+
+  const handleTargetPeriodChange = (period) => {
+    setTargetPeriod(period);
+    fetchDashboardData(period);
   };
 
   const handlePeriodChange = async (period) => {
@@ -285,20 +291,34 @@ const MainContent = ({ sidebarOpen }) => {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Monthly Target
+                  {targetPeriod.charAt(0).toUpperCase() +
+                    targetPeriod.slice(1).replace("-yearly", " Yearly")}{" "}
+                  Target
                 </h2>
                 <p className="text-sm text-gray-500">
                   {monthlyTarget.hasTarget
-                    ? "Current monthly revenue target"
-                    : "No monthly target set"}
+                    ? `Current ${targetPeriod} revenue target`
+                    : `No ${targetPeriod} target set`}
                 </p>
               </div>
-              <button
-                onClick={handleSetTarget}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                {monthlyTarget.hasTarget ? "Edit Target" : "Set Target"} →
-              </button>
+              <div className="flex items-center space-x-3">
+                <select
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={targetPeriod}
+                  onChange={(e) => handleTargetPeriodChange(e.target.value)}
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="half-yearly">Half Yearly</option>
+                  <option value="annually">Annually</option>
+                </select>
+                <button
+                  onClick={handleSetTarget}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  {monthlyTarget.hasTarget ? "Edit" : "Set"} →
+                </button>
+              </div>
             </div>
 
             {monthlyTarget.hasTarget ? (
@@ -409,7 +429,7 @@ const MainContent = ({ sidebarOpen }) => {
                 </h3>
                 <p className="text-gray-600 mb-6 max-w-md mx-auto">
                   {targetInsights.recommendation ||
-                    "Set a monthly revenue target to track your performance better."}
+                    `Set a ${targetPeriod} revenue target to track your performance better.`}
                 </p>
                 <button
                   onClick={handleSetTarget}
@@ -427,7 +447,6 @@ const MainContent = ({ sidebarOpen }) => {
             totalCount={stats.find((s) => s.title === "Total Orders")?.valueRaw}
           />
         </div>
-
         {/* Full Width Revenue Chart */}
         <div className="mt-6 rounded-lg bg-white p-6 shadow">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
@@ -435,18 +454,20 @@ const MainContent = ({ sidebarOpen }) => {
               <h2 className="text-lg font-semibold text-gray-900">
                 Revenue Overview
               </h2>
-              <p className="text-sm text-gray-500">Monthly revenue vs target</p>
+              <p className="text-sm text-gray-500">
+                Revenue vs Target Overview
+              </p>
             </div>
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
               <select
                 className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                value={selectedPeriod}
-                onChange={(e) => handlePeriodChange(e.target.value)}
+                value={targetPeriod} // Reusing targetPeriod here or can be a separate state if users want independent control
+                onChange={(e) => handleTargetPeriodChange(e.target.value)}
               >
-                <option value="thismonth">This Month</option>
-                <option value="3months">Last 3 Months</option>
-                <option value="6months">Last 6 Months</option>
-                <option value="12months">Last 12 Months</option>
+                <option value="monthly">Monthly View</option>
+                <option value="quarterly">Quarterly View</option>
+                <option value="half-yearly">Half Yearly View</option>
+                <option value="annually">Annually View</option>
               </select>
             </div>
           </div>
