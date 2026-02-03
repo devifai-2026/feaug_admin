@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 import {
   ReceiptRefundIcon,
   EyeIcon,
@@ -7,184 +7,223 @@ import {
   ClockIcon,
   XCircleIcon,
   FunnelIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline'
-import { Link } from 'react-router-dom'
-import { jsPDF } from 'jspdf'
-import Sidebar from '../Sidebar'
-import Navbar from '../Navbar'
-import invoiceApi from '../../api/invoices.api'
-import orderApi from '../../api/orders.api'
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import Sidebar from "../Sidebar";
+import Navbar from "../Navbar";
+import invoiceApi from "../../api/invoices.api";
+import orderApi from "../../api/orders.api";
+import moment from "moment";
 
 const Invoices = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [downloading, setDownloading] = useState(null)
-  const [invoices, setInvoices] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [downloading, setDownloading] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [dateFilter, setDateFilter] = useState('all')
-  const [amountFilter, setAmountFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [amountFilter, setAmountFilter] = useState("all");
 
   // Stats
   const [stats, setStats] = useState({
     total: 0,
     paid: 0,
     pending: 0,
-    overdue: 0
-  })
+    overdue: 0,
+  });
 
   useEffect(() => {
-    fetchInvoices()
-  }, [statusFilter, dateFilter, amountFilter, searchQuery])
+    fetchInvoices();
+  }, [statusFilter, dateFilter, amountFilter, searchQuery]);
 
   const fetchInvoices = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
       // Fetch orders which contain invoice data
-      const params = {}
-      if (statusFilter !== 'all') params.paymentStatus = statusFilter
-      if (searchQuery) params.search = searchQuery
+      const params = {};
+      if (statusFilter !== "all") params.paymentStatus = statusFilter;
+      if (searchQuery) params.search = searchQuery;
 
-      const response = await orderApi.getAllOrders(params)
+      const response = await orderApi.getAllOrders(params);
 
-      if (response.status === 'success' && response.data) {
-        const ordersData = response.data.orders || []
+      if (response.status === "success" && response.data) {
+        const ordersData = response.data.orders || [];
 
         // Transform orders to invoice format
-        const invoicesData = ordersData.map(order => ({
-          id: order.invoiceNumber || order.orderNumber || order._id,
-          orderId: order._id,
-          client: order.shippingAddress?.fullName || order.user?.name || 'Guest',
-          clientEmail: order.user?.email || order.shippingAddress?.email || 'N/A',
-          clientAddress: order.shippingAddress ?
-            `${order.shippingAddress.street}, ${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zipCode}` :
-            'N/A',
-          date: order.createdAt,
-          dueDate: order.dueDate || new Date(new Date(order.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          amount: `₹${order.totalAmount || 0}`,
-          tax: `₹${order.taxAmount || 0}`,
-          subtotal: `₹${(order.totalAmount || 0) - (order.taxAmount || 0)}`,
-          status: order.paymentStatus === 'paid' ? 'Paid' :
-            order.paymentStatus === 'pending' ? 'Pending' : 'Overdue',
-          items: order.items || [],
-          notes: order.notes || '',
-          paymentMethod: order.paymentMethod || 'N/A',
-          paymentDate: order.paymentDate || null
-        }))
+        const invoicesData = ordersData.map((order) => {
+          const shippingAddr =
+            order.shippingAddress ||
+            (order.addresses &&
+              order.addresses.find((a) => a.type === "shipping"));
+
+          return {
+            id: order.invoiceNumber || order.orderNumber || order._id,
+            orderId: order._id,
+            client:
+              shippingAddr?.fullName ||
+              shippingAddr?.name ||
+              order.user?.fullName ||
+              (order.user?.firstName
+                ? `${order.user.firstName} ${order.user.lastName || ""}`.trim()
+                : null) ||
+              order.user?.name ||
+              "Guest",
+            clientEmail: order.user?.email || shippingAddr?.email || "N/A",
+            clientAddress: shippingAddr
+              ? `${shippingAddr.addressLine1 || shippingAddr.street || ""}, ${shippingAddr.city || ""}, ${shippingAddr.state || ""} ${shippingAddr.pincode || shippingAddr.zipCode || ""}`
+                  .trim()
+                  .replace(/^, /, "")
+              : "N/A",
+            date: order.createdAt,
+            dueDate:
+              order.dueDate ||
+              new Date(
+                new Date(order.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            amount: `₹${order.grandTotal || order.totalAmount || 0}`,
+            tax: `₹${order.tax || order.taxAmount || 0}`,
+            subtotal: `₹${order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)}`,
+            status:
+              order.paymentStatus === "paid"
+                ? "Paid"
+                : order.paymentStatus === "pending"
+                  ? "Pending"
+                  : "Overdue",
+            items: order.items || [],
+            notes: order.notes || "",
+            paymentMethod: order.paymentMethod || "N/A",
+            paymentDate: order.paymentDate || null,
+          };
+        });
 
         // Apply client-side filters
-        let filtered = invoicesData
+        let filtered = invoicesData;
 
-        if (dateFilter !== 'all') {
-          const now = new Date()
-          filtered = filtered.filter(inv => {
-            const invDate = new Date(inv.date)
+        if (dateFilter !== "all") {
+          const now = new Date();
+          filtered = filtered.filter((inv) => {
+            const invDate = new Date(inv.date);
             switch (dateFilter) {
-              case 'thismonth':
-                return invDate.getMonth() === now.getMonth() && invDate.getFullYear() === now.getFullYear()
-              case '3months':
-                return (now - invDate) <= 90 * 24 * 60 * 60 * 1000
-              case '6months':
-                return (now - invDate) <= 180 * 24 * 60 * 60 * 1000
-              case '12months':
-                return (now - invDate) <= 365 * 24 * 60 * 60 * 1000
+              case "thismonth":
+                return (
+                  invDate.getMonth() === now.getMonth() &&
+                  invDate.getFullYear() === now.getFullYear()
+                );
+              case "3months":
+                return now - invDate <= 90 * 24 * 60 * 60 * 1000;
+              case "6months":
+                return now - invDate <= 180 * 24 * 60 * 60 * 1000;
+              case "12months":
+                return now - invDate <= 365 * 24 * 60 * 60 * 1000;
               default:
-                return true
+                return true;
             }
-          })
+          });
         }
 
-        if (amountFilter !== 'all') {
-          filtered = filtered.filter(inv => {
-            const amount = parseFloat(inv.amount.replace(/[^0-9.-]+/g, ''))
+        if (amountFilter !== "all") {
+          filtered = filtered.filter((inv) => {
+            const amount = parseFloat(inv.amount.replace(/[^0-9.-]+/g, ""));
             switch (amountFilter) {
-              case 'under1000':
-                return amount < 1000
-              case '1000to5000':
-                return amount >= 1000 && amount < 5000
-              case 'over5000':
-                return amount >= 5000
+              case "under1000":
+                return amount < 1000;
+              case "1000to5000":
+                return amount >= 1000 && amount < 5000;
+              case "over5000":
+                return amount >= 5000;
               default:
-                return true
+                return true;
             }
-          })
+          });
         }
 
-        setInvoices(filtered)
+        setInvoices(filtered);
 
         // Calculate stats
         setStats({
           total: invoicesData.length,
-          paid: invoicesData.filter(inv => inv.status === 'Paid').length,
-          pending: invoicesData.filter(inv => inv.status === 'Pending').length,
-          overdue: invoicesData.filter(inv => inv.status === 'Overdue').length
-        })
+          paid: invoicesData.filter((inv) => inv.status === "Paid").length,
+          pending: invoicesData.filter((inv) => inv.status === "Pending")
+            .length,
+          overdue: invoicesData.filter((inv) => inv.status === "Overdue")
+            .length,
+        });
       }
     } catch (err) {
-      console.error('Error fetching invoices:', err)
-      setError('Failed to load invoices. Please try again.')
-      setInvoices([])
+      console.error("Error fetching invoices:", err);
+      setError("Failed to load invoices. Please try again.");
+      setInvoices([]);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const closeSidebar = () => setSidebarOpen(false);
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Paid': return <CheckCircleIcon className="h-5 w-5 text-green-500" />
-      case 'Pending': return <ClockIcon className="h-5 w-5 text-yellow-500" />
-      case 'Overdue': return <XCircleIcon className="h-5 w-5 text-red-500" />
-      default: return <ClockIcon className="h-5 w-5 text-gray-500" />
+      case "Paid":
+        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
+      case "Pending":
+        return <ClockIcon className="h-5 w-5 text-yellow-500" />;
+      case "Overdue":
+        return <XCircleIcon className="h-5 w-5 text-red-500" />;
+      default:
+        return <ClockIcon className="h-5 w-5 text-gray-500" />;
     }
-  }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Paid': return 'bg-green-100 text-green-800'
-      case 'Pending': return 'bg-yellow-100 text-yellow-800'
-      case 'Overdue': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case "Paid":
+        return "bg-green-100 text-green-800";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "Overdue":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
-  }
+  };
 
   const downloadPDF = async (invoice) => {
     setDownloading(invoice.id);
 
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdf = new jsPDF("p", "mm", "a4");
 
       // Set metadata
       pdf.setProperties({
         title: `${invoice.id} - ${invoice.client}`,
-        subject: 'Invoice',
-        author: 'Invoice Management System',
-        keywords: 'invoice, billing, payment'
+        subject: "Invoice",
+        author: "Invoice Management System",
+        keywords: "invoice, billing, payment",
       });
 
       // Company header with styling
       pdf.setFontSize(24);
       pdf.setTextColor(59, 130, 246);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('INVOICE', 105, 25, null, null, 'center');
+      pdf.setFont("helvetica", "bold");
+      pdf.text("INVOICE", 105, 25, null, null, "center");
 
       // Add decorative line
       pdf.setDrawColor(59, 130, 246);
@@ -194,31 +233,31 @@ const Invoices = () => {
       // Company info box
       pdf.setFontSize(11);
       pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('From:', 20, 40);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Your Company Name', 20, 45);
-      pdf.text('123 Business Street', 20, 50);
-      pdf.text('City, State 12345', 20, 55);
-      pdf.text('contact@yourcompany.com', 20, 60);
-      pdf.text('(123) 456-7890', 20, 65);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("From:", 20, 40);
+      pdf.setFont("helvetica", "normal");
+      pdf.text("Your Company Name", 20, 45);
+      pdf.text("123 Business Street", 20, 50);
+      pdf.text("City, State 12345", 20, 55);
+      pdf.text("contact@yourcompany.com", 20, 60);
+      pdf.text("(123) 456-7890", 20, 65);
 
       // Invoice details box
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Invoice Details:', 150, 40);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Invoice Details:", 150, 40);
+      pdf.setFont("helvetica", "normal");
 
       pdf.text(`Invoice #: ${invoice.id}`, 150, 45);
       pdf.text(`Date: ${formatDate(invoice.date)}`, 150, 50);
-      pdf.text(`Due Date: ${formatDate(invoice.dueDate)}`, 150, 55);
+      pdf.text(`Due In: ${formatDate(invoice.dueDate)}`, 150, 55);
       pdf.text(`Status: ${invoice.status}`, 150, 60);
 
       // Client info
       pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Bill To:', 20, 80);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Bill To:", 20, 80);
       pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFont("helvetica", "normal");
       pdf.text(invoice.client, 20, 85);
       pdf.text(invoice.clientAddress, 20, 90);
       pdf.text(invoice.clientEmail, 20, 95);
@@ -227,20 +266,34 @@ const Invoices = () => {
       pdf.setFontSize(12);
       pdf.setTextColor(255, 255, 255);
       pdf.setFillColor(59, 130, 246);
-      pdf.rect(20, 110, 170, 10, 'F');
-      pdf.text('Description', 25, 117);
-      pdf.text('Quantity', 110, 117);
-      pdf.text('Price', 140, 117);
-      pdf.text('Total', 170, 117);
+      pdf.rect(20, 110, 170, 10, "F");
+      pdf.text("Description", 25, 117);
+      pdf.text("Quantity", 110, 117);
+      pdf.text("Price", 140, 117);
+      pdf.text("Total", 170, 117);
 
       // Items
       pdf.setTextColor(0, 0, 0);
       let yPos = 125;
       invoice.items.forEach((item, index) => {
-        pdf.text(item.description, 25, yPos);
+        const description =
+          item.productName ||
+          item.description ||
+          item.product?.name ||
+          "Product";
+        const price =
+          typeof item.price === "number"
+            ? `₹${item.price.toLocaleString()}`
+            : item.price || "₹0";
+        const total =
+          typeof item.total === "number"
+            ? `₹${item.total.toLocaleString()}`
+            : item.total || price;
+
+        pdf.text(description, 25, yPos);
         pdf.text(item.quantity.toString(), 110, yPos);
-        pdf.text(item.price, 140, yPos);
-        pdf.text(item.total, 170, yPos);
+        pdf.text(price, 140, yPos);
+        pdf.text(total, 170, yPos);
         yPos += 8;
       });
 
@@ -251,11 +304,11 @@ const Invoices = () => {
       yPos += 5;
 
       pdf.setFontSize(12);
-      pdf.text('Subtotal:', 140, yPos);
+      pdf.text("Subtotal:", 140, yPos);
       pdf.text(invoice.subtotal, 170, yPos);
 
       yPos += 8;
-      pdf.text('Tax (10%):', 140, yPos);
+      pdf.text("Tax (10%):", 140, yPos);
       pdf.text(invoice.tax, 170, yPos);
 
       yPos += 8;
@@ -264,18 +317,18 @@ const Invoices = () => {
       yPos += 10;
 
       pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
+      pdf.setFont("helvetica", "bold");
       pdf.setTextColor(59, 130, 246);
-      pdf.text('Total Amount:', 140, yPos);
+      pdf.text("Total Amount:", 140, yPos);
       pdf.text(invoice.amount, 170, yPos);
 
       // Notes section
       yPos += 20;
       pdf.setFontSize(11);
       pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Notes:', 20, yPos);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Notes:", 20, yPos);
+      pdf.setFont("helvetica", "normal");
 
       // Split notes into multiple lines if too long
       const notesLines = pdf.splitTextToSize(invoice.notes, 170);
@@ -285,32 +338,49 @@ const Invoices = () => {
       yPos = 280;
       pdf.setFontSize(8);
       pdf.setTextColor(128, 128, 128);
-      pdf.text('Thank you for your business!', 105, yPos, null, null, 'center');
-      pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, yPos + 5, null, null, 'center');
-      pdf.text('Invoice Management System • Professional Invoice', 105, yPos + 10, null, null, 'center');
+      pdf.text("Thank you for your business!", 105, yPos, null, null, "center");
+      pdf.text(
+        `Generated on: ${new Date().toLocaleString()}`,
+        105,
+        yPos + 5,
+        null,
+        null,
+        "center",
+      );
+      pdf.text(
+        "Invoice Management System • Professional Invoice",
+        105,
+        yPos + 10,
+        null,
+        null,
+        "center",
+      );
 
       // Save PDF
-      pdf.save(`Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, '_')}.pdf`);
+      pdf.save(
+        `Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, "_")}.pdf`,
+      );
 
       // Show success message
-      alert(`PDF downloaded: Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, '_')}.pdf`);
-
+      alert(
+        `PDF downloaded: Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, "_")}.pdf`,
+      );
     } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Error generating PDF. Please try again.');
+      console.error("PDF generation error:", error);
+      alert("Error generating PDF. Please try again.");
     } finally {
       setDownloading(null);
     }
-  }
+  };
 
   const printInvoice = (invoice) => {
     setPrinting(invoice.id);
 
     try {
       // Create a print-friendly version
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open("", "_blank");
       if (!printWindow) {
-        alert('Please allow pop-ups to print invoice');
+        alert("Please allow pop-ups to print invoice");
         setPrinting(null);
         return;
       }
@@ -485,7 +555,7 @@ const Invoices = () => {
               <div class="section-title">Invoice Details</div>
               <p><strong>Invoice #:</strong> ${invoice.id}</p>
               <p><strong>Date:</strong> ${formatDate(invoice.date)}</p>
-              <p><strong>Due Date:</strong> ${formatDate(invoice.dueDate)}</p>
+              <p><strong>Due In:</strong> ${formatDate(invoice.dueDate)}</p>
               <p><strong>Status:</strong> ${invoice.status} 
                 <span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span>
               </p>
@@ -493,8 +563,8 @@ const Invoices = () => {
             
             <div>
               <div class="section-title">Payment Information</div>
-              <p><strong>Payment Method:</strong> ${invoice.paymentMethod || 'N/A'}</p>
-              <p><strong>Payment Date:</strong> ${invoice.paymentDate ? formatDate(invoice.paymentDate) : 'Pending'}</p>
+              <p><strong>Payment Method:</strong> ${invoice.paymentMethod || "N/A"}</p>
+              <p><strong>Payment Date:</strong> ${invoice.paymentDate ? formatDate(invoice.paymentDate) : "Pending"}</p>
             </div>
           </div>
           
@@ -509,14 +579,31 @@ const Invoices = () => {
               </tr>
             </thead>
             <tbody>
-              ${invoice.items.map(item => `
+              ${invoice.items
+                .map((item) => {
+                  const description =
+                    item.productName ||
+                    item.description ||
+                    item.product?.name ||
+                    "Product";
+                  const price =
+                    typeof item.price === "number"
+                      ? `₹${item.price.toLocaleString()}`
+                      : item.price || "₹0";
+                  const total =
+                    typeof item.total === "number"
+                      ? `₹${item.total.toLocaleString()}`
+                      : item.total || price;
+                  return `
                 <tr>
-                  <td>${item.description}</td>
+                  <td>${description}</td>
                   <td>${item.quantity}</td>
-                  <td>${item.price}</td>
-                  <td><strong>${item.total}</strong></td>
+                  <td>${price}</td>
+                  <td><strong>${total}</strong></td>
                 </tr>
-              `).join('')}
+              `;
+                })
+                .join("")}
             </tbody>
           </table>
           
@@ -559,18 +646,21 @@ const Invoices = () => {
       `);
 
       printWindow.document.close();
-
     } catch (error) {
-      console.error('Print error:', error);
-      alert('Error printing invoice. Please try again.');
+      console.error("Print error:", error);
+      alert("Error printing invoice. Please try again.");
     } finally {
       setPrinting(null);
     }
-  }
+  };
 
   return (
     <div className="flex h-screen">
-      <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
+        closeSidebar={closeSidebar}
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
@@ -582,7 +672,9 @@ const Invoices = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-                  <p className="text-gray-600">Manage and track your invoices</p>
+                  <p className="text-gray-600">
+                    Manage and track your invoices
+                  </p>
                 </div>
               </div>
             </div>
@@ -659,7 +751,9 @@ const Invoices = () => {
                   <ClockIcon className="h-8 w-8 text-yellow-500 mr-4" />
                   <div>
                     <div className="text-sm text-gray-600">Pending</div>
-                    <div className="text-2xl font-bold mt-1">{stats.pending}</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.pending}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -668,7 +762,9 @@ const Invoices = () => {
                   <XCircleIcon className="h-8 w-8 text-red-500 mr-4" />
                   <div>
                     <div className="text-sm text-gray-600">Overdue</div>
-                    <div className="text-2xl font-bold mt-1">{stats.overdue}</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.overdue}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -680,37 +776,57 @@ const Invoices = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invoice ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Due In
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {invoices.map((invoice) => (
                       <tr key={invoice.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{invoice.id}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {invoice.id}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{invoice.client}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {invoice.client}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {invoice.date}
+                          {moment(invoice.date).format("DD-MM-YYYY")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {invoice.amount}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {invoice.dueDate}
+                          {moment(invoice.dueDate).format("DD-MM-YYYY")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             {getStatusIcon(invoice.status)}
-                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}>
+                            <span
+                              className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}
+                            >
                               {invoice.status}
                             </span>
                           </div>
@@ -727,10 +843,11 @@ const Invoices = () => {
                             <button
                               onClick={() => downloadPDF(invoice)}
                               disabled={downloading === invoice.id}
-                              className={`p-1 rounded transition-all duration-200 ${downloading === invoice.id
-                                ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-purple-600 hover:text-purple-800 hover:bg-purple-50'
-                                }`}
+                              className={`p-1 rounded transition-all duration-200 ${
+                                downloading === invoice.id
+                                  ? "text-gray-400 cursor-not-allowed"
+                                  : "text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                              }`}
                               title="Download PDF"
                             >
                               {downloading === invoice.id ? (
@@ -747,12 +864,11 @@ const Invoices = () => {
                 </table>
               </div>
             </div>
-
           </div>
-        </main >
-      </div >
-    </div >
-  )
-}
+        </main>
+      </div>
+    </div>
+  );
+};
 
-export default Invoices
+export default Invoices;
