@@ -196,7 +196,7 @@ const Categories = () => {
             </span>
           )}
         </div>
-        
+
         {node.children && node.children.length > 0 && (
           <div className="mt-2">
             {node.children.map(child => renderNode(child, level + 1))}

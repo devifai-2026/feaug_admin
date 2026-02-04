@@ -42,7 +42,7 @@ const Users = () => {
   });
 
   const statusOptions = ["All", "Active", "Inactive"];
-const roleOptions = ["All", "admin", "customer", "manager"];
+  const roleOptions = ["All", "admin", "customer", "manager"];
 
   useEffect(() => {
     fetchUsers();
@@ -53,7 +53,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
     try {
       setLoading(true);
       setError(null);
-      
+
       // Build query parameters for server-side pagination and filtering
       const params = {
         page: currentPage,
@@ -63,20 +63,20 @@ const roleOptions = ["All", "admin", "customer", "manager"];
         status: statusFilter !== "All" ? statusFilter : undefined,
         role: roleFilter !== "All" ? roleFilter : "All",
       };
-      
+
       // Remove undefined parameters
       Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
-      
+
       // Call the API with parameters
       const response = await userApi.getAllUsers(params);
-      
+
       // Handle different response structures
       if (response.status === 'success') {
         // Backend returns structured response
         const { users: userData, pagination: paginationData, stats } = response.data;
-        
+
         setUsers(userData || []);
-        
+
         if (paginationData) {
           setPagination({
             totalUsers: paginationData.totalUsers || 0,
@@ -86,7 +86,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
             currentPage: paginationData.currentPage || 1,
           });
         }
-        
+
         if (stats) {
           setUserStats(stats);
         }
@@ -107,7 +107,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
           totalPages: Math.ceil(response.data.length / itemsPerPage),
         }));
       }
-      
+
     } catch (err) {
       console.error("Error fetching users:", err);
       setError(err.response?.data?.message || "Failed to load users. Please try again.");
@@ -154,11 +154,11 @@ const roleOptions = ["All", "admin", "customer", "manager"];
     if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
       try {
         await userApi.deleteUser(id);
-        
+
         // Refresh the user list
         fetchUsers();
         fetchUserStats();
-        
+
         // Show success message
         alert(`User "${name}" has been deleted successfully.`);
       } catch (err) {
@@ -171,7 +171,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
   const handleStatusToggle = async (id, currentStatus) => {
     try {
       await userApi.updateUserStatus(id, !currentStatus);
-      
+
       // Update local state
       const updatedUsers = users.map((user) =>
         user._id === id
@@ -179,7 +179,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
           : user
       );
       setUsers(updatedUsers);
-      
+
       // Refresh stats
       fetchUserStats();
     } catch (err) {
@@ -257,9 +257,8 @@ const roleOptions = ["All", "admin", "customer", "manager"];
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
         <main
-          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:pl-6" : "lg:pl-6"
-          }`}
+          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"
+            }`}
         >
           <div className="mx-auto max-w-7xl">
             {/* Header */}
@@ -272,7 +271,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                
+
                 </div>
               </div>
             </div>
@@ -315,7 +314,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                       {userStats?.activeUsers || users.filter(u => u.isActive).length}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {Math.round(((userStats?.activeUsers || users.filter(u => u.isActive).length) / 
+                      {Math.round(((userStats?.activeUsers || users.filter(u => u.isActive).length) /
                         (userStats?.totalUsers || users.length || 1) * 100) || 0)}% of total
                     </div>
                   </div>
@@ -332,7 +331,7 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                       {userStats?.verifiedUsers || users.filter(u => u.isEmailVerified).length}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {Math.round(((userStats?.verifiedUsers || users.filter(u => u.isEmailVerified).length) / 
+                      {Math.round(((userStats?.verifiedUsers || users.filter(u => u.isEmailVerified).length) /
                         (userStats?.totalUsers || users.length || 1) * 100) || 0)}% verified
                     </div>
                   </div>
@@ -528,23 +527,25 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <img
-                                className="h-10 w-10 rounded-full bg-gray-200"
-                                src={user.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email || user._id}`}
-                                alt={`${user.firstName} ${user.lastName}`}
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email || user._id}`;
-                                }}
-                              />
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {user.firstName} {user.lastName}
+                              <Link to={`/users/edit/${user._id}`} className="flex items-center hover:opacity-80 transition-opacity group">
+                                <img
+                                  className="h-10 w-10 rounded-full bg-gray-200 group-hover:ring-2 group-hover:ring-blue-500 transition-all"
+                                  src={user.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email || user._id}`}
+                                  alt={`${user.firstName} ${user.lastName}`}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email || user._id}`;
+                                  }}
+                                />
+                                <div className="ml-4 text-left">
+                                  <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                                    {user.firstName} {user.lastName}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    ID: #{user._id?.slice(-6) || 'N/A'}
+                                  </div>
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  ID: #{user._id?.slice(-6) || 'N/A'}
-                                </div>
-                              </div>
+                              </Link>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -579,11 +580,10 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => handleStatusToggle(user._id, user.isActive)}
-                                className={`p-1 rounded-full transition-colors ${
-                                  user.isActive
+                                className={`p-1 rounded-full transition-colors ${user.isActive
                                     ? "text-green-600 hover:text-green-800 hover:bg-green-50"
                                     : "text-red-600 hover:text-red-800 hover:bg-red-50"
-                                }`}
+                                  }`}
                                 title={`Toggle ${user.isActive ? "Inactive" : "Active"}`}
                               >
                                 {user.isActive ? (
@@ -593,11 +593,10 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                                 )}
                               </button>
                               <span
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  user.isActive
+                                className={`px-2 py-1 text-xs rounded-full ${user.isActive
                                     ? "bg-green-100 text-green-800 border border-green-200"
                                     : "bg-red-100 text-red-800 border border-red-200"
-                                }`}
+                                  }`}
                               >
                                 {user.isActive ? "Active" : "Inactive"}
                               </span>
@@ -647,11 +646,10 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                   <button
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={!pagination.hasPrevPage}
-                    className={`p-2 rounded-lg border ${
-                      !pagination.hasPrevPage
+                    className={`p-2 rounded-lg border ${!pagination.hasPrevPage
                         ? "text-gray-400 border-gray-300 cursor-not-allowed"
                         : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     <ChevronLeftIcon className="h-5 w-5" />
                   </button>
@@ -675,11 +673,10 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                             <span className="px-2 text-gray-500">...</span>
                             <button
                               onClick={() => goToPage(page)}
-                              className={`px-3 py-1 rounded-lg ${
-                                currentPage === page
+                              className={`px-3 py-1 rounded-lg ${currentPage === page
                                   ? "bg-blue-600 text-white"
                                   : "text-gray-700 hover:bg-gray-100"
-                              }`}
+                                }`}
                             >
                               {page}
                             </button>
@@ -691,11 +688,10 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                         <button
                           key={page}
                           onClick={() => goToPage(page)}
-                          className={`px-3 py-1 rounded-lg ${
-                            currentPage === page
+                          className={`px-3 py-1 rounded-lg ${currentPage === page
                               ? "bg-blue-600 text-white"
                               : "text-gray-700 hover:bg-gray-100"
-                          }`}
+                            }`}
                         >
                           {page}
                         </button>
@@ -705,11 +701,10 @@ const roleOptions = ["All", "admin", "customer", "manager"];
                   <button
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={!pagination.hasNextPage}
-                    className={`p-2 rounded-lg border ${
-                      !pagination.hasNextPage
+                    className={`p-2 rounded-lg border ${!pagination.hasNextPage
                         ? "text-gray-400 border-gray-300 cursor-not-allowed"
                         : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     <ChevronRightIcon className="h-5 w-5" />
                   </button>

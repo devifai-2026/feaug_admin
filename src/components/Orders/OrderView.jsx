@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -22,6 +22,7 @@ import {
   XMarkIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
+
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import moment from "moment";
@@ -567,6 +568,17 @@ const OrderView = () => {
                     >
                       <PrinterIcon className="h-5 w-5 text-gray-600" />
                     </button>
+                    {order.trackingUrl && (
+                      <a
+                        href={order.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                        title="Track Package on Shiprocket"
+                      >
+                        <TruckIcon className="h-5 w-5 text-blue-600" />
+                      </a>
+                    )}
                     <button
                       onClick={handleSendInvoiceEmail}
                       disabled={updating}
@@ -730,21 +742,20 @@ const OrderView = () => {
                           className="flex items-start"
                         >
                           <div
-                            className={`h-3 w-3 rounded-full mt-2 ${
-                              event.type === "order_created"
-                                ? "bg-blue-500"
-                                : event.type === "status_change"
-                                  ? "bg-green-500"
-                                  : event.type === "shipping_update"
-                                    ? "bg-purple-500"
-                                    : event.type === "payment_received"
-                                      ? "bg-green-500"
-                                      : event.type === "order_shipped"
-                                        ? "bg-blue-500"
-                                        : event.type === "order_delivered"
-                                          ? "bg-green-500"
-                                          : "bg-gray-500"
-                            } mr-3`}
+                            className={`h-3 w-3 rounded-full mt-2 ${event.type === "order_created"
+                              ? "bg-blue-500"
+                              : event.type === "status_change"
+                                ? "bg-green-500"
+                                : event.type === "shipping_update"
+                                  ? "bg-purple-500"
+                                  : event.type === "payment_received"
+                                    ? "bg-green-500"
+                                    : event.type === "order_shipped"
+                                      ? "bg-blue-500"
+                                      : event.type === "order_delivered"
+                                        ? "bg-green-500"
+                                        : "bg-gray-500"
+                              } mr-3`}
                           ></div>
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">
@@ -788,19 +799,21 @@ const OrderView = () => {
                   </h2>
                   <div className="space-y-3">
                     <div className="flex items-center">
-                      <img
-                        className="h-12 w-12 rounded-full"
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.user?.email || order._id}`}
-                        alt={getCustomerName()}
-                      />
-                      <div className="ml-3">
-                        <div className="font-medium text-gray-900">
-                          {getCustomerName()}
+                      <Link to={`/users/edit/${order.user?._id}`} className="flex items-center hover:opacity-80 transition-opacity group">
+                        <img
+                          className="h-12 w-12 rounded-full group-hover:ring-2 group-hover:ring-blue-500 transition-all"
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.user?.email || order._id}`}
+                          alt={getCustomerName()}
+                        />
+                        <div className="ml-3">
+                          <div className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                            {getCustomerName()}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            User ID: {order.user?._id?.slice(-6) || "N/A"}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          User ID: {order.user?._id?.slice(-6) || "N/A"}
-                        </div>
-                      </div>
+                      </Link>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center text-sm">
@@ -857,13 +870,12 @@ const OrderView = () => {
                             {getPaymentMethodText(order.paymentMethod)}
                           </span>
                           <div
-                            className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${
-                              order.paymentStatus === "paid"
-                                ? "bg-green-100 text-green-800"
-                                : order.paymentStatus === "pending"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
+                            className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${order.paymentStatus === "paid"
+                              ? "bg-green-100 text-green-800"
+                              : order.paymentStatus === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                              }`}
                           >
                             {order.paymentStatus?.charAt(0).toUpperCase() +
                               order.paymentStatus?.slice(1) || "Unknown"}
@@ -1032,14 +1044,11 @@ const OrderView = () => {
                   {couriers.map((courier) => (
                     <div
                       key={courier.courier_company_id}
-                      onClick={() =>
-                        setSelectedCourier(courier.courier_company_id)
-                      }
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedCourier === courier.courier_company_id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
+                      onClick={() => setSelectedCourier(courier.courier_company_id)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedCourier === courier.courier_company_id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -1142,7 +1151,7 @@ const OrderView = () => {
 
                   {/* Tracking Activities */}
                   {trackingData.tracking_data?.shipment_track_activities ||
-                  trackingData.activities ? (
+                    trackingData.activities ? (
                     <div className="space-y-3">
                       <h4 className="font-medium text-gray-900">
                         Tracking History

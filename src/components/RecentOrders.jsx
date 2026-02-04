@@ -153,8 +153,8 @@ const RecentOrders = ({ orders = [], totalCount }) => {
                         {formatCurrency(order.amount)}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {order.itemsCount
-                          ? `${order.itemsCount} items`
+                        {order.itemsCount !== undefined
+                          ? `${order.itemsCount} item${order.itemsCount !== 1 ? 's' : ''}`
                           : "1 item"}
                       </div>
                     </div>

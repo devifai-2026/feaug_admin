@@ -76,6 +76,7 @@ const Products = () => {
           stock: product.stockQuantity || 0,
           status: product.stockQuantity === 0 ? 'Out of Stock' : product.stockQuantity < 20 ? 'Low Stock' : 'In Stock',
           image: product.images?.[0]?.url || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=150&h=150&fit=crop',
+          sku: product.sku,
           isDummy: false,
         }));
 
@@ -318,7 +319,7 @@ const Products = () => {
                                   )}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  ID: #{product.id.toString().padStart(3, "0")}
+                                  SKU: {product.sku || 'N/A'}
                                 </div>
                               </div>
                             </div>
