@@ -44,6 +44,7 @@ const EditBanner = () => {
     textColor: '',
     buttonText: '',
     buttonColor: '',
+    promoCode: '',
     primaryImage: ''
   });
 
@@ -80,6 +81,7 @@ const EditBanner = () => {
         textColor: banner.textColor || '',
         buttonText: banner.buttonText || '',
         buttonColor: banner.buttonColor || '',
+        promoCode: banner.promoCode || '',
         primaryImage: banner.images?.find(img => img.isPrimary)?.url || banner.images?.[0]?.url || ''
       });
 
@@ -591,6 +593,24 @@ const EditBanner = () => {
                       placeholder="e.g., Shop Now"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Promo Code (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="promoCode"
+                      value={formData.promoCode}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                      placeholder="e.g., SAVE20"
+                      maxLength="20"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Enter a promo code that will only work when this banner is active
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -637,51 +657,6 @@ const EditBanner = () => {
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       <span className="ml-3 text-sm font-medium text-gray-700">Active</span>
                     </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Styling */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Styling (Optional)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Background Color
-                    </label>
-                    <input
-                      type="color"
-                      name="backgroundColor"
-                      value={formData.backgroundColor || '#ffffff'}
-                      onChange={handleInputChange}
-                      className="w-full h-10 px-2 border border-gray-300 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Text Color
-                    </label>
-                    <input
-                      type="color"
-                      name="textColor"
-                      value={formData.textColor || '#000000'}
-                      onChange={handleInputChange}
-                      className="w-full h-10 px-2 border border-gray-300 rounded-lg cursor-pointer"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Button Color
-                    </label>
-                    <input
-                      type="color"
-                      name="buttonColor"
-                      value={formData.buttonColor || '#3b82f6'}
-                      onChange={handleInputChange}
-                      className="w-full h-10 px-2 border border-gray-300 rounded-lg cursor-pointer"
-                    />
                   </div>
                 </div>
               </div>
