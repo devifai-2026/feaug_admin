@@ -291,6 +291,30 @@ const ProductEdit = () => {
     }
   };
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (value === "") return;
+
+    // Integer fields
+    if (
+      ["stockQuantity", "lowStockThreshold", "discountValue"].includes(name)
+    ) {
+      const num = parseInt(value);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+      }));
+    }
+    // Float fields
+    else if (["basePrice", "sellingPrice", "weight"].includes(name)) {
+      const num = parseFloat(value);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+      }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm();
@@ -663,6 +687,8 @@ const ProductEdit = () => {
                           name="basePrice"
                           value={formData.basePrice}
                           onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          min="0"
                           className="w-full pl-8 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                           placeholder="0.00"
                           required
@@ -684,6 +710,8 @@ const ProductEdit = () => {
                           name="sellingPrice"
                           value={formData.sellingPrice}
                           onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          min="0"
                           className="w-full pl-8 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                           placeholder="0.00"
                           required
@@ -717,6 +745,8 @@ const ProductEdit = () => {
                           name="discountValue"
                           value={formData.discountValue}
                           onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          min="0"
                           disabled={formData.discountType === "none"}
                           className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all disabled:opacity-50"
                           placeholder="0"
@@ -734,6 +764,8 @@ const ProductEdit = () => {
                         name="stockQuantity"
                         value={formData.stockQuantity}
                         onChange={handleInputChange}
+                        onBlur={handleBlur}
+                        min="0"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         placeholder="0"
                         required
@@ -750,6 +782,8 @@ const ProductEdit = () => {
                         name="lowStockThreshold"
                         value={formData.lowStockThreshold}
                         onChange={handleInputChange}
+                        onBlur={handleBlur}
+                        min="0"
                         className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         placeholder="10"
                       />

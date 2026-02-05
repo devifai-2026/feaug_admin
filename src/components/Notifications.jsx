@@ -36,9 +36,12 @@ const Notifications = () => {
   const fetchNotifications = async (page = 1) => {
     try {
       setLoading(true);
+      const limit = 10;
+      const offset = (page - 1) * limit;
+
       const response = await notificationsApi.getNotifications({
-        page,
-        limit: 20,
+        limit,
+        offset,
       });
       if (response.status === "success") {
         const transformed = response.data.notifications.map(
@@ -106,16 +109,26 @@ const Notifications = () => {
     }
   };
 
+  const [deletingIds, setDeletingIds] = useState([]);
+
   const handleDelete = async (id, e) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this notification?")) {
+
+    // Animate out
+    setDeletingIds((prev) => [...prev, id]);
+
+    // Wait for animation
+    setTimeout(async () => {
       try {
         await notificationsApi.deleteNotification(id);
         setNotifications((prev) => prev.filter((n) => n.id !== id));
+        setDeletingIds((prev) => prev.filter((delId) => delId !== id)); // Cleanup
       } catch (error) {
         console.error("Error deleting notification:", error);
+        // Revert UI if needed or re-fetch
+        fetchNotifications();
       }
-    }
+    }, 300);
   };
 
   const handleNotificationClick = (notification) => {
@@ -190,19 +203,23 @@ const Notifications = () => {
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`group p-4 sm:p-6 hover:bg-gray-50 transition-all cursor-pointer relative ${
-                          !notification.read ? "bg-blue-50/40" : ""
-                        }`}
+                        className={`relative group overflow-hidden cursor-pointer transition-all duration-300 ease-in-out mb-2 rounded-lg border ${
+                          deletingIds.includes(notification.id)
+                            ? "translate-x-full opacity-0 h-0 my-0 py-0"
+                            : "opacity-100"
+                        } ${!notification.read ? "bg-blue-50/40 border-blue-100" : "bg-white border-gray-100 hover:shadow-sm"}`}
                         onClick={() => handleNotificationClick(notification)}
                       >
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-4 p-4 sm:p-6">
                           <div
                             className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center shadow-sm ${notification.color}`}
                           >
                             <notification.icon className="h-5 w-5 text-white" />
                           </div>
 
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 pr-8">
+                            {" "}
+                            {/* Right padding for delete button space */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
                               <h4
                                 className={`text-sm font-bold truncate ${!notification.read ? "text-blue-900" : "text-gray-900"}`}
@@ -218,7 +235,6 @@ const Notifications = () => {
                             >
                               {notification.message}
                             </p>
-
                             <div className="mt-3 flex items-center gap-3">
                               {!notification.read && (
                                 <button
@@ -226,25 +242,25 @@ const Notifications = () => {
                                     e.stopPropagation();
                                     handleMarkAsRead(notification.id);
                                   }}
-                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+                                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
                                 >
                                   Mark as read
                                 </button>
                               )}
-                              <button
-                                onClick={(e) =>
-                                  handleDelete(notification.id, e)
-                                }
-                                className="text-xs font-semibold text-gray-400 hover:text-red-500 inline-flex items-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <TrashIcon className="h-3 w-3 mr-1" />
-                                Delete
-                              </button>
                             </div>
                           </div>
 
+                          {/* Hover Delete Button */}
+                          <button
+                            onClick={(e) => handleDelete(notification.id, e)}
+                            className="absolute right-4 top-4 p-2 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
+                            title="Delete notification"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+
                           {!notification.read && (
-                            <div className="h-2 w-2 rounded-full bg-blue-600 mt-2"></div>
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-l-lg"></div>
                           )}
                         </div>
                       </div>

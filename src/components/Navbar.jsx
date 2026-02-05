@@ -11,6 +11,8 @@ import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
   EnvelopeIcon,
+  TrashIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -38,24 +40,72 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
     setIsDropdownOpen(false);
   };
 
+  const [pagination, setPagination] = useState({
+    limit: 10,
+    offset: 0,
+    hasMore: true,
+  });
+  const [loadingMore, setLoadingMore] = useState(false);
+
   // Fetch notifications from API
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (isLoadMore = false) => {
     if (!isAuthenticated) return;
+    if (isLoadMore && !pagination.hasMore) return;
 
     try {
-      setLoading(true);
-      const response = await notificationsApi.getRecentNotifications(10);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      // Calculate current offset based on existing notifications if loading more
+      // or start from 0 if initial fetch
+      const currentOffset = isLoadMore ? notifications.length : 0;
+
+      const response = await notificationsApi.getNotifications({
+        limit: pagination.limit,
+        offset: currentOffset,
+      });
 
       if (response.status === "success" && response.data?.notifications) {
         const transformedNotifications = response.data.notifications.map(
           transformNotification,
         );
-        setNotifications(transformedNotifications);
+
+        if (isLoadMore) {
+          setNotifications((prev) => [...prev, ...transformedNotifications]);
+        } else {
+          setNotifications(transformedNotifications);
+        }
+
+        // Update pagination state
+        setPagination((prev) => ({
+          ...prev,
+          offset: currentOffset + transformedNotifications.length,
+          hasMore: transformedNotifications.length === prev.limit,
+        }));
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
-      setLoading(false);
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    // Check if scrolled to bottom (with small threshold of 10px)
+    if (
+      scrollHeight - scrollTop <= clientHeight + 10 &&
+      !loadingMore &&
+      pagination.hasMore
+    ) {
+      fetchNotifications(true);
     }
   };
 
@@ -216,30 +266,41 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
     }
   };
 
+  const [deletingIds, setDeletingIds] = useState([]);
+
   const deleteNotification = async (id, e) => {
     e.stopPropagation();
 
-    try {
-      // Optimistically update UI
-      const wasUnread = notifications.find((n) => n.id === id && !n.read);
-      const updatedNotifications = notifications.filter(
-        (notification) => notification.id !== id,
-      );
-      setNotifications(updatedNotifications);
+    // Trigger slide-out animation
+    setDeletingIds((prev) => [...prev, id]);
 
-      // Update unread count if it was unread
-      if (wasUnread) {
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+    // Wait for animation to finish before removing from list
+    setTimeout(async () => {
+      try {
+        // Optimistically update UI
+        const wasUnread = notifications.find((n) => n.id === id && !n.read);
+        const updatedNotifications = notifications.filter(
+          (notification) => notification.id !== id,
+        );
+        setNotifications(updatedNotifications);
+
+        // Remove from deletingIds
+        setDeletingIds((prev) => prev.filter((delId) => delId !== id));
+
+        // Update unread count if it was unread
+        if (wasUnread) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+
+        // Call API
+        await notificationsApi.deleteNotification(id);
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+        // Revert on error - tough to animate back, but we can re-fetch
+        fetchNotifications();
+        fetchUnreadCount();
       }
-
-      // Call API
-      await notificationsApi.deleteNotification(id);
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-      // Revert on error
-      fetchNotifications();
-      fetchUnreadCount();
-    }
+    }, 300); // Match transition duration
   };
 
   // Close dropdown when clicking outside
@@ -334,8 +395,32 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                 </div>
 
                 {/* Notifications List */}
-                <div className="flex-1 overflow-y-auto min-h-0">
-                  {notifications.length === 0 ? (
+                <div
+                  className="flex-1 overflow-y-auto min-h-0"
+                  onScroll={handleScroll}
+                >
+                  {loading && notifications.length === 0 ? (
+                    // Initial Loading Skeleton
+                    <div className="divide-y divide-gray-100">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="p-4 flex items-start animate-pulse"
+                        >
+                          <div className="h-9 w-9 bg-gray-200 rounded-full mr-3 flex-shrink-0"></div>
+                          <div className="flex-1 min-w-0">
+                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
+                            <div className="h-3 bg-gray-200 rounded w-2/3 mb-2"></div>
+                            <div className="flex justify-between items-center mt-2">
+                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    // Empty State
                     <div className="p-8 text-center">
                       <div className="h-12 w-12 mx-auto mb-4 flex items-center justify-center rounded-full bg-gray-100">
                         <BellIcon className="h-6 w-6 text-gray-400" />
@@ -348,25 +433,33 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                       </p>
                     </div>
                   ) : (
+                    // Notifications List
                     <div className="divide-y divide-gray-100">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                            !notification.read ? "bg-blue-50" : ""
-                          }`}
+                          className={`relative group overflow-hidden cursor-pointer transition-all duration-300 ease-in-out border-b border-gray-50 last:border-0 ${
+                            deletingIds.includes(notification.id)
+                              ? "translate-x-full opacity-0 h-0 my-0 py-0"
+                              : "opacity-100"
+                          } ${!notification.read ? "bg-blue-50/30" : "bg-white hover:bg-gray-50"}`}
                           onClick={() => handleNotificationClick(notification)}
                         >
-                          <div className="flex items-start">
+                          <div className="flex items-start p-4">
+                            {/* Icon */}
                             <div
-                              className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${notification.color}`}
+                              className={`flex-shrink-0 h-9 w-9 rounded-full flex items-center justify-center mr-3 shadow-sm ${notification.color}`}
                             >
                               <notification.icon className="h-4 w-4 text-white" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between">
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0 pr-6">
+                              {" "}
+                              {/* Added padding-right to prevent text overlapping with delete btn */}
+                              <div className="flex items-start justify-between mb-0.5">
                                 <p
-                                  className={`text-sm font-medium truncate ${
+                                  className={`text-sm font-semibold truncate ${
                                     !notification.read
                                       ? "text-blue-900"
                                       : "text-gray-900"
@@ -374,32 +467,55 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                                 >
                                   {notification.title}
                                 </p>
-                                <button
-                                  onClick={(e) =>
-                                    deleteNotification(notification.id, e)
-                                  }
-                                  className="ml-2 flex-shrink-0 text-gray-400 hover:text-red-500"
-                                >
-                                  <XMarkIcon className="h-4 w-4" />
-                                </button>
                               </div>
-                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              <p className="text-sm text-gray-600 line-clamp-2 leading-snug">
                                 {notification.message}
                               </p>
                               <div className="flex items-center justify-between mt-2">
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-gray-400 font-medium">
                                   {notification.time}
                                 </span>
                                 {!notification.read && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 uppercase tracking-wide">
                                     New
                                   </span>
                                 )}
                               </div>
                             </div>
+
+                            {/* Hover Delete Button */}
+                            <button
+                              onClick={(e) =>
+                                deleteNotification(notification.id, e)
+                              }
+                              className="absolute right-2 top-3 p-1.5 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all duration-200 transform hover:scale-105 focus:outline-none"
+                              title="Delete notification"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
                           </div>
                         </div>
                       ))}
+                      {loadingMore && (
+                        // Infinite Scroll Skeleton
+                        <div className="divide-y divide-gray-100 border-t border-gray-100">
+                          {[...Array(2)].map((_, i) => (
+                            <div
+                              key={`loading-${i}`}
+                              className="p-4 flex items-start animate-pulse"
+                            >
+                              <div className="h-9 w-9 bg-gray-200 rounded-full mr-3 flex-shrink-0"></div>
+                              <div className="flex-1 min-w-0">
+                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                                <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
+                                <div className="flex justify-between items-center mt-2">
+                                  <div className="h-3 bg-gray-200 rounded w-16"></div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
