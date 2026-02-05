@@ -702,7 +702,9 @@ const OrderView = () => {
                       </div>
                       {order.discount > 0 && (
                         <div className="flex justify-between text-green-600">
-                          <span>Discount</span>
+                          <span>
+                            Discount {order.promoCode && `(${order.promoCode})`}
+                          </span>
                           <span>-{formatCurrency(order.discount || 0)}</span>
                         </div>
                       )}
@@ -742,20 +744,21 @@ const OrderView = () => {
                           className="flex items-start"
                         >
                           <div
-                            className={`h-3 w-3 rounded-full mt-2 ${event.type === "order_created"
-                              ? "bg-blue-500"
-                              : event.type === "status_change"
-                                ? "bg-green-500"
-                                : event.type === "shipping_update"
-                                  ? "bg-purple-500"
-                                  : event.type === "payment_received"
-                                    ? "bg-green-500"
-                                    : event.type === "order_shipped"
-                                      ? "bg-blue-500"
-                                      : event.type === "order_delivered"
-                                        ? "bg-green-500"
-                                        : "bg-gray-500"
-                              } mr-3`}
+                            className={`h-3 w-3 rounded-full mt-2 ${
+                              event.type === "order_created"
+                                ? "bg-blue-500"
+                                : event.type === "status_change"
+                                  ? "bg-green-500"
+                                  : event.type === "shipping_update"
+                                    ? "bg-purple-500"
+                                    : event.type === "payment_received"
+                                      ? "bg-green-500"
+                                      : event.type === "order_shipped"
+                                        ? "bg-blue-500"
+                                        : event.type === "order_delivered"
+                                          ? "bg-green-500"
+                                          : "bg-gray-500"
+                            } mr-3`}
                           ></div>
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">
@@ -799,7 +802,10 @@ const OrderView = () => {
                   </h2>
                   <div className="space-y-3">
                     <div className="flex items-center">
-                      <Link to={`/users/edit/${order.user?._id}`} className="flex items-center hover:opacity-80 transition-opacity group">
+                      <Link
+                        to={`/users/edit/${order.user?._id}`}
+                        className="flex items-center hover:opacity-80 transition-opacity group"
+                      >
                         <img
                           className="h-12 w-12 rounded-full group-hover:ring-2 group-hover:ring-blue-500 transition-all"
                           src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.user?.email || order._id}`}
@@ -870,12 +876,13 @@ const OrderView = () => {
                             {getPaymentMethodText(order.paymentMethod)}
                           </span>
                           <div
-                            className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${order.paymentStatus === "paid"
-                              ? "bg-green-100 text-green-800"
-                              : order.paymentStatus === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                              }`}
+                            className={`text-xs mt-1 px-2 py-1 rounded-full inline-block ${
+                              order.paymentStatus === "paid"
+                                ? "bg-green-100 text-green-800"
+                                : order.paymentStatus === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                            }`}
                           >
                             {order.paymentStatus?.charAt(0).toUpperCase() +
                               order.paymentStatus?.slice(1) || "Unknown"}
@@ -1044,11 +1051,14 @@ const OrderView = () => {
                   {couriers.map((courier) => (
                     <div
                       key={courier.courier_company_id}
-                      onClick={() => setSelectedCourier(courier.courier_company_id)}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${selectedCourier === courier.courier_company_id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                      onClick={() =>
+                        setSelectedCourier(courier.courier_company_id)
+                      }
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedCourier === courier.courier_company_id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -1151,7 +1161,7 @@ const OrderView = () => {
 
                   {/* Tracking Activities */}
                   {trackingData.tracking_data?.shipment_track_activities ||
-                    trackingData.activities ? (
+                  trackingData.activities ? (
                     <div className="space-y-3">
                       <h4 className="font-medium text-gray-900">
                         Tracking History

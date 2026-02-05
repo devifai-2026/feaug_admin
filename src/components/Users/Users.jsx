@@ -31,7 +31,10 @@ const Users = () => {
   const [roleFilter, setRoleFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
-  const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "createdAt",
+    direction: "desc",
+  });
   const [userStats, setUserStats] = useState(null);
   const [pagination, setPagination] = useState({
     totalUsers: 0,
@@ -58,22 +61,31 @@ const Users = () => {
       const params = {
         page: currentPage,
         limit: itemsPerPage,
-        sort: sortConfig.direction === "desc" ? `-${sortConfig.key}` : sortConfig.key,
+        sort:
+          sortConfig.direction === "desc"
+            ? `-${sortConfig.key}`
+            : sortConfig.key,
         search: searchTerm || undefined,
         status: statusFilter !== "All" ? statusFilter : undefined,
         role: roleFilter !== "All" ? roleFilter : "All",
       };
 
       // Remove undefined parameters
-      Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+      Object.keys(params).forEach(
+        (key) => params[key] === undefined && delete params[key],
+      );
 
       // Call the API with parameters
       const response = await userApi.getAllUsers(params);
 
       // Handle different response structures
-      if (response.status === 'success') {
+      if (response.status === "success") {
         // Backend returns structured response
-        const { users: userData, pagination: paginationData, stats } = response.data;
+        const {
+          users: userData,
+          pagination: paginationData,
+          stats,
+        } = response.data;
 
         setUsers(userData || []);
 
@@ -93,7 +105,7 @@ const Users = () => {
       } else if (Array.isArray(response)) {
         // Direct array response
         setUsers(response);
-        setPagination(prev => ({
+        setPagination((prev) => ({
           ...prev,
           totalUsers: response.length,
           totalPages: Math.ceil(response.length / itemsPerPage),
@@ -101,16 +113,18 @@ const Users = () => {
       } else if (response.data && Array.isArray(response.data)) {
         // Response with data property
         setUsers(response.data);
-        setPagination(prev => ({
+        setPagination((prev) => ({
           ...prev,
           totalUsers: response.data.length,
           totalPages: Math.ceil(response.data.length / itemsPerPage),
         }));
       }
-
     } catch (err) {
       console.error("Error fetching users:", err);
-      setError(err.response?.data?.message || "Failed to load users. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Failed to load users. Please try again.",
+      );
       setUsers([]);
     } finally {
       setLoading(false);
@@ -163,7 +177,10 @@ const Users = () => {
         alert(`User "${name}" has been deleted successfully.`);
       } catch (err) {
         console.error("Error deleting user:", err);
-        alert(err.response?.data?.message || "Failed to delete user. Please try again.");
+        alert(
+          err.response?.data?.message ||
+            "Failed to delete user. Please try again.",
+        );
       }
     }
   };
@@ -174,9 +191,7 @@ const Users = () => {
 
       // Update local state
       const updatedUsers = users.map((user) =>
-        user._id === id
-          ? { ...user, isActive: !currentStatus }
-          : user
+        user._id === id ? { ...user, isActive: !currentStatus } : user,
       );
       setUsers(updatedUsers);
 
@@ -184,7 +199,10 @@ const Users = () => {
       fetchUserStats();
     } catch (err) {
       console.error("Error updating user status:", err);
-      alert(err.response?.data?.message || "Failed to update user status. Please try again.");
+      alert(
+        err.response?.data?.message ||
+          "Failed to update user status. Please try again.",
+      );
     }
   };
 
@@ -220,7 +238,10 @@ const Users = () => {
 
   // Calculate displayed range
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage + 1;
-  const indexOfLastItem = Math.min(currentPage * itemsPerPage, pagination.totalUsers);
+  const indexOfLastItem = Math.min(
+    currentPage * itemsPerPage,
+    pagination.totalUsers,
+  );
 
   if (loading && users.length === 0) {
     return (
@@ -232,7 +253,9 @@ const Users = () => {
         />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-          <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
+          <main
+            className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"}`}
+          >
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -257,8 +280,9 @@ const Users = () => {
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
         <main
-          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"
-            }`}
+          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${
+            sidebarOpen ? "lg:pl-6" : "lg:pl-6"
+          }`}
         >
           <div className="mx-auto max-w-7xl">
             {/* Header */}
@@ -267,12 +291,11 @@ const Users = () => {
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Users</h1>
                   <p className="text-gray-600">
-                    Manage user accounts and permissions ({pagination.totalUsers} users)
+                    Manage user accounts and permissions (
+                    {pagination.totalUsers} users)
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-
-                </div>
+                <div className="flex items-center gap-3"></div>
               </div>
             </div>
 
@@ -311,11 +334,17 @@ const Users = () => {
                   <div>
                     <div className="text-sm text-gray-600">Active Users</div>
                     <div className="text-2xl font-bold mt-1">
-                      {userStats?.activeUsers || users.filter(u => u.isActive).length}
+                      {userStats?.activeUsers ||
+                        users.filter((u) => u.isActive).length}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {Math.round(((userStats?.activeUsers || users.filter(u => u.isActive).length) /
-                        (userStats?.totalUsers || users.length || 1) * 100) || 0)}% of total
+                      {Math.round(
+                        ((userStats?.activeUsers ||
+                          users.filter((u) => u.isActive).length) /
+                          (userStats?.totalUsers || users.length || 1)) *
+                          100 || 0,
+                      )}
+                      % of total
                     </div>
                   </div>
                 </div>
@@ -328,11 +357,17 @@ const Users = () => {
                   <div>
                     <div className="text-sm text-gray-600">Verified Users</div>
                     <div className="text-2xl font-bold mt-1">
-                      {userStats?.verifiedUsers || users.filter(u => u.isEmailVerified).length}
+                      {userStats?.verifiedUsers ||
+                        users.filter((u) => u.isEmailVerified).length}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {Math.round(((userStats?.verifiedUsers || users.filter(u => u.isEmailVerified).length) /
-                        (userStats?.totalUsers || users.length || 1) * 100) || 0)}% verified
+                      {Math.round(
+                        ((userStats?.verifiedUsers ||
+                          users.filter((u) => u.isEmailVerified).length) /
+                          (userStats?.totalUsers || users.length || 1)) *
+                          100 || 0,
+                      )}
+                      % verified
                     </div>
                   </div>
                 </div>
@@ -345,20 +380,24 @@ const Users = () => {
                   <div>
                     <div className="text-sm text-gray-600">New This Month</div>
                     <div className="text-2xl font-bold mt-1">
-                      {userStats?.newThisMonth || users.filter((user) => {
-                        if (!user.createdAt) return false;
-                        const joinDate = new Date(user.createdAt);
-                        const currentMonth = new Date().getMonth();
-                        const currentYear = new Date().getFullYear();
-                        return (
-                          joinDate.getMonth() === currentMonth &&
-                          joinDate.getFullYear() === currentYear
-                        );
-                      }).length}
+                      {userStats?.newThisMonth ||
+                        users.filter((user) => {
+                          if (!user.createdAt) return false;
+                          const joinDate = new Date(user.createdAt);
+                          const currentMonth = new Date().getMonth();
+                          const currentYear = new Date().getFullYear();
+                          return (
+                            joinDate.getMonth() === currentMonth &&
+                            joinDate.getFullYear() === currentYear
+                          );
+                        }).length}
                     </div>
                     {userStats?.monthlyGrowth && (
-                      <div className={`text-xs ${userStats.monthlyGrowth >= 0 ? 'text-green-600' : 'text-red-600'} mt-1`}>
-                        {userStats.monthlyGrowth >= 0 ? '↑' : '↓'} {Math.abs(userStats.monthlyGrowth)}% from last month
+                      <div
+                        className={`text-xs ${userStats.monthlyGrowth >= 0 ? "text-green-600" : "text-red-600"} mt-1`}
+                      >
+                        {userStats.monthlyGrowth >= 0 ? "↑" : "↓"}{" "}
+                        {Math.abs(userStats.monthlyGrowth)}% from last month
                       </div>
                     )}
                   </div>
@@ -508,7 +547,8 @@ const Users = () => {
                             <UserIcon className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                             <p className="text-lg mb-2">No users found</p>
                             <p className="text-sm mb-4">
-                              {error || "Try adjusting your filters or search terms"}
+                              {error ||
+                                "Try adjusting your filters or search terms"}
                             </p>
                             <button
                               onClick={resetFilters}
@@ -527,10 +567,16 @@ const Users = () => {
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <Link to={`/users/edit/${user._id}`} className="flex items-center hover:opacity-80 transition-opacity group">
+                              <Link
+                                to={`/users/edit/${user._id}`}
+                                className="flex items-center hover:opacity-80 transition-opacity group"
+                              >
                                 <img
                                   className="h-10 w-10 rounded-full bg-gray-200 group-hover:ring-2 group-hover:ring-blue-500 transition-all"
-                                  src={user.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email || user._id}`}
+                                  src={
+                                    user.profileImage ||
+                                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email || user._id}`
+                                  }
                                   alt={`${user.firstName} ${user.lastName}`}
                                   onError={(e) => {
                                     e.target.onerror = null;
@@ -542,7 +588,7 @@ const Users = () => {
                                     {user.firstName} {user.lastName}
                                   </div>
                                   <div className="text-sm text-gray-500">
-                                    ID: #{user._id?.slice(-6) || 'N/A'}
+                                    ID: #{user._id?.slice(-6) || "N/A"}
                                   </div>
                                 </div>
                               </Link>
@@ -564,10 +610,10 @@ const Users = () => {
                             <div className="flex flex-col gap-1">
                               <span
                                 className={`px-3 py-1 text-xs rounded-full ${getRoleColor(
-                                  user.role || 'user'
+                                  user.role || "user",
                                 )}`}
                               >
-                                {user.role || 'user'}
+                                {user.role || "user"}
                               </span>
                               {user.isEmailVerified && (
                                 <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full border border-green-200">
@@ -579,11 +625,14 @@ const Users = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => handleStatusToggle(user._id, user.isActive)}
-                                className={`p-1 rounded-full transition-colors ${user.isActive
+                                onClick={() =>
+                                  handleStatusToggle(user._id, user.isActive)
+                                }
+                                className={`p-1 rounded-full transition-colors ${
+                                  user.isActive
                                     ? "text-green-600 hover:text-green-800 hover:bg-green-50"
                                     : "text-red-600 hover:text-red-800 hover:bg-red-50"
-                                  }`}
+                                }`}
                                 title={`Toggle ${user.isActive ? "Inactive" : "Active"}`}
                               >
                                 {user.isActive ? (
@@ -593,10 +642,11 @@ const Users = () => {
                                 )}
                               </button>
                               <span
-                                className={`px-2 py-1 text-xs rounded-full ${user.isActive
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  user.isActive
                                     ? "bg-green-100 text-green-800 border border-green-200"
                                     : "bg-red-100 text-red-800 border border-red-200"
-                                  }`}
+                                }`}
                               >
                                 {user.isActive ? "Active" : "Inactive"}
                               </span>
@@ -615,7 +665,13 @@ const Users = () => {
                                 <PencilIcon className="h-5 w-5" />
                               </Link>
                               <button
-                                onClick={() => handleDelete(user._id, `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email)}
+                                onClick={() =>
+                                  handleDelete(
+                                    user._id,
+                                    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                                      user.email,
+                                  )
+                                }
                                 className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
                                 title="Delete"
                               >
@@ -637,8 +693,8 @@ const Users = () => {
                 <div className="text-sm text-gray-700">
                   Showing{" "}
                   <span className="font-medium">{indexOfFirstItem}</span> to{" "}
-                  <span className="font-medium">{indexOfLastItem}</span>{" "}
-                  of <span className="font-medium">{pagination.totalUsers}</span>{" "}
+                  <span className="font-medium">{indexOfLastItem}</span> of{" "}
+                  <span className="font-medium">{pagination.totalUsers}</span>{" "}
                   users
                 </div>
 
@@ -646,18 +702,23 @@ const Users = () => {
                   <button
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={!pagination.hasPrevPage}
-                    className={`p-2 rounded-lg border ${!pagination.hasPrevPage
+                    className={`p-2 rounded-lg border ${
+                      !pagination.hasPrevPage
                         ? "text-gray-400 border-gray-300 cursor-not-allowed"
                         : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     <ChevronLeftIcon className="h-5 w-5" />
                   </button>
 
-                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                  {Array.from(
+                    { length: pagination.totalPages },
+                    (_, i) => i + 1,
+                  )
                     .filter((page) => {
                       if (pagination.totalPages <= 5) return true;
-                      if (page === 1 || page === pagination.totalPages) return true;
+                      if (page === 1 || page === pagination.totalPages)
+                        return true;
                       if (page >= currentPage - 1 && page <= currentPage + 1)
                         return true;
                       return false;
@@ -673,10 +734,11 @@ const Users = () => {
                             <span className="px-2 text-gray-500">...</span>
                             <button
                               onClick={() => goToPage(page)}
-                              className={`px-3 py-1 rounded-lg ${currentPage === page
+                              className={`px-3 py-1 rounded-lg ${
+                                currentPage === page
                                   ? "bg-blue-600 text-white"
                                   : "text-gray-700 hover:bg-gray-100"
-                                }`}
+                              }`}
                             >
                               {page}
                             </button>
@@ -688,10 +750,11 @@ const Users = () => {
                         <button
                           key={page}
                           onClick={() => goToPage(page)}
-                          className={`px-3 py-1 rounded-lg ${currentPage === page
+                          className={`px-3 py-1 rounded-lg ${
+                            currentPage === page
                               ? "bg-blue-600 text-white"
                               : "text-gray-700 hover:bg-gray-100"
-                            }`}
+                          }`}
                         >
                           {page}
                         </button>
@@ -701,10 +764,11 @@ const Users = () => {
                   <button
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={!pagination.hasNextPage}
-                    className={`p-2 rounded-lg border ${!pagination.hasNextPage
+                    className={`p-2 rounded-lg border ${
+                      !pagination.hasNextPage
                         ? "text-gray-400 border-gray-300 cursor-not-allowed"
                         : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }`}
+                    }`}
                   >
                     <ChevronRightIcon className="h-5 w-5" />
                   </button>

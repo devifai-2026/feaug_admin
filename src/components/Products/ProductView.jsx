@@ -524,7 +524,7 @@ const ProductView = () => {
                             Short Description
                           </label>
                           <div
-                            className="text-gray-600 leading-relaxed prose prose-sm max-w-none"
+                            className="text-gray-600 leading-relaxed prose prose-sm max-w-none break-words"
                             dangerouslySetInnerHTML={{
                               __html:
                                 product.shortDescription ||
@@ -537,7 +537,7 @@ const ProductView = () => {
                             Full Description
                           </label>
                           <div
-                            className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 prose prose-sm max-w-none"
+                            className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 prose prose-sm max-w-none break-words"
                             dangerouslySetInnerHTML={{
                               __html:
                                 product.description ||

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftIcon,
   PhotoIcon,
@@ -8,13 +8,13 @@ import {
   ArrowUpTrayIcon,
   CheckIcon,
   TrashIcon,
-} from '@heroicons/react/24/outline';
-import { useRef } from 'react';
-import Sidebar from '../Sidebar';
-import Navbar from '../Navbar';
-import bannerApi from '../../api/banners.api';
-import s3Api from '../../api/s3.api';
-import { useToast } from '../../context/ToastContext';
+} from "@heroicons/react/24/outline";
+import { useRef } from "react";
+import Sidebar from "../Sidebar";
+import Navbar from "../Navbar";
+import bannerApi from "../../api/banners.api";
+import s3Api from "../../api/s3.api";
+import { useToast } from "../../context/ToastContext";
 
 const EditBanner = () => {
   const { id } = useParams();
@@ -27,29 +27,30 @@ const EditBanner = () => {
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
-    title: '',
-    subheader: '', // Adjusted to match model 'subheader'
-    body: '',
-    footer: '',
-    bannerType: 'header',
-    linkType: 'none',
-    linkTarget: '',
-    page: 'home',
-    position: 'top',
+    title: "",
+    subheader: "", // Adjusted to match model 'subheader'
+    body: "",
+    footer: "",
+    bannerType: "header",
+    linkType: "none",
+    linkTarget: "",
+    page: "home",
+    position: "top",
     displayOrder: 0,
     isActive: true,
-    startDate: '',
-    endDate: '',
-    backgroundColor: '',
-    textColor: '',
-    buttonText: '',
-    buttonColor: '',
-    promoCode: '',
-    primaryImage: ''
+    startDate: "",
+    endDate: "",
+    backgroundColor: "",
+    textColor: "",
+    buttonText: "",
+    buttonColor: "",
+    promoCode: "",
+    discountPercentage: 0,
+    primaryImage: "",
   });
 
   const [images, setImages] = useState([]);
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState("");
 
   const [errors, setErrors] = useState({});
 
@@ -64,37 +65,43 @@ const EditBanner = () => {
       const banner = response.data.banner;
 
       setFormData({
-        title: banner.title || '',
-        subheader: banner.subheader || banner.subtitle || '', // Fallback to subtitle if subheader missing
-        body: banner.body || '',
-        footer: banner.footer || '',
-        bannerType: banner.bannerType || 'header',
-        linkType: banner.linkType || 'none',
-        linkTarget: banner.linkTarget || '',
-        page: banner.page || 'home',
-        position: banner.position || 'top',
+        title: banner.title || "",
+        subheader: banner.subheader || banner.subtitle || "", // Fallback to subtitle if subheader missing
+        body: banner.body || "",
+        footer: banner.footer || "",
+        bannerType: banner.bannerType || "header",
+        linkType: banner.linkType || "none",
+        linkTarget: banner.linkTarget || "",
+        page: banner.page || "home",
+        position: banner.position || "top",
         displayOrder: banner.displayOrder || 0,
         isActive: banner.isActive !== false,
-        startDate: banner.startDate ? banner.startDate.split('T')[0] : '',
-        endDate: banner.endDate ? banner.endDate.split('T')[0] : '',
-        backgroundColor: banner.backgroundColor || '',
-        textColor: banner.textColor || '',
-        buttonText: banner.buttonText || '',
-        buttonColor: banner.buttonColor || '',
-        promoCode: banner.promoCode || '',
-        primaryImage: banner.images?.find(img => img.isPrimary)?.url || banner.images?.[0]?.url || ''
+        startDate: banner.startDate ? banner.startDate.split("T")[0] : "",
+        endDate: banner.endDate ? banner.endDate.split("T")[0] : "",
+        backgroundColor: banner.backgroundColor || "",
+        textColor: banner.textColor || "",
+        buttonText: banner.buttonText || "",
+        buttonColor: banner.buttonColor || "",
+        promoCode: banner.promoCode || "",
+        discountPercentage: banner.discountPercentage || 0,
+        primaryImage:
+          banner.images?.find((img) => img.isPrimary)?.url ||
+          banner.images?.[0]?.url ||
+          "",
       });
 
       if (banner.images) {
-        setImages(banner.images.map(img => ({
-          url: img.url,
-          subheader: img.subheader || ''
-        })));
+        setImages(
+          banner.images.map((img) => ({
+            url: img.url,
+            subheader: img.subheader || "",
+          })),
+        );
       }
     } catch (error) {
-      console.error('Error fetching banner:', error);
-      showToast('Error fetching banner details', 'error');
-      navigate('/banners');
+      console.error("Error fetching banner:", error);
+      showToast("Error fetching banner details", "error");
+      navigate("/banners");
     } finally {
       setLoading(false);
     }
@@ -105,32 +112,32 @@ const EditBanner = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleAddImageUrl = () => {
     if (!newImageUrl.trim()) return;
-    setImages(prev => [...prev, { url: newImageUrl.trim(), subheader: '' }]);
-    setNewImageUrl('');
+    setImages((prev) => [...prev, { url: newImageUrl.trim(), subheader: "" }]);
+    setNewImageUrl("");
   };
 
   const removeImage = (index) => {
     const removedImage = images[index];
-    setImages(prev => prev.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
     if (removedImage.url === formData.primaryImage) {
-      setFormData(prev => ({ ...prev, primaryImage: '' }));
+      setFormData((prev) => ({ ...prev, primaryImage: "" }));
     }
   };
 
   const handleImageSubheaderChange = (index, subheader) => {
-    setImages(prev => {
+    setImages((prev) => {
       const newImages = [...prev];
       newImages[index] = { ...newImages[index], subheader };
       return newImages;
@@ -138,7 +145,7 @@ const EditBanner = () => {
   };
 
   const handleSetPrimaryImage = (url) => {
-    setFormData(prev => ({ ...prev, primaryImage: url }));
+    setFormData((prev) => ({ ...prev, primaryImage: url }));
   };
 
   const handleFileUpload = async (e) => {
@@ -154,28 +161,28 @@ const EditBanner = () => {
         const presignedResponse = await s3Api.getPresignedUrl(
           file.name,
           file.type,
-          'banners'
+          "banners",
         );
 
         // Upload to S3
         await fetch(presignedResponse.uploadUrl, {
-          method: 'PUT',
+          method: "PUT",
           body: file,
           headers: {
-            'Content-Type': file.type,
+            "Content-Type": file.type,
           },
         });
 
         const uploadedUrl = presignedResponse.fileUrl;
-        setImages(prev => [...prev, { url: uploadedUrl, subheader: '' }]);
+        setImages((prev) => [...prev, { url: uploadedUrl, subheader: "" }]);
       }
-      showToast('Images uploaded successfully', 'success');
+      showToast("Images uploaded successfully", "success");
     } catch (error) {
-      console.error('Error uploading images:', error);
-      showToast('Error uploading images', 'error');
+      console.error("Error uploading images:", error);
+      showToast("Error uploading images", "error");
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -183,15 +190,16 @@ const EditBanner = () => {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+      newErrors.title = "Title is required";
     }
 
     if (images.length === 0) {
-      newErrors.image = 'Banner image is required';
+      newErrors.image = "Banner image is required";
     }
 
-    if (formData.linkType !== 'none' && !formData.linkTarget.trim()) {
-      newErrors.linkTarget = 'Link target is required when link type is selected';
+    if (formData.linkType !== "none" && !formData.linkTarget.trim()) {
+      newErrors.linkTarget =
+        "Link target is required when link type is selected";
     }
 
     setErrors(newErrors);
@@ -202,7 +210,7 @@ const EditBanner = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      showToast('Please fix the errors before submitting', 'error');
+      showToast("Please fix the errors before submitting", "error");
       return;
     }
 
@@ -212,13 +220,13 @@ const EditBanner = () => {
       const bannerData = {
         ...formData,
         displayOrder: parseInt(formData.displayOrder) || 0,
-        name: formData.title.toLowerCase().replace(/\s+/g, '-'),
+        name: formData.title.toLowerCase().replace(/\s+/g, "-"),
         images: images.map((img, index) => ({
           url: img.url,
-          subheader: img.subheader || '',
+          subheader: img.subheader || "",
           isPrimary: img.url === (formData.primaryImage || images[0]?.url),
-          alt: formData.title
-        }))
+          alt: formData.title,
+        })),
       };
 
       delete bannerData.primaryImage;
@@ -231,11 +239,14 @@ const EditBanner = () => {
       if (!bannerData.subheader) delete bannerData.subheader;
 
       await bannerApi.updateBanner(id, bannerData);
-      showToast('Banner updated successfully', 'success');
-      navigate('/banners');
+      showToast("Banner updated successfully", "success");
+      navigate("/banners");
     } catch (error) {
-      console.error('Error updating banner:', error);
-      showToast(error.response?.data?.message || 'Error updating banner', 'error');
+      console.error("Error updating banner:", error);
+      showToast(
+        error.response?.data?.message || "Error updating banner",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
@@ -263,25 +274,31 @@ const EditBanner = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
-        <main className={`flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
+        <main
+          className={`flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"}`}
+        >
           <div className="mx-auto max-w-4xl">
             {/* Header */}
             <div className="mb-6">
               <button
-                onClick={() => navigate('/banners')}
+                onClick={() => navigate("/banners")}
                 className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
               >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />
                 Back to Banners
               </button>
               <h1 className="text-2xl font-bold text-gray-900">Edit Banner</h1>
-              <p className="text-gray-600 mt-1">Update banner details and settings</p>
+              <p className="text-gray-600 mt-1">
+                Update banner details and settings
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Basic Information
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -292,12 +309,15 @@ const EditBanner = () => {
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.title ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.title ? "border-red-500" : "border-gray-300"
+                      }`}
                       placeholder="Enter banner title"
                     />
                     {errors.title && (
-                      <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.title}
+                      </p>
                     )}
                   </div>
 
@@ -424,7 +444,9 @@ const EditBanner = () => {
                 <div className="p-6 space-y-6">
                   {/* Image URL Input */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Add Image via URL</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Add Image via URL
+                    </label>
                     <div className="flex gap-4">
                       <div className="flex-1 relative">
                         <input
@@ -448,14 +470,18 @@ const EditBanner = () => {
 
                   {/* File Upload UI */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Upload Images</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Upload Images
+                    </label>
                     <div className="p-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 flex flex-col items-center justify-center transition-colors hover:bg-gray-50 hover:border-blue-300">
                       <div className="p-3 bg-white rounded-full shadow-sm mb-4">
                         <ArrowUpTrayIcon className="h-6 w-6 text-blue-500" />
                       </div>
                       <div className="text-center">
                         <label className="relative cursor-pointer group">
-                          <span className="text-blue-600 font-bold group-hover:text-blue-700 transition-colors underline">Click to upload files</span>
+                          <span className="text-blue-600 font-bold group-hover:text-blue-700 transition-colors underline">
+                            Click to upload files
+                          </span>
                           <input
                             type="file"
                             multiple
@@ -466,13 +492,30 @@ const EditBanner = () => {
                             disabled={uploading}
                           />
                         </label>
-                        <p className="text-sm text-gray-500 mt-1 font-medium italic">or drag and drop images here</p>
+                        <p className="text-sm text-gray-500 mt-1 font-medium italic">
+                          or drag and drop images here
+                        </p>
                       </div>
                       {uploading && (
                         <div className="mt-4 flex items-center text-blue-600 font-bold text-sm animate-pulse">
-                          <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          <svg
+                            className="animate-spin h-4 w-4 mr-2"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="none"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
                           </svg>
                           Uploading Assets...
                         </div>
@@ -480,17 +523,23 @@ const EditBanner = () => {
                     </div>
                   </div>
 
-                  {errors.image && <p className="text-sm text-red-500 font-medium">{errors.image}</p>}
+                  {errors.image && (
+                    <p className="text-sm text-red-500 font-medium">
+                      {errors.image}
+                    </p>
+                  )}
 
                   {/* Image Gallery */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
                     {images.map((img, index) => (
                       <div
                         key={index}
-                        className={`group relative flex flex-col bg-white rounded-xl overflow-hidden border-2 transition-all shadow-sm ${formData.primaryImage === img.url || (!formData.primaryImage && index === 0)
-                          ? 'border-blue-500 ring-2 ring-blue-100'
-                          : 'border-gray-100 hover:border-blue-300'
-                          }`}
+                        className={`group relative flex flex-col bg-white rounded-xl overflow-hidden border-2 transition-all shadow-sm ${
+                          formData.primaryImage === img.url ||
+                          (!formData.primaryImage && index === 0)
+                            ? "border-blue-500 ring-2 ring-blue-100"
+                            : "border-gray-100 hover:border-blue-300"
+                        }`}
                       >
                         <div className="relative aspect-video">
                           <img
@@ -502,7 +551,7 @@ const EditBanner = () => {
                             <button
                               type="button"
                               onClick={() => handleSetPrimaryImage(img.url)}
-                              className={`p-2 rounded-lg transition-colors ${formData.primaryImage === img.url || (!formData.primaryImage && index === 0) ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-gray-100'}`}
+                              className={`p-2 rounded-lg transition-colors ${formData.primaryImage === img.url || (!formData.primaryImage && index === 0) ? "bg-blue-600 text-white" : "bg-white text-blue-600 hover:bg-gray-100"}`}
                               title="Set as Primary"
                             >
                               <CheckIcon className="h-5 w-5" />
@@ -516,18 +565,23 @@ const EditBanner = () => {
                               <TrashIcon className="h-5 w-5" />
                             </button>
                           </div>
-                          {(formData.primaryImage === img.url || (!formData.primaryImage && index === 0)) && (
+                          {(formData.primaryImage === img.url ||
+                            (!formData.primaryImage && index === 0)) && (
                             <div className="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded uppercase tracking-wider">
                               Primary
                             </div>
                           )}
                         </div>
                         <div className="p-3 bg-gray-50 border-t border-gray-100">
-                          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Image Subheader (Optional)</label>
+                          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            Image Subheader (Optional)
+                          </label>
                           <input
                             type="text"
                             value={img.subheader}
-                            onChange={(e) => handleImageSubheaderChange(index, e.target.value)}
+                            onChange={(e) =>
+                              handleImageSubheaderChange(index, e.target.value)
+                            }
                             className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             placeholder="e.g., Shop our summer deals"
                           />
@@ -540,7 +594,9 @@ const EditBanner = () => {
 
               {/* Link Settings */}
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Link Settings</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Link Settings
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -560,7 +616,7 @@ const EditBanner = () => {
                     </select>
                   </div>
 
-                  {formData.linkType !== 'none' && (
+                  {formData.linkType !== "none" && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Link Target *
@@ -570,12 +626,21 @@ const EditBanner = () => {
                         name="linkTarget"
                         value={formData.linkTarget}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.linkTarget ? 'border-red-500' : 'border-gray-300'
-                          }`}
-                        placeholder={formData.linkType === 'url' ? 'https://example.com' : 'Enter ID'}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                          errors.linkTarget
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
+                        placeholder={
+                          formData.linkType === "url"
+                            ? "https://example.com"
+                            : "Enter ID"
+                        }
                       />
                       {errors.linkTarget && (
-                        <p className="mt-1 text-sm text-red-600">{errors.linkTarget}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.linkTarget}
+                        </p>
                       )}
                     </div>
                   )}
@@ -608,7 +673,28 @@ const EditBanner = () => {
                       maxLength="20"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Enter a promo code that will only work when this banner is active
+                      Enter a promo code that will only work when this banner is
+                      active
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discount Percentage (%)
+                    </label>
+                    <input
+                      type="number"
+                      name="discountPercentage"
+                      value={formData.discountPercentage}
+                      onChange={handleInputChange}
+                      min="0"
+                      max="100"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 20"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Set the discount percentage for the automatically created
+                      promo code
                     </p>
                   </div>
                 </div>
@@ -616,7 +702,9 @@ const EditBanner = () => {
 
               {/* Scheduling */}
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Scheduling</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Scheduling
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -642,7 +730,9 @@ const EditBanner = () => {
                       onChange={handleInputChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
-                    <p className="mt-1 text-xs text-gray-500">Leave empty for no end date</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Leave empty for no end date
+                    </p>
                   </div>
 
                   <div className="flex items-center">
@@ -655,7 +745,9 @@ const EditBanner = () => {
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      <span className="ml-3 text-sm font-medium text-gray-700">Active</span>
+                      <span className="ml-3 text-sm font-medium text-gray-700">
+                        Active
+                      </span>
                     </label>
                   </div>
                 </div>
@@ -665,7 +757,7 @@ const EditBanner = () => {
               <div className="flex justify-end space-x-4">
                 <button
                   type="button"
-                  onClick={() => navigate('/banners')}
+                  onClick={() => navigate("/banners")}
                   className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancel
@@ -673,8 +765,11 @@ const EditBanner = () => {
                 <button
                   type="submit"
                   disabled={saving || uploading}
-                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${saving || uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-                    }`}
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${
+                    saving || uploading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-blue-700"
+                  }`}
                 >
                   {saving ? (
                     <>
@@ -682,7 +777,7 @@ const EditBanner = () => {
                       Saving...
                     </>
                   ) : (
-                    'Save Changes'
+                    "Save Changes"
                   )}
                 </button>
               </div>
