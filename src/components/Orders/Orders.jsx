@@ -21,6 +21,7 @@ import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import orderApi from "../../api/orders.api";
 import { useToast } from "../../context/ToastContext";
+import { useSocket } from "../../context/SocketContext";
 import StatusUpdateModal from "../../components/Modals/StatusUpdateModal";
 import ExportModal from "../../components/Modals/ExportOrderModal";
 import moment from "moment";
@@ -67,6 +68,20 @@ const Orders = () => {
     fetchStatistics();
     fetchRecentActivities();
   }, [pagination.page, sortBy]);
+
+  // Listen for socket events to refetch orders
+  const { notifications: socketNotifications } = useSocket();
+
+  useEffect(() => {
+    if (socketNotifications.length > 0) {
+      const latest = socketNotifications[0];
+      if (latest.type === "new_order" || latest.type === "order_update") {
+        console.log("♻️ Socket event trigger: Refetching orders...");
+        fetchOrders();
+        fetchStatistics();
+      }
+    }
+  }, [socketNotifications]);
 
   // Apply filters when they change
   useEffect(() => {

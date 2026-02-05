@@ -1,6 +1,7 @@
 import {
   MagnifyingGlassIcon,
   BellIcon,
+  ShoppingBagIcon,
   Bars3Icon,
   ChevronDownIcon,
   UserIcon,
@@ -16,11 +17,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import notificationsApi from "../api/notifications.api";
-import { transformNotification, getNotificationRoute } from "../utils/notificationUtils";
+import {
+  transformNotification,
+  getNotificationRoute,
+} from "../utils/notificationUtils";
 
 const Navbar = ({ sidebarOpen, toggleSidebar }) => {
   const { user, logout, isAuthenticated } = useAuth();
-  const { notifications: socketNotifications, connected: socketConnected } = useSocket();
+  const { notifications: socketNotifications, connected: socketConnected } =
+    useSocket();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -41,12 +46,14 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
       setLoading(true);
       const response = await notificationsApi.getRecentNotifications(10);
 
-      if (response.status === 'success' && response.data?.notifications) {
-        const transformedNotifications = response.data.notifications.map(transformNotification);
+      if (response.status === "success" && response.data?.notifications) {
+        const transformedNotifications = response.data.notifications.map(
+          transformNotification,
+        );
         setNotifications(transformedNotifications);
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
     }
@@ -59,11 +66,14 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
     try {
       const response = await notificationsApi.getUnreadCount();
 
-      if (response.status === 'success' && response.data?.unreadCount !== undefined) {
+      if (
+        response.status === "success" &&
+        response.data?.unreadCount !== undefined
+      ) {
         setUnreadCount(response.data.unreadCount);
       }
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      console.error("Error fetching unread count:", error);
     }
   };
 
@@ -82,23 +92,39 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
       const latestSocketNotification = socketNotifications[0];
 
       // Check if this notification is already in our list
-      const exists = notifications.some(n =>
-        n.id === latestSocketNotification.id ||
-        (n.data?.orderId === latestSocketNotification.data?.orderId &&
-          n.type === latestSocketNotification.type)
+      const exists = notifications.some(
+        (n) =>
+          n.id === latestSocketNotification.id ||
+          (n.data?.orderId === latestSocketNotification.data?.orderId &&
+            n.type === latestSocketNotification.type),
       );
 
       if (!exists) {
+        // Transform the socket notification to ensure it has icon, color, etc.
+        const formattedNotification = {
+          ...latestSocketNotification,
+          icon:
+            latestSocketNotification.icon === "ShoppingBagIcon"
+              ? ShoppingBagIcon
+              : latestSocketNotification.type === "new_order"
+                ? ShoppingBagIcon
+                : InformationCircleIcon,
+          color: latestSocketNotification.color || "bg-blue-500",
+          time: "Just now",
+        };
+
         // Add to the beginning of notifications list
-        setNotifications(prev => [latestSocketNotification, ...prev].slice(0, 10));
+        setNotifications((prev) =>
+          [formattedNotification, ...prev].slice(0, 10),
+        );
         // Increment unread count
-        setUnreadCount(prev => prev + 1);
+        setUnreadCount((prev) => prev + 1);
 
         // Optional: Play notification sound or show browser notification
-        if ('Notification' in window && Notification.permission === 'granted') {
+        if ("Notification" in window && Notification.permission === "granted") {
           new Notification(latestSocketNotification.title, {
             body: latestSocketNotification.message,
-            icon: '/favicon.ico'
+            icon: "/favicon.ico",
           });
         }
       }
@@ -134,8 +160,21 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
     navigate("/login");
   };
 
+  const handleNotificationClick = (notification) => {
+    markAsRead(notification.id);
+    const route = getNotificationRoute(notification);
+    if (route) {
+      navigate(route);
+      setIsNotificationOpen(false);
+    }
+  };
+
   const markAsRead = async (id) => {
     try {
+      // Find the notification to check if it's already read
+      const notification = notifications.find((n) => n.id === id);
+      if (notification?.read) return;
+
       // Optimistically update UI
       const updatedNotifications = notifications.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification,
@@ -143,15 +182,15 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
       setNotifications(updatedNotifications);
 
       // Update unread count
-      const wasUnread = notifications.find(n => n.id === id && !n.read);
+      const wasUnread = notifications.find((n) => n.id === id && !n.read);
       if (wasUnread) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
       // Call API
       await notificationsApi.markAsRead(id);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
       // Revert on error
       fetchNotifications();
       fetchUnreadCount();
@@ -169,7 +208,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
         // Call API
         await notificationsApi.clearAllNotifications();
       } catch (error) {
-        console.error('Error clearing notifications:', error);
+        console.error("Error clearing notifications:", error);
         // Revert on error
         fetchNotifications();
         fetchUnreadCount();
@@ -182,7 +221,7 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
 
     try {
       // Optimistically update UI
-      const wasUnread = notifications.find(n => n.id === id && !n.read);
+      const wasUnread = notifications.find((n) => n.id === id && !n.read);
       const updatedNotifications = notifications.filter(
         (notification) => notification.id !== id,
       );
@@ -190,13 +229,13 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
 
       // Update unread count if it was unread
       if (wasUnread) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        setUnreadCount((prev) => Math.max(0, prev - 1));
       }
 
       // Call API
       await notificationsApi.deleteNotification(id);
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      console.error("Error deleting notification:", error);
       // Revert on error
       fetchNotifications();
       fetchUnreadCount();
@@ -313,9 +352,10 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.read ? "bg-blue-50" : ""
-                            }`}
-                          onClick={() => markAsRead(notification.id)}
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${
+                            !notification.read ? "bg-blue-50" : ""
+                          }`}
+                          onClick={() => handleNotificationClick(notification)}
                         >
                           <div className="flex items-start">
                             <div
@@ -326,10 +366,11 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between">
                                 <p
-                                  className={`text-sm font-medium truncate ${!notification.read
-                                    ? "text-blue-900"
-                                    : "text-gray-900"
-                                    }`}
+                                  className={`text-sm font-medium truncate ${
+                                    !notification.read
+                                      ? "text-blue-900"
+                                      : "text-gray-900"
+                                  }`}
                                 >
                                   {notification.title}
                                 </p>

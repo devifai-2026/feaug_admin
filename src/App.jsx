@@ -32,6 +32,7 @@ import Banners from "./components/Banners/Banners";
 import AddBanner from "./components/Banners/AddBanner";
 import EditBanner from "./components/Banners/EditBanner";
 import PromoCodes from "./components/PromoCodes/PromoCodes";
+import Notifications from "./components/Notifications";
 import { SocketProvider } from "./context/SocketContext";
 
 // Public route wrapper (redirects to dashboard if already logged in)
@@ -282,6 +283,15 @@ function AppContent() {
         }
       />
 
+      <Route
+        path="/notifications"
+        element={
+          <PrivateRoute>
+            <Notifications />
+          </PrivateRoute>
+        }
+      />
+
       {/* Catch all route - redirect to login if route doesn't exist */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
@@ -291,13 +301,13 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <SocketProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <SocketProvider>
           <div className="min-h-screen bg-gray-50">
             <AppContent />
           </div>
-        </AuthProvider>
-      </SocketProvider>
+        </SocketProvider>
+      </AuthProvider>
     </Router>
   );
 }
