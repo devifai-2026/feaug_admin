@@ -130,13 +130,13 @@ const OrderUpdate = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    
+
     // In a real app, you would make an API call here
     console.log('Updating order:', id, formData)
-    
+
     // Show success message
     alert(`Order ${id} updated successfully!`)
-    
+
     // Navigate back to orders
     navigate('/orders')
   }
@@ -153,7 +153,7 @@ const OrderUpdate = () => {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-lg text-red-600">Order not found</div>
-        <button 
+        <button
           onClick={() => navigate('/orders')}
           className="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
@@ -166,11 +166,11 @@ const OrderUpdate = () => {
   return (
     <div className="flex h-screen">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        
-        <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
+
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           <div className="mx-auto max-w-7xl">
             {/* Header */}
             <div className="mb-8">
@@ -187,7 +187,7 @@ const OrderUpdate = () => {
                     <p className="text-gray-600">Order ID: #{order.id}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center">
                     {getStatusIcon(order.status)}
@@ -204,7 +204,7 @@ const OrderUpdate = () => {
               <div className="lg:col-span-2">
                 <div className="bg-white rounded-lg shadow p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Update Order Details</h2>
-                  
+
                   <form onSubmit={handleSubmit}>
                     <div className="space-y-6">
                       {/* Status */}

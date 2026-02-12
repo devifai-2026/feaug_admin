@@ -196,7 +196,7 @@ const Categories = () => {
             </span>
           )}
         </div>
-        
+
         {node.children && node.children.length > 0 && (
           <div className="mt-2">
             {node.children.map(child => renderNode(child, level + 1))}
@@ -519,13 +519,13 @@ const Categories = () => {
                                 >
                                   <PencilIcon className="h-5 w-5" />
                                 </Link>
-                                <button
+                                {/* <button
                                   onClick={() => handleViewSubcategories(category)}
                                   className="text-green-600 hover:text-green-800"
                                   title="View Subcategories"
                                 >
                                   <FolderIcon className="h-5 w-5" />
-                                </button>
+                                </button> */}
                                 <button 
                                   className={`${category.productCount > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
                                   title={category.productCount > 0 ? 'Cannot delete category with products' : 'Delete'}

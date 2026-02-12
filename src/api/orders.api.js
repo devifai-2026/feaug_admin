@@ -76,6 +76,57 @@ const orderApi = {
   getOrdersByStatusCount: () =>
     axiosInstance.get('/admin/orders/status-count')
       .then(response => response.data),
+
+  // =====================================================
+  // SHIPROCKET INTEGRATION
+  // =====================================================
+
+  // Create Shiprocket shipment
+  createShipment: (orderId, data = {}) =>
+    axiosInstance.post(`/admin/orders/${orderId}/create-shipment`, data)
+      .then(response => response.data),
+
+  // Get available couriers for order
+  getAvailableCouriers: (orderId, weight) =>
+    axiosInstance.get(`/admin/orders/${orderId}/available-couriers`, {
+      params: { weight }
+    })
+      .then(response => response.data),
+
+  // Generate AWB (Air Waybill)
+  generateAWB: (orderId, courierId) =>
+    axiosInstance.post(`/admin/orders/${orderId}/generate-awb`, { courierId })
+      .then(response => response.data),
+
+  // Schedule pickup
+  schedulePickup: (orderId) =>
+    axiosInstance.post(`/admin/orders/${orderId}/schedule-pickup`)
+      .then(response => response.data),
+
+  // Track shipment
+  trackShipment: (orderId) =>
+    axiosInstance.get(`/admin/orders/${orderId}/track-shipment`)
+      .then(response => response.data),
+
+  // Cancel shipment
+  cancelShipment: (orderId, reason) =>
+    axiosInstance.post(`/admin/orders/${orderId}/cancel-shipment`, { reason })
+      .then(response => response.data),
+
+  // Get shipping label
+  getShippingLabel: (orderId) =>
+    axiosInstance.get(`/admin/orders/${orderId}/shipping-label`)
+      .then(response => response.data),
+
+  // Get shipping charges estimate
+  getShippingCharges: (orderId, dimensions) =>
+    axiosInstance.post(`/admin/orders/${orderId}/shipping-charges`, dimensions)
+      .then(response => response.data),
+
+  // Generate manifest for multiple orders
+  generateManifest: (orderIds) =>
+    axiosInstance.post('/admin/orders/generate-manifest', { orderIds })
+      .then(response => response.data),
 };
 
 export default orderApi;

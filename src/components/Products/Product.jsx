@@ -12,115 +12,96 @@ import {
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import productApi from "../../api/product.api";
+import categoryApi from "../../api/categories.api";
 
 const Products = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const [categoriesList, setCategoriesList] = useState([]);
 
-  // Dummy products that should always be available
-  const dummyProducts = [
-    {
-      id: 1,
-      name: "Wireless Headphones",
-      category: "Electronics",
-      price: "₹99.99",
-      stock: 45,
-      status: "In Stock",
-      image:
-        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150&h=150&fit=crop",
-      isDummy: true,
-    },
-    {
-      id: 2,
-      name: "Running Shoes",
-      category: "Sports",
-      price: "₹129.99",
-      stock: 23,
-      status: "Low Stock",
-      image:
-        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=150&h=150&fit=crop",
-      isDummy: true,
-    },
-    {
-      id: 3,
-      name: "Coffee Maker",
-      category: "Home & Kitchen",
-      price: "₹79.99",
-      stock: 0,
-      status: "Out of Stock",
-      image:
-        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=150&h=150&fit=crop",
-      isDummy: true,
-    },
-    {
-      id: 4,
-      name: "Smart Watch",
-      category: "Electronics",
-      price: "₹199.99",
-      stock: 67,
-      status: "In Stock",
-      image:
-        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150&h=150&fit=crop",
-      isDummy: true,
-    },
-    {
-      id: 5,
-      name: "Backpack",
-      category: "Fashion",
-      price: "₹49.99",
-      stock: 89,
-      status: "In Stock",
-      image:
-        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=150&h=150&fit=crop",
-      isDummy: true,
-    },
-    {
-      id: 6,
-      name: "Desk Lamp",
-      category: "Home & Office",
-      price: "₹34.99",
-      stock: 12,
-      status: "Low Stock",
-      image:
-        "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=150&h=150&fit=crop",
-      isDummy: true,
-    },
-  ];
-
-  // Load products from localStorage
+  // Fetch categories on mount
   useEffect(() => {
-    loadProductsFromStorage();
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryApi.getAllCategories();
+        if (response && response.data && response.data.categories) {
+          setCategoriesList(response.data.categories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
   }, []);
 
-  const loadProductsFromStorage = () => {
+
+  // Load products from API
+  useEffect(() => {
+    fetchProducts();
+  }, [pagination.page, searchQuery, selectedCategory]);
+
+  const fetchProducts = async () => {
     try {
-      const savedProducts = JSON.parse(
-        localStorage.getItem("products") || "[]"
-      );
+      setLoading(true);
+      setError(null);
 
-      // Filter out any dummy products that might have been saved previously
-      const userProducts = savedProducts.filter((product) => !product.isDummy);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
 
-      // Combine dummy products with user's products (dummy first, then user's)
-      const allProducts = [...dummyProducts, ...userProducts];
+      if (searchQuery) params.search = searchQuery;
+      if (selectedCategory) params.category = selectedCategory;
 
-      setProducts(allProducts);
+      const response = await productApi.getAllProducts(params);
 
-      // Only save if we need to initialize or update
-      if (savedProducts.length === 0) {
-        localStorage.setItem("products", JSON.stringify(userProducts));
+      if (response.status === 'success' && response.data) {
+        // Transform API products to match component format
+        const apiProducts = (response.data.products || []).map(product => ({
+          id: product._id,
+          name: product.name,
+          category: product.category?.name || 'Uncategorized',
+          price: `₹${product.sellingPrice || product.basePrice || 0}`,
+          stock: product.stockQuantity || 0,
+          status: product.stockQuantity === 0 ? 'Out of Stock' : product.stockQuantity < 20 ? 'Low Stock' : 'In Stock',
+          image: product.images?.[0]?.url || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=150&h=150&fit=crop',
+          sku: product.sku,
+          isDummy: false,
+        }));
+
+        setProducts(apiProducts);
+
+        setPagination(prev => ({
+          ...prev,
+          total: response.total || response.results || apiProducts.length,
+          totalPages: Math.ceil((response.total || apiProducts.length) / pagination.limit),
+        }));
+      } else {
+        setProducts([]);
       }
-    } catch (error) {
-      console.error("Error loading products:", error);
-      // If error, just show dummy products
-      setProducts(dummyProducts);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setError("Failed to load products from server");
+      setProducts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Save only user products to localStorage whenever products change
+  // Also keep localStorage sync for user-added products (backwards compatibility)
   useEffect(() => {
     if (products.length > 0) {
-      // Filter out dummy products before saving
       const userProducts = products.filter((product) => !product.isDummy);
       localStorage.setItem("products", JSON.stringify(userProducts));
     }
@@ -129,7 +110,7 @@ const Products = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
-  const deleteProduct = (id) => {
+  const deleteProduct = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       const productToDelete = products.find((p) => p.id === id);
 
@@ -141,9 +122,29 @@ const Products = () => {
         return;
       }
 
-      const updatedProducts = products.filter((product) => product.id !== id);
-      setProducts(updatedProducts);
+      try {
+        await productApi.deleteProduct(id);
+        const updatedProducts = products.filter((product) => product.id !== id);
+        setProducts(updatedProducts);
+      } catch (err) {
+        console.error("Error deleting product:", err);
+        alert(err.response?.data?.message || "Failed to delete product. Please try again.");
+      }
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleCategoryFilter = (e) => {
+    setSelectedCategory(e.target.value);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
   };
 
   // Calculate average price (excluding dummy products if desired)
@@ -173,11 +174,7 @@ const Products = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
-        <main
-          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:pl-6" : "lg:pl-6"
-          }`}
-        >
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           <div className="mx-auto max-w-7xl">
             {/* Header */}
             <div className="mb-8">
@@ -214,15 +211,21 @@ const Products = () => {
                   <input
                     type="text"
                     placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={handleSearch}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
-              <select className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <option>All Categories</option>
-                <option>Electronics</option>
-                <option>Fashion</option>
-                <option>Home & Kitchen</option>
+              <select
+                value={selectedCategory}
+                onChange={handleCategoryFilter}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Categories</option>
+                {categoriesList.map(cat => (
+                  <option key={cat._id} value={cat._id}>{cat.name}</option>
+                ))}
               </select>
               <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                 <FunnelIcon className="h-5 w-5 mr-2" />
@@ -231,8 +234,29 @@ const Products = () => {
               </button>
             </div>
 
+            {/* Loading State */}
+            {loading && (
+              <div className="bg-white rounded-lg shadow p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading products...</p>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-yellow-800">{error}</p>
+                <button
+                  onClick={fetchProducts}
+                  className="mt-2 text-yellow-600 hover:text-yellow-800 text-sm font-medium"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
             {/* Products Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            {!loading && <><div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -271,9 +295,8 @@ const Products = () => {
                       products.map((product) => (
                         <tr
                           key={product.id}
-                          className={`hover:bg-gray-50 ${
-                            product.isDummy ? "border-l-4 border-blue-500" : ""
-                          }`}
+                          className={`hover:bg-gray-50 ${product.isDummy ? "border-l-4 border-blue-500" : ""
+                            }`}
                         >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
@@ -283,8 +306,7 @@ const Products = () => {
                                 alt={product.name}
                                 onError={(e) => {
                                   e.target.onerror = null;
-                                  e.target.src =
-                                    "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=150&h=150&fit=crop";
+                                  e.target.src = 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=150&h=150&fit=crop';
                                 }}
                               />
                               <div className="ml-4">
@@ -297,7 +319,7 @@ const Products = () => {
                                   )}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  ID: #{product.id.toString().padStart(3, "0")}
+                                  SKU: {product.sku || 'N/A'}
                                 </div>
                               </div>
                             </div>
@@ -314,13 +336,12 @@ const Products = () => {
                             <div className="flex items-center">
                               <div className="w-24 bg-gray-200 rounded-full h-2">
                                 <div
-                                  className={`h-2 rounded-full ${
-                                    product.stock > 50
-                                      ? "bg-green-500"
-                                      : product.stock > 20
+                                  className={`h-2 rounded-full ${product.stock > 50
+                                    ? "bg-green-500"
+                                    : product.stock > 20
                                       ? "bg-yellow-500"
                                       : "bg-red-500"
-                                  }`}
+                                    }`}
                                   style={{
                                     width: `${Math.min(product.stock, 100)}%`,
                                   }}
@@ -333,13 +354,12 @@ const Products = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span
-                              className={`px-3 py-1 text-xs rounded-full ${
-                                product.status === "In Stock"
-                                  ? "bg-green-100 text-green-800"
-                                  : product.status === "Low Stock"
+                              className={`px-3 py-1 text-xs rounded-full ${product.status === "In Stock"
+                                ? "bg-green-100 text-green-800"
+                                : product.status === "Low Stock"
                                   ? "bg-yellow-100 text-yellow-800"
                                   : "bg-red-100 text-red-800"
-                              }`}
+                                }`}
                             >
                               {product.status}
                             </span>
@@ -355,11 +375,10 @@ const Products = () => {
                               </Link>
                               <Link
                                 to={`/products/edit/${product.id}`}
-                                className={`p-1 ${
-                                  product.isDummy
-                                    ? "text-gray-400 cursor-not-allowed pointer-events-none"
-                                    : "text-green-600 hover:text-green-800"
-                                }`}
+                                className={`p-1 ${product.isDummy
+                                  ? "text-gray-400 cursor-not-allowed pointer-events-none"
+                                  : "text-green-600 hover:text-green-800"
+                                  }`}
                                 title={
                                   product.isDummy
                                     ? "Cannot edit demo products"
@@ -369,11 +388,10 @@ const Products = () => {
                                 <PencilIcon className="h-5 w-5" />
                               </Link>
                               <button
-                                className={`p-1 ${
-                                  product.isDummy
-                                    ? "text-gray-400 cursor-not-allowed"
-                                    : "text-red-600 hover:text-red-800"
-                                }`}
+                                className={`p-1 ${product.isDummy
+                                  ? "text-gray-400 cursor-not-allowed"
+                                  : "text-red-600 hover:text-red-800"
+                                  }`}
                                 title={
                                   product.isDummy
                                     ? "Cannot delete demo products"
@@ -398,44 +416,46 @@ const Products = () => {
               </div>
             </div>
 
-            {/* Pagination */}
-            <div className="mt-6 flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to{" "}
-                <span className="font-medium">{products.length}</span> of{" "}
-                <span className="font-medium">{products.length}</span> products
-                <span className="ml-2 text-gray-500">
-                  ({products.filter((p) => !p.isDummy).length} user-added)
-                </span>
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled
-                >
-                  Previous
-                </button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  1
-                </button>
-                {products.length > 10 && (
-                  <>
-                    <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
-                      2
+              {/* Pagination */}
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Showing <span className="font-medium">1</span> to{" "}
+                  <span className="font-medium">{products.length}</span> of{" "}
+                  <span className="font-medium">{pagination.total}</span> products
+                  <span className="ml-2 text-gray-500">
+                    ({products.length} products from API)
+                  </span>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={pagination.page === 1}
+                  >
+                    Previous
+                  </button>
+                  {[...Array(Math.min(pagination.totalPages, 3))].map((_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => handlePageChange(i + 1)}
+                      className={`px-3 py-1 rounded-lg ${pagination.page === i + 1
+                        ? "bg-blue-600 text-white"
+                        : "border border-gray-300 hover:bg-gray-50"
+                        }`}
+                    >
+                      {i + 1}
                     </button>
-                    <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
-                      3
-                    </button>
-                  </>
-                )}
-                <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled={products.length <= 10}
-                >
-                  Next
-                </button>
+                  ))}
+                  <button
+                    className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
-            </div>
+            </>}
 
             {/* Quick Stats */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">

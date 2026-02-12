@@ -709,7 +709,7 @@ const UserEdit = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+              {/* <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
                     <ClockIcon className="h-6 w-6 text-amber-600" />
@@ -731,7 +731,7 @@ const UserEdit = () => {
                       : "N/A"}
                   </span>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Premium Tabs */}
@@ -743,7 +743,7 @@ const UserEdit = () => {
                     "profile",
                     "orders",
                     "analytics",
-                    "activity",
+                    // "activity",
                   ].map((tab) => (
                     <button
                       key={tab}

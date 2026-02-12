@@ -18,17 +18,19 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import Sidebar from "../Sidebar";
-import Navbar from "../Navbar";;
+import Navbar from "../Navbar";
 import orderApi from "../../api/orders.api";
 import { useToast } from "../../context/ToastContext";
+import { useSocket } from "../../context/SocketContext";
 import StatusUpdateModal from "../../components/Modals/StatusUpdateModal";
 import ExportModal from "../../components/Modals/ExportOrderModal";
+import moment from "moment";
 
 const Orders = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { showToast } = useToast();
-  
+
   // State management
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ const Orders = () => {
     shipped: { count: 15, revenue: 0 },
     completed: { count: 156, revenue: 0 },
     cancelled: { count: 3, revenue: 0 },
-    total: { orders: 194, revenue: 0 }
+    total: { orders: 194, revenue: 0 },
   });
   const [recentActivities, setRecentActivities] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,67 +69,87 @@ const Orders = () => {
     fetchRecentActivities();
   }, [pagination.page, sortBy]);
 
+  // Listen for socket events to refetch orders
+  const { notifications: socketNotifications } = useSocket();
+
+  useEffect(() => {
+    if (socketNotifications.length > 0) {
+      const latest = socketNotifications[0];
+      if (latest.type === "new_order" || latest.type === "order_update") {
+        console.log("♻️ Socket event trigger: Refetching orders...");
+        fetchOrders();
+        fetchStatistics();
+      }
+    }
+  }, [socketNotifications]);
+
   // Apply filters when they change
   useEffect(() => {
     if (pagination.page === 1) {
       fetchOrders();
     } else {
-      setPagination(prev => ({ ...prev, page: 1 }));
+      setPagination((prev) => ({ ...prev, page: 1 }));
     }
   }, [filters, searchQuery]);
 
- // In your Orders component, update the fetchOrders function:
-const fetchOrders = useCallback(async () => {
-  try {
-    setLoading(true);
-    const params = {
-      page: pagination.page,
-      limit: pagination.limit,
-      sort: sortBy,
-      ...filters,
-    };
-    
-    if (searchQuery) {
-      params.search = searchQuery;
+  // In your Orders component, update the fetchOrders function:
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        sort: sortBy,
+        ...filters,
+      };
+
+      if (searchQuery) {
+        params.search = searchQuery;
+      }
+
+      const response = await orderApi.getAllOrders(params);
+      console.log("Orders response:", response); // Debug log
+
+      setOrders(response.data.orders || []);
+
+      // Ensure total is a number and calculate totalPages safely
+      const total = Number(response.total) || 0;
+      const limit = Number(pagination.limit) || 10;
+      const totalPages = Math.ceil(total / limit) || 1;
+
+      setPagination((prev) => ({
+        ...prev,
+        total: total,
+        totalPages: totalPages,
+        page: total > 0 ? Math.min(prev.page, totalPages) : 1, // Ensure page is valid
+      }));
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      showToast("Error fetching orders", "error");
+    } finally {
+      setLoading(false);
     }
-    
-    const response = await orderApi.getAllOrders(params);
-    console.log("Orders response:", response); // Debug log
-    
-    setOrders(response.data.orders || []);
-    
-    // Ensure total is a number and calculate totalPages safely
-    const total = Number(response.total) || 0;
-    const limit = Number(pagination.limit) || 10;
-    const totalPages = Math.ceil(total / limit) || 1;
-    
-    setPagination(prev => ({
-      ...prev,
-      total: total,
-      totalPages: totalPages,
-      page: total > 0 ? Math.min(prev.page, totalPages) : 1 // Ensure page is valid
-    }));
-    
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    showToast("Error fetching orders", "error");
-  } finally {
-    setLoading(false);
-  }
-}, [pagination.page, pagination.limit, sortBy, filters, searchQuery, showToast]);
+  }, [
+    pagination.page,
+    pagination.limit,
+    sortBy,
+    filters,
+    searchQuery,
+    showToast,
+  ]);
 
   const fetchStatistics = useCallback(async () => {
     try {
       const response = await orderApi.getOrdersByStatusCount();
       const counts = response.data.counts;
-      
+
       setStats({
         pending: counts.pending || { count: 0, revenue: 0 },
         processing: counts.processing || { count: 0, revenue: 0 },
         shipped: counts.shipped || { count: 0, revenue: 0 },
         completed: counts.delivered || { count: 0, revenue: 0 },
         cancelled: counts.cancelled || { count: 0, revenue: 0 },
-        total: counts.total || { orders: 0, revenue: 0 }
+        total: counts.total || { orders: 0, revenue: 0 },
       });
     } catch (error) {
       console.error("Error fetching statistics:", error);
@@ -193,12 +215,7 @@ const fetchOrders = useCallback(async () => {
   };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return moment(dateString).format("DD-MM-YYYY");
   };
 
   const formatCurrency = (amount) => {
@@ -216,7 +233,7 @@ const fetchOrders = useCallback(async () => {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const clearFilters = () => {
@@ -230,10 +247,10 @@ const fetchOrders = useCallback(async () => {
   };
 
   const handleOrderSelect = (orderId) => {
-    setSelectedOrders(prev =>
+    setSelectedOrders((prev) =>
       prev.includes(orderId)
-        ? prev.filter(id => id !== orderId)
-        : [...prev, orderId]
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId],
     );
   };
 
@@ -241,7 +258,7 @@ const fetchOrders = useCallback(async () => {
     if (selectedOrders.length === orders.length) {
       setSelectedOrders([]);
     } else {
-      setSelectedOrders(orders.map(order => order._id));
+      setSelectedOrders(orders.map((order) => order._id));
     }
   };
 
@@ -268,7 +285,6 @@ const fetchOrders = useCallback(async () => {
     }
   };
 
-
   const handleViewOrder = (orderId) => {
     navigate(`/orders/view/${orderId}`);
   };
@@ -276,18 +292,18 @@ const fetchOrders = useCallback(async () => {
   const handlePrintOrder = async (order) => {
     try {
       const response = await orderApi.generateInvoice(order._id);
-      
+
       // Create blob and download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = new Blob([response.data], { type: "application/pdf" });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `invoice-${order.orderId}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       showToast("Invoice downloaded successfully", "success");
     } catch (error) {
       console.error("Error generating invoice:", error);
@@ -298,29 +314,27 @@ const fetchOrders = useCallback(async () => {
   const handleExportOrders = async (exportOptions) => {
     try {
       const response = await orderApi.exportOrders(exportOptions);
-      
+
       // Convert to CSV
       const headers = Object.keys(response.data.orders[0] || {});
       const csvRows = [
-        headers.join(','),
-        ...response.data.orders.map(row => 
-          headers.map(header => 
-            JSON.stringify(row[header] || '')
-          ).join(',')
-        )
+        headers.join(","),
+        ...response.data.orders.map((row) =>
+          headers.map((header) => JSON.stringify(row[header] || "")).join(","),
+        ),
       ];
-      
-      const csvString = csvRows.join('\n');
-      const blob = new Blob([csvString], { type: 'text/csv' });
+
+      const csvString = csvRows.join("\n");
+      const blob = new Blob([csvString], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `orders-export-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `orders-export-${new Date().toISOString().split("T")[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       showToast("Orders exported successfully", "success");
       setIsExportModalOpen(false);
     } catch (error) {
@@ -334,7 +348,7 @@ const fetchOrders = useCallback(async () => {
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleSortChange = (field) => {
@@ -352,11 +366,7 @@ const fetchOrders = useCallback(async () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
-        <main
-          className={`flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:ml-64" : "lg:ml-16"
-          }`}
-        >
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="mx-auto max-w-7xl">
             {/* Header */}
             <div className="mb-6 md:mb-8">
@@ -396,12 +406,14 @@ const fetchOrders = useCallback(async () => {
                     />
                   </div>
                 </form>
-                
+
                 <div className="flex items-center gap-2">
                   <FunnelIcon className="h-5 w-5 text-gray-500" />
                   <select
                     value={filters.status}
-                    onChange={(e) => handleFilterChange("status", e.target.value)}
+                    onChange={(e) =>
+                      handleFilterChange("status", e.target.value)
+                    }
                     className="block w-full md:w-auto pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                   >
                     <option value="">All Status</option>
@@ -411,7 +423,7 @@ const fetchOrders = useCallback(async () => {
                     <option value="delivered">Delivered</option>
                     <option value="cancelled">Cancelled</option>
                   </select>
-                  
+
                   {(filters.status || filters.startDate || filters.endDate) && (
                     <button
                       onClick={clearFilters}
@@ -432,7 +444,9 @@ const fetchOrders = useCallback(async () => {
                   {getStatusIcon("pending")}
                   <div className="ml-3">
                     <div className="text-sm text-gray-600">Pending</div>
-                    <div className="text-xl font-bold mt-1">{stats.pending.count}</div>
+                    <div className="text-xl font-bold mt-1">
+                      {stats.pending.count}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -441,7 +455,9 @@ const fetchOrders = useCallback(async () => {
                   {getStatusIcon("processing")}
                   <div className="ml-3">
                     <div className="text-sm text-gray-600">Processing</div>
-                    <div className="text-xl font-bold mt-1">{stats.processing.count}</div>
+                    <div className="text-xl font-bold mt-1">
+                      {stats.processing.count}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -450,7 +466,9 @@ const fetchOrders = useCallback(async () => {
                   {getStatusIcon("shipped")}
                   <div className="ml-3">
                     <div className="text-sm text-gray-600">Shipped</div>
-                    <div className="text-xl font-bold mt-1">{stats.shipped.count}</div>
+                    <div className="text-xl font-bold mt-1">
+                      {stats.shipped.count}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -459,7 +477,9 @@ const fetchOrders = useCallback(async () => {
                   {getStatusIcon("delivered")}
                   <div className="ml-3">
                     <div className="text-sm text-gray-600">Completed</div>
-                    <div className="text-xl font-bold mt-1">{stats.completed.count}</div>
+                    <div className="text-xl font-bold mt-1">
+                      {stats.completed.count}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -468,21 +488,33 @@ const fetchOrders = useCallback(async () => {
                   {getStatusIcon("cancelled")}
                   <div className="ml-3">
                     <div className="text-sm text-gray-600">Cancelled</div>
-                    <div className="text-xl font-bold mt-1">{stats.cancelled.count}</div>
+                    <div className="text-xl font-bold mt-1">
+                      {stats.cancelled.count}
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-lg shadow">
                 <div className="flex items-center">
                   <div className="h-5 w-5 text-blue-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
                       <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-                      <path fillRule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <div className="ml-3">
                     <div className="text-sm text-gray-600">Total Orders</div>
-                    <div className="text-xl font-bold mt-1">{stats.total.orders}</div>
+                    <div className="text-xl font-bold mt-1">
+                      {stats.total.orders}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -494,7 +526,8 @@ const fetchOrders = useCallback(async () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center">
                     <span className="text-blue-800 font-medium">
-                      {selectedOrders.length} order{selectedOrders.length !== 1 ? 's' : ''} selected
+                      {selectedOrders.length} order
+                      {selectedOrders.length !== 1 ? "s" : ""} selected
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -536,12 +569,27 @@ const fetchOrders = useCallback(async () => {
               ) : orders.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-gray-400 mb-4">
-                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    <svg
+                      className="mx-auto h-12 w-12"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-                  <p className="text-gray-500 mb-6">Try adjusting your search or filter to find what you're looking for.</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No orders found
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Try adjusting your search or filter to find what you're
+                    looking for.
+                  </p>
                   <button
                     onClick={clearFilters}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -558,42 +606,45 @@ const fetchOrders = useCallback(async () => {
                           <th className="px-6 py-3 text-left">
                             <input
                               type="checkbox"
-                              checked={selectedOrders.length === orders.length && orders.length > 0}
+                              checked={
+                                selectedOrders.length === orders.length &&
+                                orders.length > 0
+                              }
                               onChange={handleSelectAll}
                               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                             />
                           </th>
-                          <th 
+                          <th
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
-                            onClick={() => handleSortChange('orderId')}
+                            onClick={() => handleSortChange("orderId")}
                           >
                             <div className="flex items-center">
                               Order ID
-                              {sortBy === 'orderId' && ' ↓'}
-                              {sortBy === '-orderId' && ' ↑'}
+                              {sortBy === "orderId" && " ↓"}
+                              {sortBy === "-orderId" && " ↑"}
                             </div>
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Customer
                           </th>
-                          <th 
+                          <th
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
-                            onClick={() => handleSortChange('createdAt')}
+                            onClick={() => handleSortChange("createdAt")}
                           >
                             <div className="flex items-center">
                               Date
-                              {sortBy === 'createdAt' && ' ↓'}
-                              {sortBy === '-createdAt' && ' ↑'}
+                              {sortBy === "createdAt" && " ↓"}
+                              {sortBy === "-createdAt" && " ↑"}
                             </div>
                           </th>
-                          <th 
+                          <th
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
-                            onClick={() => handleSortChange('grandTotal')}
+                            onClick={() => handleSortChange("grandTotal")}
                           >
                             <div className="flex items-center">
                               Amount
-                              {sortBy === 'grandTotal' && ' ↓'}
-                              {sortBy === '-grandTotal' && ' ↑'}
+                              {sortBy === "grandTotal" && " ↓"}
+                              {sortBy === "-grandTotal" && " ↑"}
                             </div>
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -632,7 +683,8 @@ const fetchOrders = useCallback(async () => {
                                 />
                                 <div className="ml-3">
                                   <div className="text-sm font-medium text-gray-900">
-                                    {order.user?.firstName} {order.user?.lastName}
+                                    {order.user?.firstName}{" "}
+                                    {order.user?.lastName}
                                   </div>
                                   <div className="text-sm text-gray-500">
                                     {order.user?.email}
@@ -651,10 +703,11 @@ const fetchOrders = useCallback(async () => {
                                 {getStatusIcon(order.status)}
                                 <span
                                   className={`ml-2 px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                                    order.status
+                                    order.status,
                                   )}`}
                                 >
-                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                  {order.status.charAt(0).toUpperCase() +
+                                    order.status.slice(1)}
                                 </span>
                               </div>
                             </td>
@@ -688,58 +741,76 @@ const fetchOrders = useCallback(async () => {
                       </tbody>
                     </table>
                   </div>
-                  
+
                   {/* Pagination */}
-                {/* Simpler Pagination */}
-{pagination.total > 0 && (
-  <div className="bg-white px-6 py-3 border-t border-gray-200">
-    <div className="flex flex-col md:flex-row md:items-center justify-between">
-      <div className="mb-4 md:mb-0">
-        <p className="text-sm text-gray-700">
-          Showing{" "}
-          <span className="font-medium">
-            {Math.max(1, (pagination.page - 1) * pagination.limit + 1)}
-          </span>{" "}
-          to{" "}
-          <span className="font-medium">
-            {Math.min(
-              pagination.page * pagination.limit,
-              pagination.total
-            )}
-          </span>{" "}
-          of <span className="font-medium">{pagination.total}</span>{" "}
-          results
-        </p>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
-          disabled={pagination.page <= 1}
-          className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronLeftIcon className="h-4 w-4 mr-1" />
-          Previous
-        </button>
-        
-        <div className="flex items-center space-x-1">
-          <span className="text-sm text-gray-500 px-2">
-            Page {pagination.page} of {pagination.totalPages || 1}
-          </span>
-        </div>
-        
-        <button
-          onClick={() => handlePageChange(Math.min(pagination.totalPages || 1, pagination.page + 1))}
-          disabled={pagination.page >= (pagination.totalPages || 1)}
-          className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-          <ChevronRightIcon className="h-4 w-4 ml-1" />
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                  {/* Simpler Pagination */}
+                  {pagination.total > 0 && (
+                    <div className="bg-white px-6 py-3 border-t border-gray-200">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between">
+                        <div className="mb-4 md:mb-0">
+                          <p className="text-sm text-gray-700">
+                            Showing{" "}
+                            <span className="font-medium">
+                              {Math.max(
+                                1,
+                                (pagination.page - 1) * pagination.limit + 1,
+                              )}
+                            </span>{" "}
+                            to{" "}
+                            <span className="font-medium">
+                              {Math.min(
+                                pagination.page * pagination.limit,
+                                pagination.total,
+                              )}
+                            </span>{" "}
+                            of{" "}
+                            <span className="font-medium">
+                              {pagination.total}
+                            </span>{" "}
+                            results
+                          </p>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              handlePageChange(Math.max(1, pagination.page - 1))
+                            }
+                            disabled={pagination.page <= 1}
+                            className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <ChevronLeftIcon className="h-4 w-4 mr-1" />
+                            Previous
+                          </button>
+
+                          <div className="flex items-center space-x-1">
+                            <span className="text-sm text-gray-500 px-2">
+                              Page {pagination.page} of{" "}
+                              {pagination.totalPages || 1}
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              handlePageChange(
+                                Math.min(
+                                  pagination.totalPages || 1,
+                                  pagination.page + 1,
+                                ),
+                              )
+                            }
+                            disabled={
+                              pagination.page >= (pagination.totalPages || 1)
+                            }
+                            className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Next
+                            <ChevronRightIcon className="h-4 w-4 ml-1" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -755,16 +826,24 @@ const fetchOrders = useCallback(async () => {
                     <div key={activity.id} className="flex items-center">
                       <div
                         className={`h-3 w-3 rounded-full ${
-                          activity.action === 'create' ? 'bg-purple-500' :
-                          activity.action === 'update' ? 'bg-blue-500' :
-                          activity.action === 'payment' ? 'bg-green-200' :
-                          activity.action === 'delivered' ? 'bg-green-500' :
-                          'bg-yellow-500'
+                          activity.action === "create"
+                            ? "bg-purple-500"
+                            : activity.action === "update"
+                              ? "bg-blue-500"
+                              : activity.action === "payment"
+                                ? "bg-green-200"
+                                : activity.action === "delivered"
+                                  ? "bg-green-500"
+                                  : "bg-yellow-500"
                         } mr-3`}
                       ></div>
                       <div className="flex-1">
-                        <span className="font-medium text-sm">{activity.orderId}</span>
-                        <span className="text-gray-600 text-sm ml-2">{activity.description}</span>
+                        <span className="font-medium text-sm">
+                          {activity.orderId}
+                        </span>
+                        <span className="text-gray-600 text-sm ml-2">
+                          {activity.description}
+                        </span>
                       </div>
                       <div className="text-xs text-gray-500">
                         {new Date(activity.time).toLocaleDateString()}

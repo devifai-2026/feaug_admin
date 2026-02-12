@@ -1,172 +1,229 @@
-import { useState } from 'react'
-import { 
-  PlusIcon,
+import { useState, useEffect } from "react";
+import {
   ReceiptRefundIcon,
   EyeIcon,
-  PrinterIcon,
   ArrowDownTrayIcon,
   CheckCircleIcon,
   ClockIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline'
-import { Link } from 'react-router-dom'
-import { jsPDF } from 'jspdf'
-import Sidebar from '../Sidebar'
-import Navbar from '../Navbar'
+  XCircleIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import { Link } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import Sidebar from "../Sidebar";
+import Navbar from "../Navbar";
+import invoiceApi from "../../api/invoices.api";
+import orderApi from "../../api/orders.api";
+import moment from "moment";
 
 const Invoices = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [downloading, setDownloading] = useState(null)
-  const [printing, setPrinting] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [downloading, setDownloading] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const invoices = [
-    { 
-      id: 'INV-001', 
-      client: 'Tech Corp Inc.', 
-      clientEmail: 'billing@techcorp.com',
-      clientAddress: '123 Tech Street, San Francisco, CA 94107',
-      date: '2024-01-15', 
-      dueDate: '2024-02-15',
-      amount: '₹1,250.00',
-      tax: '₹112.50',
-      subtotal: '₹1,137.50',
-      status: 'Paid',
-      items: [
-        { description: 'Website Redesign', quantity: 1, price: '₹750.00', total: '₹750.00' },
-        { description: 'Monthly Maintenance', quantity: 2, price: '₹250.00', total: '₹500.00' },
-      ],
-      notes: 'Thank you for your business. Please make payment by the due date.',
-      paymentMethod: 'Credit Card',
-      paymentDate: '2024-01-20'
-    },
-    { 
-      id: 'INV-002', 
-      client: 'Global Retail', 
-      clientEmail: 'accounts@globalretail.com',
-      clientAddress: '456 Retail Ave, New York, NY 10001',
-      date: '2024-01-14', 
-      dueDate: '2024-02-14',
-      amount: '₹890.50',
-      tax: '₹80.14',
-      subtotal: '₹810.36',
-      status: 'Pending',
-      items: [
-        { description: 'E-commerce Setup', quantity: 1, price: '₹500.00', total: '₹500.00' },
-        { description: 'Payment Gateway Integration', quantity: 1, price: '₹390.50', total: '₹390.50' },
-      ],
-      notes: 'Payment due within 30 days.',
-      paymentMethod: 'Bank Transfer',
-      paymentDate: null
-    },
-    { 
-      id: 'INV-003', 
-      client: 'Innovate Solutions', 
-      clientEmail: 'finance@innovatesolutions.com',
-      clientAddress: '789 Innovation Blvd, Austin, TX 73301',
-      date: '2024-01-13', 
-      dueDate: '2024-02-13',
-      amount: '₹2,340.00',
-      tax: '₹210.60',
-      subtotal: '₹2,129.40',
-      status: 'Paid',
-      items: [
-        { description: 'Mobile App Development', quantity: 1, price: '₹1,800.00', total: '₹1,800.00' },
-        { description: 'UI/UX Design', quantity: 1, price: '₹540.00', total: '₹540.00' },
-      ],
-      notes: 'Project completed successfully.',
-      paymentMethod: 'PayPal',
-      paymentDate: '2024-01-18'
-    },
-    { 
-      id: 'INV-004', 
-      client: 'Startup Ventures', 
-      clientEmail: 'accounts@startupventures.com',
-      clientAddress: '101 Startup Lane, Boston, MA 02108',
-      date: '2024-01-12', 
-      dueDate: '2024-01-31',
-      amount: '₹560.75',
-      tax: '₹50.47',
-      subtotal: '₹510.28',
-      status: 'Overdue',
-      items: [
-        { description: 'Consulting Hours', quantity: 5, price: '₹100.00', total: '₹500.00' },
-        { description: 'Report Generation', quantity: 1, price: '₹60.75', total: '₹60.75' },
-      ],
-      notes: 'Please contact us for payment extension.',
-      paymentMethod: 'Check',
-      paymentDate: null
-    },
-    { 
-      id: 'INV-005', 
-      client: 'Enterprise Ltd.', 
-      clientEmail: 'invoices@enterprise.com',
-      clientAddress: '222 Business Park, Chicago, IL 60601',
-      date: '2024-01-11', 
-      dueDate: '2024-02-11',
-      amount: '₹3,780.20',
-      tax: '₹340.22',
-      subtotal: '₹3,439.98',
-      status: 'Paid',
-      items: [
-        { description: 'ERP Implementation', quantity: 1, price: '₹2,500.00', total: '₹2,500.00' },
-        { description: 'Training Sessions', quantity: 4, price: '₹320.05', total: '₹1,280.20' },
-      ],
-      notes: 'Annual maintenance contract included.',
-      paymentMethod: 'Wire Transfer',
-      paymentDate: '2024-01-25'
-    },
-  ]
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [amountFilter, setAmountFilter] = useState("all");
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
+  // Stats
+  const [stats, setStats] = useState({
+    total: 0,
+    paid: 0,
+    pending: 0,
+    overdue: 0,
+  });
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [statusFilter, dateFilter, amountFilter, searchQuery]);
+
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch orders which contain invoice data
+      const params = {};
+      if (statusFilter !== "all") params.paymentStatus = statusFilter;
+      if (searchQuery) params.search = searchQuery;
+
+      const response = await orderApi.getAllOrders(params);
+
+      if (response.status === "success" && response.data) {
+        const ordersData = response.data.orders || [];
+
+        // Transform orders to invoice format
+        const invoicesData = ordersData.map((order) => {
+          const shippingAddr =
+            order.shippingAddress ||
+            (order.addresses &&
+              order.addresses.find((a) => a.type === "shipping"));
+
+          return {
+            id: order.invoiceNumber || order.orderNumber || order._id,
+            orderId: order._id,
+            client:
+              shippingAddr?.fullName ||
+              shippingAddr?.name ||
+              order.user?.fullName ||
+              (order.user?.firstName
+                ? `${order.user.firstName} ${order.user.lastName || ""}`.trim()
+                : null) ||
+              order.user?.name ||
+              "Guest",
+            clientEmail: order.user?.email || shippingAddr?.email || "N/A",
+            clientAddress: shippingAddr
+              ? `${shippingAddr.addressLine1 || shippingAddr.street || ""}, ${shippingAddr.city || ""}, ${shippingAddr.state || ""} ${shippingAddr.pincode || shippingAddr.zipCode || ""}`
+                  .trim()
+                  .replace(/^, /, "")
+              : "N/A",
+            date: order.createdAt,
+            dueDate:
+              order.dueDate ||
+              new Date(
+                new Date(order.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            amount: `₹${order.grandTotal || order.totalAmount || 0}`,
+            tax: `₹${order.tax || order.taxAmount || 0}`,
+            subtotal: `₹${order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)}`,
+            status:
+              order.paymentStatus === "paid"
+                ? "Paid"
+                : order.paymentStatus === "pending"
+                  ? "Pending"
+                  : "Overdue",
+            items: order.items || [],
+            notes: order.notes || "",
+            paymentMethod: order.paymentMethod || "N/A",
+            paymentDate: order.paymentDate || null,
+          };
+        });
+
+        // Apply client-side filters
+        let filtered = invoicesData;
+
+        if (dateFilter !== "all") {
+          const now = new Date();
+          filtered = filtered.filter((inv) => {
+            const invDate = new Date(inv.date);
+            switch (dateFilter) {
+              case "thismonth":
+                return (
+                  invDate.getMonth() === now.getMonth() &&
+                  invDate.getFullYear() === now.getFullYear()
+                );
+              case "3months":
+                return now - invDate <= 90 * 24 * 60 * 60 * 1000;
+              case "6months":
+                return now - invDate <= 180 * 24 * 60 * 60 * 1000;
+              case "12months":
+                return now - invDate <= 365 * 24 * 60 * 60 * 1000;
+              default:
+                return true;
+            }
+          });
+        }
+
+        if (amountFilter !== "all") {
+          filtered = filtered.filter((inv) => {
+            const amount = parseFloat(inv.amount.replace(/[^0-9.-]+/g, ""));
+            switch (amountFilter) {
+              case "under1000":
+                return amount < 1000;
+              case "1000to5000":
+                return amount >= 1000 && amount < 5000;
+              case "over5000":
+                return amount >= 5000;
+              default:
+                return true;
+            }
+          });
+        }
+
+        setInvoices(filtered);
+
+        // Calculate stats
+        setStats({
+          total: invoicesData.length,
+          paid: invoicesData.filter((inv) => inv.status === "Paid").length,
+          pending: invoicesData.filter((inv) => inv.status === "Pending")
+            .length,
+          overdue: invoicesData.filter((inv) => inv.status === "Overdue")
+            .length,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching invoices:", err);
+      setError("Failed to load invoices. Please try again.");
+      setInvoices([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const closeSidebar = () => setSidebarOpen(false);
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Paid': return <CheckCircleIcon className="h-5 w-5 text-green-500" />
-      case 'Pending': return <ClockIcon className="h-5 w-5 text-yellow-500" />
-      case 'Overdue': return <XCircleIcon className="h-5 w-5 text-red-500" />
-      default: return <ClockIcon className="h-5 w-5 text-gray-500" />
+      case "Paid":
+        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
+      case "Pending":
+        return <ClockIcon className="h-5 w-5 text-yellow-500" />;
+      case "Overdue":
+        return <XCircleIcon className="h-5 w-5 text-red-500" />;
+      default:
+        return <ClockIcon className="h-5 w-5 text-gray-500" />;
     }
-  }
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Paid': return 'bg-green-100 text-green-800'
-      case 'Pending': return 'bg-yellow-100 text-yellow-800'
-      case 'Overdue': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case "Paid":
+        return "bg-green-100 text-green-800";
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "Overdue":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
-  }
+  };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
-  }
+  };
 
   const downloadPDF = async (invoice) => {
     setDownloading(invoice.id);
-    
+
     try {
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
+      const pdf = new jsPDF("p", "mm", "a4");
+
       // Set metadata
       pdf.setProperties({
         title: `${invoice.id} - ${invoice.client}`,
-        subject: 'Invoice',
-        author: 'Invoice Management System',
-        keywords: 'invoice, billing, payment'
+        subject: "Invoice",
+        author: "Invoice Management System",
+        keywords: "invoice, billing, payment",
       });
 
       // Company header with styling
       pdf.setFontSize(24);
       pdf.setTextColor(59, 130, 246);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('INVOICE', 105, 25, null, null, 'center');
+      pdf.setFont("helvetica", "bold");
+      pdf.text("INVOICE", 105, 25, null, null, "center");
 
       // Add decorative line
       pdf.setDrawColor(59, 130, 246);
@@ -176,31 +233,31 @@ const Invoices = () => {
       // Company info box
       pdf.setFontSize(11);
       pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('From:', 20, 40);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Your Company Name', 20, 45);
-      pdf.text('123 Business Street', 20, 50);
-      pdf.text('City, State 12345', 20, 55);
-      pdf.text('contact@yourcompany.com', 20, 60);
-      pdf.text('(123) 456-7890', 20, 65);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("From:", 20, 40);
+      pdf.setFont("helvetica", "normal");
+      pdf.text("Your Company Name", 20, 45);
+      pdf.text("123 Business Street", 20, 50);
+      pdf.text("City, State 12345", 20, 55);
+      pdf.text("contact@yourcompany.com", 20, 60);
+      pdf.text("(123) 456-7890", 20, 65);
 
       // Invoice details box
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Invoice Details:', 150, 40);
-      pdf.setFont('helvetica', 'normal');
-      
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Invoice Details:", 150, 40);
+      pdf.setFont("helvetica", "normal");
+
       pdf.text(`Invoice #: ${invoice.id}`, 150, 45);
       pdf.text(`Date: ${formatDate(invoice.date)}`, 150, 50);
-      pdf.text(`Due Date: ${formatDate(invoice.dueDate)}`, 150, 55);
+      pdf.text(`Due In: ${formatDate(invoice.dueDate)}`, 150, 55);
       pdf.text(`Status: ${invoice.status}`, 150, 60);
 
       // Client info
       pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Bill To:', 20, 80);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Bill To:", 20, 80);
       pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFont("helvetica", "normal");
       pdf.text(invoice.client, 20, 85);
       pdf.text(invoice.clientAddress, 20, 90);
       pdf.text(invoice.clientEmail, 20, 95);
@@ -209,20 +266,34 @@ const Invoices = () => {
       pdf.setFontSize(12);
       pdf.setTextColor(255, 255, 255);
       pdf.setFillColor(59, 130, 246);
-      pdf.rect(20, 110, 170, 10, 'F');
-      pdf.text('Description', 25, 117);
-      pdf.text('Quantity', 110, 117);
-      pdf.text('Price', 140, 117);
-      pdf.text('Total', 170, 117);
+      pdf.rect(20, 110, 170, 10, "F");
+      pdf.text("Description", 25, 117);
+      pdf.text("Quantity", 110, 117);
+      pdf.text("Price", 140, 117);
+      pdf.text("Total", 170, 117);
 
       // Items
       pdf.setTextColor(0, 0, 0);
       let yPos = 125;
       invoice.items.forEach((item, index) => {
-        pdf.text(item.description, 25, yPos);
+        const description =
+          item.productName ||
+          item.description ||
+          item.product?.name ||
+          "Product";
+        const price =
+          typeof item.price === "number"
+            ? `₹${item.price.toLocaleString()}`
+            : item.price || "₹0";
+        const total =
+          typeof item.total === "number"
+            ? `₹${item.total.toLocaleString()}`
+            : item.total || price;
+
+        pdf.text(description, 25, yPos);
         pdf.text(item.quantity.toString(), 110, yPos);
-        pdf.text(item.price, 140, yPos);
-        pdf.text(item.total, 170, yPos);
+        pdf.text(price, 140, yPos);
+        pdf.text(total, 170, yPos);
         yPos += 8;
       });
 
@@ -231,34 +302,34 @@ const Invoices = () => {
       pdf.setDrawColor(200, 200, 200);
       pdf.line(140, yPos, 190, yPos);
       yPos += 5;
-      
+
       pdf.setFontSize(12);
-      pdf.text('Subtotal:', 140, yPos);
+      pdf.text("Subtotal:", 140, yPos);
       pdf.text(invoice.subtotal, 170, yPos);
-      
+
       yPos += 8;
-      pdf.text('Tax (10%):', 140, yPos);
+      pdf.text("Tax (10%):", 140, yPos);
       pdf.text(invoice.tax, 170, yPos);
-      
+
       yPos += 8;
       pdf.setDrawColor(200, 200, 200);
       pdf.line(140, yPos, 190, yPos);
       yPos += 10;
-      
+
       pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
+      pdf.setFont("helvetica", "bold");
       pdf.setTextColor(59, 130, 246);
-      pdf.text('Total Amount:', 140, yPos);
+      pdf.text("Total Amount:", 140, yPos);
       pdf.text(invoice.amount, 170, yPos);
 
       // Notes section
       yPos += 20;
       pdf.setFontSize(11);
       pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Notes:', 20, yPos);
-      pdf.setFont('helvetica', 'normal');
-      
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Notes:", 20, yPos);
+      pdf.setFont("helvetica", "normal");
+
       // Split notes into multiple lines if too long
       const notesLines = pdf.splitTextToSize(invoice.notes, 170);
       pdf.text(notesLines, 20, yPos + 5);
@@ -267,32 +338,49 @@ const Invoices = () => {
       yPos = 280;
       pdf.setFontSize(8);
       pdf.setTextColor(128, 128, 128);
-      pdf.text('Thank you for your business!', 105, yPos, null, null, 'center');
-      pdf.text(`Generated on: ${new Date().toLocaleString()}`, 105, yPos + 5, null, null, 'center');
-      pdf.text('Invoice Management System • Professional Invoice', 105, yPos + 10, null, null, 'center');
+      pdf.text("Thank you for your business!", 105, yPos, null, null, "center");
+      pdf.text(
+        `Generated on: ${new Date().toLocaleString()}`,
+        105,
+        yPos + 5,
+        null,
+        null,
+        "center",
+      );
+      pdf.text(
+        "Invoice Management System • Professional Invoice",
+        105,
+        yPos + 10,
+        null,
+        null,
+        "center",
+      );
 
       // Save PDF
-      pdf.save(`Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, '_')}.pdf`);
+      pdf.save(
+        `Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, "_")}.pdf`,
+      );
 
       // Show success message
-      alert(`PDF downloaded: Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, '_')}.pdf`);
-      
+      alert(
+        `PDF downloaded: Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, "_")}.pdf`,
+      );
     } catch (error) {
-      console.error('PDF generation error:', error);
-      alert('Error generating PDF. Please try again.');
+      console.error("PDF generation error:", error);
+      alert("Error generating PDF. Please try again.");
     } finally {
       setDownloading(null);
     }
-  }
+  };
 
   const printInvoice = (invoice) => {
     setPrinting(invoice.id);
-    
+
     try {
       // Create a print-friendly version
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open("", "_blank");
       if (!printWindow) {
-        alert('Please allow pop-ups to print invoice');
+        alert("Please allow pop-ups to print invoice");
         setPrinting(null);
         return;
       }
@@ -467,7 +555,7 @@ const Invoices = () => {
               <div class="section-title">Invoice Details</div>
               <p><strong>Invoice #:</strong> ${invoice.id}</p>
               <p><strong>Date:</strong> ${formatDate(invoice.date)}</p>
-              <p><strong>Due Date:</strong> ${formatDate(invoice.dueDate)}</p>
+              <p><strong>Due In:</strong> ${formatDate(invoice.dueDate)}</p>
               <p><strong>Status:</strong> ${invoice.status} 
                 <span class="status-badge status-${invoice.status.toLowerCase()}">${invoice.status}</span>
               </p>
@@ -475,8 +563,8 @@ const Invoices = () => {
             
             <div>
               <div class="section-title">Payment Information</div>
-              <p><strong>Payment Method:</strong> ${invoice.paymentMethod || 'N/A'}</p>
-              <p><strong>Payment Date:</strong> ${invoice.paymentDate ? formatDate(invoice.paymentDate) : 'Pending'}</p>
+              <p><strong>Payment Method:</strong> ${invoice.paymentMethod || "N/A"}</p>
+              <p><strong>Payment Date:</strong> ${invoice.paymentDate ? formatDate(invoice.paymentDate) : "Pending"}</p>
             </div>
           </div>
           
@@ -491,14 +579,31 @@ const Invoices = () => {
               </tr>
             </thead>
             <tbody>
-              ${invoice.items.map(item => `
+              ${invoice.items
+                .map((item) => {
+                  const description =
+                    item.productName ||
+                    item.description ||
+                    item.product?.name ||
+                    "Product";
+                  const price =
+                    typeof item.price === "number"
+                      ? `₹${item.price.toLocaleString()}`
+                      : item.price || "₹0";
+                  const total =
+                    typeof item.total === "number"
+                      ? `₹${item.total.toLocaleString()}`
+                      : item.total || price;
+                  return `
                 <tr>
-                  <td>${item.description}</td>
+                  <td>${description}</td>
                   <td>${item.quantity}</td>
-                  <td>${item.price}</td>
-                  <td><strong>${item.total}</strong></td>
+                  <td>${price}</td>
+                  <td><strong>${total}</strong></td>
                 </tr>
-              `).join('')}
+              `;
+                })
+                .join("")}
             </tbody>
           </table>
           
@@ -541,36 +646,84 @@ const Invoices = () => {
       `);
 
       printWindow.document.close();
-      
     } catch (error) {
-      console.error('Print error:', error);
-      alert('Error printing invoice. Please try again.');
+      console.error("Print error:", error);
+      alert("Error printing invoice. Please try again.");
     } finally {
       setPrinting(null);
     }
-  }
+  };
 
   return (
     <div className="flex h-screen">
-      <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
-      
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        toggleSidebar={toggleSidebar}
+        closeSidebar={closeSidebar}
+      />
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        
-        <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
+
+        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
           <div className="mx-auto max-w-7xl">
             {/* Header */}
             <div className="mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-                  <p className="text-gray-600">Manage and track your invoices</p>
+                  <p className="text-gray-600">
+                    Manage and track your invoices
+                  </p>
                 </div>
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Create Invoice
-                </button>
               </div>
+            </div>
+
+            {/* Filters */}
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-1">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search invoices..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+                <option value="overdue">Overdue</option>
+              </select>
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Time</option>
+                <option value="thismonth">This Month</option>
+                <option value="3months">Last 3 Months</option>
+                <option value="6months">Last 6 Months</option>
+                <option value="12months">Last 12 Months</option>
+              </select>
+              <select
+                value={amountFilter}
+                onChange={(e) => setAmountFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Amounts</option>
+                <option value="under1000">Under ₹1,000</option>
+                <option value="1000to5000">₹1,000 - ₹5,000</option>
+                <option value="over5000">Over ₹5,000</option>
+              </select>
             </div>
 
             {/* Stats */}
@@ -580,7 +733,7 @@ const Invoices = () => {
                   <ReceiptRefundIcon className="h-8 w-8 text-blue-500 mr-4" />
                   <div>
                     <div className="text-sm text-gray-600">Total Invoices</div>
-                    <div className="text-2xl font-bold mt-1">48</div>
+                    <div className="text-2xl font-bold mt-1">{stats.total}</div>
                   </div>
                 </div>
               </div>
@@ -589,7 +742,7 @@ const Invoices = () => {
                   <CheckCircleIcon className="h-8 w-8 text-green-500 mr-4" />
                   <div>
                     <div className="text-sm text-gray-600">Paid</div>
-                    <div className="text-2xl font-bold mt-1">32</div>
+                    <div className="text-2xl font-bold mt-1">{stats.paid}</div>
                   </div>
                 </div>
               </div>
@@ -598,7 +751,9 @@ const Invoices = () => {
                   <ClockIcon className="h-8 w-8 text-yellow-500 mr-4" />
                   <div>
                     <div className="text-sm text-gray-600">Pending</div>
-                    <div className="text-2xl font-bold mt-1">12</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.pending}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -607,7 +762,9 @@ const Invoices = () => {
                   <XCircleIcon className="h-8 w-8 text-red-500 mr-4" />
                   <div>
                     <div className="text-sm text-gray-600">Overdue</div>
-                    <div className="text-2xl font-bold mt-1">4</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.overdue}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -619,37 +776,57 @@ const Invoices = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invoice ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Due In
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {invoices.map((invoice) => (
                       <tr key={invoice.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{invoice.id}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {invoice.id}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{invoice.client}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {invoice.client}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {invoice.date}
+                          {moment(invoice.date).format("DD-MM-YYYY")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {invoice.amount}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {invoice.dueDate}
+                          {moment(invoice.dueDate).format("DD-MM-YYYY")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             {getStatusIcon(invoice.status)}
-                            <span className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}>
+                            <span
+                              className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}
+                            >
                               {invoice.status}
                             </span>
                           </div>
@@ -664,28 +841,12 @@ const Invoices = () => {
                               <EyeIcon className="h-5 w-5" />
                             </Link>
                             <button
-                              onClick={() => printInvoice(invoice)}
-                              disabled={printing === invoice.id}
-                              className={`p-1 rounded transition-all duration-200 ${
-                                printing === invoice.id 
-                                  ? 'text-gray-400 cursor-not-allowed' 
-                                  : 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                              }`}
-                              title="Print Invoice"
-                            >
-                              {printing === invoice.id ? (
-                                <div className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></div>
-                              ) : (
-                                <PrinterIcon className="h-5 w-5" />
-                              )}
-                            </button>
-                            <button
                               onClick={() => downloadPDF(invoice)}
                               disabled={downloading === invoice.id}
                               className={`p-1 rounded transition-all duration-200 ${
-                                downloading === invoice.id 
-                                  ? 'text-gray-400 cursor-not-allowed' 
-                                  : 'text-purple-600 hover:text-purple-800 hover:bg-purple-50'
+                                downloading === invoice.id
+                                  ? "text-gray-400 cursor-not-allowed"
+                                  : "text-purple-600 hover:text-purple-800 hover:bg-purple-50"
                               }`}
                               title="Download PDF"
                             >
@@ -703,33 +864,11 @@ const Invoices = () => {
                 </table>
               </div>
             </div>
-
-            {/* Recent Activity */}
-            <div className="mt-8 bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Invoice Activity</h2>
-              <div className="space-y-4">
-                {[
-                  { invoice: '#INV-001', action: 'Payment received', time: '2 hours ago', color: 'bg-green-500' },
-                  { invoice: '#INV-002', action: 'Invoice sent', time: '5 hours ago', color: 'bg-blue-500' },
-                  { invoice: '#INV-004', action: 'Reminder sent', time: '1 day ago', color: 'bg-red-500' },
-                  { invoice: '#INV-003', action: 'Invoice generated', time: '2 days ago', color: 'bg-purple-500' },
-                ].map((activity, idx) => (
-                  <div key={idx} className="flex items-center">
-                    <div className={`h-3 w-3 rounded-full ${activity.color} mr-3`}></div>
-                    <div className="flex-1">
-                      <span className="font-medium">{activity.invoice}</span>
-                      <span className="text-gray-600 ml-2">{activity.action}</span>
-                    </div>
-                    <div className="text-sm text-gray-500">{activity.time}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </main>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Invoices
+export default Invoices;

@@ -1,7 +1,7 @@
-import { 
-  HomeIcon, 
-  ChartBarIcon, 
-  UsersIcon, 
+import {
+  HomeIcon,
+  ChartBarIcon,
+  UsersIcon,
   ShoppingCartIcon,
   CogIcon,
   DocumentTextIcon,
@@ -13,40 +13,46 @@ import {
   ChevronRightIcon,
   TagIcon, // For Category
   ReceiptPercentIcon, // For Invoices
-} from '@heroicons/react/24/outline'
-import { NavLink } from 'react-router-dom'
+  PhotoIcon, // For Banners
+  TicketIcon, // For Promo Codes
+} from "@heroicons/react/24/outline";
+import { NavLink } from "react-router-dom";
 
 const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
   const navigation = [
-    { name: 'Dashboard', icon: HomeIcon, to: '/' },
-    { name: 'Products', icon: ShoppingCartIcon, to: '/products' },
-    { name: 'Category', icon: TagIcon, to: '/categories' },
-    { name: 'Orders', icon: CreditCardIcon, to: '/orders' },
-    { name: 'Invoices', icon: ReceiptPercentIcon, to: '/invoices' },
-    { name: 'Users', icon: UsersIcon, to: '/users' },
+    { name: "Dashboard", icon: HomeIcon, to: "/" },
+    { name: "Products", icon: ShoppingCartIcon, to: "/products" },
+    { name: "Category", icon: TagIcon, to: "/categories" },
+    { name: "Orders", icon: CreditCardIcon, to: "/orders" },
+    { name: "Invoices", icon: ReceiptPercentIcon, to: "/invoices" },
+    { name: "Banners", icon: PhotoIcon, to: "/banners" },
+    { name: "Promo Codes", icon: TicketIcon, to: "/promo-codes" },
 
-  ]
+    { name: "Users", icon: UsersIcon, to: "/users" },
+  ];
 
   const handleToggle = () => {
     if (toggleSidebar) {
-      toggleSidebar()
+      toggleSidebar();
     }
-  }
+  };
 
   return (
     <>
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-20 bg-gray-900/50 lg:hidden"
           onClick={closeSidebar}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg transition-all duration-300 ease-in-out lg:relative lg:inset-0 ${
-        sidebarOpen ? 'w-64' : 'w-20'
-      } ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 bg-white shadow-lg transition-all duration-300 ease-in-out lg:relative lg:inset-0 ${
+          sidebarOpen ? "w-64" : "w-20"
+        } ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      >
         <div className="flex h-full flex-col">
           {/* Logo section */}
           <div className="flex h-16 items-center justify-between border-b px-4">
@@ -55,14 +61,13 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
                 <span className="text-white font-bold">A</span>
               </div>
               {sidebarOpen && (
-                <span className="ml-3 text-xl font-bold whitespace-nowrap">AdminPanel</span>
+                <span className="ml-3 text-xl font-bold whitespace-nowrap">
+                  AdminPanel
+                </span>
               )}
             </div>
             {sidebarOpen ? (
-              <button
-                onClick={closeSidebar}
-                className="lg:hidden"
-              >
+              <button onClick={closeSidebar} className="lg:hidden">
                 <XMarkIcon className="h-6 w-6 text-gray-500" />
               </button>
             ) : null}
@@ -86,22 +91,26 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
               <NavLink
                 key={item.name}
                 to={item.to}
-                className={({ isActive }) => `flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors group relative ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-                title={!sidebarOpen ? item.name : ''}
+                className={({ isActive }) =>
+                  `flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors group relative ${
+                    isActive
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`
+                }
+                title={!sidebarOpen ? item.name : ""}
               >
                 {({ isActive }) => (
                   <>
-                    <item.icon className={`h-5 w-5 shrink-0 ${
-                      isActive ? 'text-blue-600' : 'text-gray-400'
-                    } ${sidebarOpen ? 'mr-3' : 'mx-auto'}`} />
+                    <item.icon
+                      className={`h-5 w-5 shrink-0 ${
+                        isActive ? "text-blue-600" : "text-gray-400"
+                      } ${sidebarOpen ? "mr-3" : "mx-auto"}`}
+                    />
                     {sidebarOpen && (
                       <span className="whitespace-nowrap">{item.name}</span>
                     )}
-                    
+
                     {/* Tooltip for collapsed sidebar */}
                     {!sidebarOpen && (
                       <span className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
@@ -113,12 +122,10 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
               </NavLink>
             ))}
           </nav>
-
-        
         </div>
       </aside>
     </>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

@@ -3,13 +3,13 @@ import axiosInstance from './axiosConfig';
 
 const dashboardApi = {
   // Get dashboard statistics
-  getDashboardStats: () =>
-    axiosInstance.get('/admin/dashboard/stats')
+  getDashboardStats: (period = 'monthly') =>
+    axiosInstance.get(`/admin/dashboard/stats?targetPeriod=${period}`)
       .then(response => response.data),
 
   // Get monthly target details
-  getMonthlyTarget: () =>
-    axiosInstance.get('/admin/dashboard/monthly-target')
+  getMonthlyTarget: (period = 'monthly') =>
+    axiosInstance.get(`/admin/dashboard/monthly-target?period=${period}`)
       .then(response => response.data),
 
   // Get revenue overview
