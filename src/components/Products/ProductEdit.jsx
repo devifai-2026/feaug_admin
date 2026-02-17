@@ -18,6 +18,7 @@ import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import productApi from "../../api/product.api";
 import categoryApi from "../../api/categories.api";
+import s3Api from "../../api/s3.api";
 import ReactQuill from "react-quill-new";
 import "quill/dist/quill.snow.css";
 
@@ -271,17 +272,29 @@ const ProductEdit = () => {
 
     setUploading(true);
     try {
-      const formData = new FormData();
       for (let i = 0; i < files.length; i++) {
-        formData.append("images", files[i]);
-      }
+        const file = files[i];
 
-      const response = await productApi.uploadProductImages(id, formData);
-      if (response && response.data && response.data.images) {
-        const newUrls = response.data.images.map((img) => img.url);
-        setImageUrls((prev) => [...prev, ...newUrls]);
-        alert("Images uploaded successfully!");
+        // Get presigned URL
+        const presignedResponse = await s3Api.getPresignedUrl(
+          file.name,
+          file.type,
+          "products",
+        );
+
+        // Upload to S3
+        await fetch(presignedResponse.uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": file.type,
+          },
+        });
+
+        const uploadedUrl = presignedResponse.fileUrl;
+        setImageUrls((prev) => [...prev, uploadedUrl]);
       }
+      alert("Images uploaded successfully! Don't forget to save changes.");
     } catch (error) {
       console.error("Error uploading images:", error);
       alert(error.message || "Error uploading images");
@@ -394,7 +407,7 @@ const ProductEdit = () => {
         console.error("Error deleting product:", error);
         alert(
           error.response?.data?.message ||
-            "Error deleting product. Please try again.",
+          "Error deleting product. Please try again.",
         );
       }
     }

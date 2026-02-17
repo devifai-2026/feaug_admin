@@ -150,7 +150,7 @@ const Products = () => {
         console.error("Error deleting product:", err);
         alert(
           err.response?.data?.message ||
-            "Failed to delete product. Please try again.",
+          "Failed to delete product. Please try again.",
         );
       }
     }
@@ -227,7 +227,7 @@ const Products = () => {
             </div>
 
             {/* Search and Filters */}
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
               <div className="md:col-span-2">
                 <div className="relative">
                   <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -373,11 +373,10 @@ const Products = () => {
                           products.map((product) => (
                             <tr
                               key={product.id}
-                              className={`hover:bg-gray-50 ${
-                                product.isDummy
+                              className={`hover:bg-gray-50 ${product.isDummy
                                   ? "border-l-4 border-blue-500"
                                   : ""
-                              }`}
+                                }`}
                             >
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center">
@@ -418,13 +417,12 @@ const Products = () => {
                                 <div className="flex items-center">
                                   <div className="w-24 bg-gray-200 rounded-full h-2">
                                     <div
-                                      className={`h-2 rounded-full ${
-                                        product.stock > 50
+                                      className={`h-2 rounded-full ${product.stock > 50
                                           ? "bg-green-500"
                                           : product.stock > 20
                                             ? "bg-yellow-500"
                                             : "bg-red-500"
-                                      }`}
+                                        }`}
                                       style={{
                                         width: `${Math.min(product.stock, 100)}%`,
                                       }}
@@ -437,13 +435,12 @@ const Products = () => {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span
-                                  className={`px-3 py-1 text-xs rounded-full ${
-                                    product.status === "In Stock"
+                                  className={`px-3 py-1 text-xs rounded-full ${product.status === "In Stock"
                                       ? "bg-green-100 text-green-800"
                                       : product.status === "Low Stock"
                                         ? "bg-yellow-100 text-yellow-800"
                                         : "bg-red-100 text-red-800"
-                                  }`}
+                                    }`}
                                 >
                                   {product.status}
                                 </span>
@@ -459,11 +456,10 @@ const Products = () => {
                                   </Link>
                                   <Link
                                     to={`/products/edit/${product.id}`}
-                                    className={`p-1 ${
-                                      product.isDummy
+                                    className={`p-1 ${product.isDummy
                                         ? "text-gray-400 cursor-not-allowed pointer-events-none"
                                         : "text-green-600 hover:text-green-800"
-                                    }`}
+                                      }`}
                                     title={
                                       product.isDummy
                                         ? "Cannot edit demo products"
@@ -473,11 +469,10 @@ const Products = () => {
                                     <PencilIcon className="h-5 w-5" />
                                   </Link>
                                   <button
-                                    className={`p-1 ${
-                                      product.isDummy
+                                    className={`p-1 ${product.isDummy
                                         ? "text-gray-400 cursor-not-allowed"
                                         : "text-red-600 hover:text-red-800"
-                                    }`}
+                                      }`}
                                     title={
                                       product.isDummy
                                         ? "Cannot delete demo products"
@@ -526,11 +521,10 @@ const Products = () => {
                         <button
                           key={i + 1}
                           onClick={() => handlePageChange(i + 1)}
-                          className={`px-3 py-1 rounded-lg ${
-                            pagination.page === i + 1
+                          className={`px-3 py-1 rounded-lg ${pagination.page === i + 1
                               ? "bg-blue-600 text-white"
                               : "border border-gray-300 hover:bg-gray-50"
-                          }`}
+                            }`}
                         >
                           {i + 1}
                         </button>

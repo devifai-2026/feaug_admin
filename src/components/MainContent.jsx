@@ -63,14 +63,15 @@ const MainContent = ({ sidebarOpen }) => {
       }
     } catch (err) {
       console.error("Error fetching user growth data:", err);
-      // Set default data if API fails
-      if (dashboardData) {
-        setDashboardData((prev) => ({
-          ...prev,
-          userGrowthProgress: getDefaultUserGrowthData(),
-        }));
-      }
-    }
+      // Set empty data if API fails to avoid static dummy data
+      setDashboardData((prev) => ({
+        ...prev,
+        userGrowthProgress: {
+          labels: [],
+          datasets: []
+        },
+      }));
+    };
   };
 
   // Default fallback data
@@ -756,10 +757,10 @@ const MainContent = ({ sidebarOpen }) => {
                               "Last Week"}
                             {userGrowthProgress.summary.mostRecentWeek
                               .newUsers > 0 && (
-                              <span className="ml-2 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
-                                Active
-                              </span>
-                            )}
+                                <span className="ml-2 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+                                  Active
+                                </span>
+                              )}
                           </p>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
@@ -794,20 +795,20 @@ const MainContent = ({ sidebarOpen }) => {
                         </div>
                         {userGrowthProgress.summary.mostRecentWeek.conversion >
                           0 && (
-                          <div className="pt-3 border-t border-gray-100">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">
-                                Week Conversion
-                              </span>
-                              <span className="text-sm font-semibold text-emerald-600">
-                                {userGrowthProgress.summary.mostRecentWeek.conversion.toFixed(
-                                  2,
-                                )}
-                                %
-                              </span>
+                            <div className="pt-3 border-t border-gray-100">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">
+                                  Week Conversion
+                                </span>
+                                <span className="text-sm font-semibold text-emerald-600">
+                                  {userGrowthProgress.summary.mostRecentWeek.conversion.toFixed(
+                                    2,
+                                  )}
+                                  %
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     ) : (
                       <div className="text-center py-8">
@@ -916,9 +917,9 @@ const MainContent = ({ sidebarOpen }) => {
                         <p className="text-xl font-bold text-gray-900">
                           {userGrowthProgress.summary.totalNewUsers > 0
                             ? (
-                                userGrowthProgress.summary.totalOrders /
-                                userGrowthProgress.summary.totalNewUsers
-                              ).toFixed(2)
+                              userGrowthProgress.summary.totalOrders /
+                              userGrowthProgress.summary.totalNewUsers
+                            ).toFixed(2)
                             : 0}
                         </p>
                       </div>
@@ -1096,10 +1097,10 @@ const MainContent = ({ sidebarOpen }) => {
                       <div className="text-lg font-semibold text-gray-900">
                         {userGrowthProgress.summary.avgWeeklyVisitors > 0
                           ? (
-                              (userGrowthProgress.summary.avgWeeklyUsers /
-                                userGrowthProgress.summary.avgWeeklyVisitors) *
-                              100
-                            ).toFixed(1)
+                            (userGrowthProgress.summary.avgWeeklyUsers /
+                              userGrowthProgress.summary.avgWeeklyVisitors) *
+                            100
+                          ).toFixed(1)
                           : 0}
                         %
                       </div>
