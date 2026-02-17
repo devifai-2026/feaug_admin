@@ -834,7 +834,7 @@ const Invoices = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <Link
-                              to={`/invoices/view/${invoice.id}`}
+                              to={`/invoices/view/${invoice.orderId}`}
                               className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-all duration-200"
                               title="View Invoice Details"
                             >
