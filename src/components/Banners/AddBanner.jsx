@@ -9,8 +9,7 @@ import {
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useRef } from "react";
-import Sidebar from "../Sidebar";
-import Navbar from "../Navbar";
+
 import bannerApi from "../../api/banners.api";
 import s3Api from "../../api/s3.api";
 import { useToast } from "../../context/ToastContext";
@@ -112,7 +111,7 @@ const PLACEMENT_OPTIONS = [
 
 const AddBanner = () => {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -151,8 +150,7 @@ const AddBanner = () => {
 
   const currentPlacement = PLACEMENT_OPTIONS.find((p) => p.value === placement);
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-  const closeSidebar = () => setSidebarOpen(false);
+
 
   const handlePlacementChange = (e) => {
     const newPlacement = e.target.value;
@@ -338,520 +336,506 @@ const AddBanner = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
-        closeSidebar={closeSidebar}
-      />
+    <div>
+      <div className="mx-auto max-w-4xl">
+        {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={() => navigate("/banners")}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeftIcon className="h-5 w-5 mr-2" />
+            Back to Banners
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Add New Banner
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Create a new banner for your website
+          </p>
+        </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-
-        <main
-          className={`flex-1 overflow-y-auto p-4 md:p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"}`}
-        >
-          <div className="mx-auto max-w-4xl">
-            {/* Header */}
-            <div className="mb-6">
-              <button
-                onClick={() => navigate("/banners")}
-                className="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Step 1: Placement */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Where should this banner appear?
+            </h2>
+            <div>
+              <select
+                value={placement}
+                onChange={handlePlacementChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
               >
-                <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                Back to Banners
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Add New Banner
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Create a new banner for your website
-              </p>
+                {PLACEMENT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {currentPlacement && (
+                <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
+                  <InformationCircleIcon className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-blue-700">
+                    {currentPlacement.description}
+                  </p>
+                </div>
+              )}
             </div>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Step 1: Placement */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Where should this banner appear?
-                </h2>
+          {/* Step 2: Content */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Banner Content
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.title ? "border-red-500" : "border-gray-300"}`}
+                  placeholder="Enter banner title"
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.title}
+                  </p>
+                )}
+              </div>
+
+              {currentPlacement?.showSubheader && (
                 <div>
-                  <select
-                    value={placement}
-                    onChange={handlePlacementChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
-                  >
-                    {PLACEMENT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  {currentPlacement && (
-                    <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
-                      <InformationCircleIcon className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-blue-700">
-                        {currentPlacement.description}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Step 2: Content */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Banner Content
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title *
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.title ? "border-red-500" : "border-gray-300"}`}
-                      placeholder="Enter banner title"
-                    />
-                    {errors.title && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.title}
-                      </p>
-                    )}
-                  </div>
-
-                  {currentPlacement?.showSubheader && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Subtitle
-                      </label>
-                      <input
-                        type="text"
-                        name="subheader"
-                        value={formData.subheader}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter subtitle (optional)"
-                      />
-                    </div>
-                  )}
-
-                  {currentPlacement?.showBody && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        name="body"
-                        value={formData.body}
-                        onChange={handleInputChange}
-                        rows="3"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter description (optional)"
-                      ></textarea>
-                    </div>
-                  )}
-
-                  {currentPlacement?.showButtonText && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Button Text
-                      </label>
-                      <input
-                        type="text"
-                        name="buttonText"
-                        value={formData.buttonText}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., Shop Now"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Step 3: Images */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                  <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                    <PhotoIcon className="h-5 w-5 mr-2 text-blue-600" />
-                    Images
-                  </h2>
-                  {placement === "homepage_carousel" && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      Each image becomes a carousel slide. Add title, subtitle & description per slide.
-                    </p>
-                  )}
-                </div>
-                <div className="p-6 space-y-6">
-                  {/* Image URL Input */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Add Image via URL
-                    </label>
-                    <div className="flex gap-4">
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
-                          value={newImageUrl}
-                          onChange={(e) => setNewImageUrl(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
-                          placeholder="Paste banner image URL here..."
-                        />
-                        <PhotoIcon className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleAddImageUrl}
-                        className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
-                      >
-                        Add URL
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* File Upload UI */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Upload Images
-                    </label>
-                    <div className="p-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 flex flex-col items-center justify-center transition-colors hover:bg-gray-50 hover:border-blue-300">
-                      <div className="p-3 bg-white rounded-full shadow-sm mb-4">
-                        <ArrowUpTrayIcon className="h-6 w-6 text-blue-500" />
-                      </div>
-                      <div className="text-center">
-                        <label className="relative cursor-pointer group">
-                          <span className="text-blue-600 font-bold group-hover:text-blue-700 transition-colors underline">
-                            Click to upload files
-                          </span>
-                          <input
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="sr-only"
-                            onChange={handleFileUpload}
-                            ref={fileInputRef}
-                            disabled={uploading}
-                          />
-                        </label>
-                        <p className="text-sm text-gray-500 mt-1 font-medium italic">
-                          or drag and drop images here
-                        </p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          PNG, JPG, WEBP up to 10MB each
-                        </p>
-                      </div>
-                      {uploading && (
-                        <div className="mt-4 w-full max-w-xs">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-semibold text-blue-600">
-                              Uploading...
-                            </span>
-                            <span className="text-sm font-semibold text-blue-600">
-                              {uploadProgress}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {errors.image && (
-                    <p className="text-sm text-red-500 font-medium">
-                      {errors.image}
-                    </p>
-                  )}
-
-                  {/* Image Gallery */}
-                  <div className="grid grid-cols-1 gap-6 mt-6">
-                    {images.map((img, index) => (
-                      <div
-                        key={index}
-                        className={`group relative flex flex-col md:flex-row bg-white rounded-xl overflow-hidden border-2 transition-all shadow-sm ${formData.primaryImage === img.url ||
-                          (!formData.primaryImage && index === 0)
-                          ? "border-blue-500 ring-2 ring-blue-100"
-                          : "border-gray-100 hover:border-blue-300"
-                          }`}
-                      >
-                        {/* Image Preview */}
-                        <div className="relative w-full md:w-1/3 aspect-video md:aspect-auto">
-                          <img
-                            src={img.url}
-                            alt="Banner"
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleSetPrimaryImage(img.url)}
-                              className={`p-2 rounded-lg transition-colors ${formData.primaryImage === img.url || (!formData.primaryImage && index === 0) ? "bg-blue-600 text-white" : "bg-white text-blue-600 hover:bg-gray-100"}`}
-                              title="Set as Primary"
-                            >
-                              <CheckIcon className="h-5 w-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="p-2 bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors shadow-sm"
-                              title="Remove Image"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
-                          </div>
-                          {(formData.primaryImage === img.url ||
-                            (!formData.primaryImage && index === 0)) && (
-                              <div className="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded uppercase tracking-wider">
-                                Primary
-                              </div>
-                            )}
-                        </div>
-
-                        {/* Per-image fields (only for carousel) */}
-                        {currentPlacement?.showPerImageFields && (
-                          <div className="flex-1 p-4 bg-gray-50 flex flex-col justify-center space-y-3">
-                            <div>
-                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                Slide Title
-                              </label>
-                              <input
-                                type="text"
-                                value={img.title || ""}
-                                onChange={(e) =>
-                                  handleImageFieldChange(index, "title", e.target.value)
-                                }
-                                className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="e.g., Discover Sparkle"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                Slide Subtitle
-                              </label>
-                              <input
-                                type="text"
-                                value={img.subtitle || ""}
-                                onChange={(e) =>
-                                  handleImageFieldChange(index, "subtitle", e.target.value)
-                                }
-                                className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="e.g., With Style"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                                Slide Description
-                              </label>
-                              <textarea
-                                value={img.description || ""}
-                                onChange={(e) =>
-                                  handleImageFieldChange(index, "description", e.target.value)
-                                }
-                                rows="2"
-                                className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                placeholder="Text shown on this carousel slide"
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 4: Promo (only for promotional banners) */}
-              {currentPlacement?.showPromo && (
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Promotion Settings
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Promo Code
-                      </label>
-                      <input
-                        type="text"
-                        name="promoCode"
-                        value={formData.promoCode}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
-                        placeholder="e.g., SAVE20"
-                        maxLength="20"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Discount Percentage (%)
-                      </label>
-                      <input
-                        type="number"
-                        name="discountPercentage"
-                        value={formData.discountPercentage}
-                        onChange={handleInputChange}
-                        min="0"
-                        max="100"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., 20"
-                      />
-                    </div>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    name="subheader"
+                    value={formData.subheader}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter subtitle (optional)"
+                  />
                 </div>
               )}
 
-              {/* Step 5: Link & Scheduling */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Link & Scheduling
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Link Type
-                    </label>
-                    <select
-                      name="linkType"
-                      value={formData.linkType}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="none">No Link</option>
-                      <option value="product">Product</option>
-                      <option value="category">Category</option>
-                      <option value="collection">Collection</option>
-                      <option value="url">Custom URL</option>
-                    </select>
-                  </div>
+              {currentPlacement?.showBody && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    name="body"
+                    value={formData.body}
+                    onChange={handleInputChange}
+                    rows="3"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter description (optional)"
+                  ></textarea>
+                </div>
+              )}
 
-                  {formData.linkType !== "none" && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Link Target *
-                      </label>
-                      <input
-                        type="text"
-                        name="linkTarget"
-                        value={formData.linkTarget}
-                        onChange={handleInputChange}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.linkTarget ? "border-red-500" : "border-gray-300"}`}
-                        placeholder={
-                          formData.linkType === "url"
-                            ? "https://example.com"
-                            : "Enter ID"
-                        }
-                      />
-                      {errors.linkTarget && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {errors.linkTarget}
-                        </p>
-                      )}
-                    </div>
-                  )}
+              {currentPlacement?.showButtonText && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Button Text
+                  </label>
+                  <input
+                    type="text"
+                    name="buttonText"
+                    value={formData.buttonText}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Shop Now"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date
-                    </label>
+          {/* Step 3: Images */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center">
+                <PhotoIcon className="h-5 w-5 mr-2 text-blue-600" />
+                Images
+              </h2>
+              {placement === "homepage_carousel" && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Each image becomes a carousel slide. Add title, subtitle & description per slide.
+                </p>
+              )}
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Image URL Input */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Add Image via URL
+                </label>
+                <div className="flex gap-4">
+                  <div className="flex-1 relative">
                     <input
-                      type="date"
-                      name="startDate"
-                      value={formData.startDate}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      type="text"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+                      placeholder="Paste banner image URL here..."
                     />
+                    <PhotoIcon className="h-5 w-5 absolute left-3 top-2.5 text-gray-400" />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      End Date
-                      {placement === "homepage_flash_sale" && (
-                        <span className="text-blue-600 font-normal ml-1">(Used for countdown timer)</span>
-                      )}
-                    </label>
-                    <input
-                      type="date"
-                      name="endDate"
-                      value={formData.endDate}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Leave empty for no end date
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Display Order
-                    </label>
-                    <input
-                      type="number"
-                      name="displayOrder"
-                      value={formData.displayOrder}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="isActive"
-                        checked={formData.isActive}
-                        onChange={handleInputChange}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                      <span className="ml-3 text-sm font-medium text-gray-700">
-                        Active
-                      </span>
-                    </label>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddImageUrl}
+                    className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95"
+                  >
+                    Add URL
+                  </button>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  onClick={() => navigate("/banners")}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading || uploading}
-                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${loading || uploading
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-blue-700"
-                    }`}
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Banner"
+              {/* File Upload UI */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Upload Images
+                </label>
+                <div className="p-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50 flex flex-col items-center justify-center transition-colors hover:bg-gray-50 hover:border-blue-300">
+                  <div className="p-3 bg-white rounded-full shadow-sm mb-4">
+                    <ArrowUpTrayIcon className="h-6 w-6 text-blue-500" />
+                  </div>
+                  <div className="text-center">
+                    <label className="relative cursor-pointer group">
+                      <span className="text-blue-600 font-bold group-hover:text-blue-700 transition-colors underline">
+                        Click to upload files
+                      </span>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={handleFileUpload}
+                        ref={fileInputRef}
+                        disabled={uploading}
+                      />
+                    </label>
+                    <p className="text-sm text-gray-500 mt-1 font-medium italic">
+                      or drag and drop images here
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      PNG, JPG, WEBP up to 10MB each
+                    </p>
+                  </div>
+                  {uploading && (
+                    <div className="mt-4 w-full max-w-xs">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-semibold text-blue-600">
+                          Uploading...
+                        </span>
+                        <span className="text-sm font-semibold text-blue-600">
+                          {uploadProgress}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
               </div>
-            </form>
+
+              {errors.image && (
+                <p className="text-sm text-red-500 font-medium">
+                  {errors.image}
+                </p>
+              )}
+
+              {/* Image Gallery */}
+              <div className="grid grid-cols-1 gap-6 mt-6">
+                {images.map((img, index) => (
+                  <div
+                    key={index}
+                    className={`group relative flex flex-col md:flex-row bg-white rounded-xl overflow-hidden border-2 transition-all shadow-sm ${formData.primaryImage === img.url ||
+                      (!formData.primaryImage && index === 0)
+                      ? "border-blue-500 ring-2 ring-blue-100"
+                      : "border-gray-100 hover:border-blue-300"
+                      }`}
+                  >
+                    {/* Image Preview */}
+                    <div className="relative w-full md:w-1/3 aspect-video md:aspect-auto">
+                      <img
+                        src={img.url}
+                        alt="Banner"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryImage(img.url)}
+                          className={`p-2 rounded-lg transition-colors ${formData.primaryImage === img.url || (!formData.primaryImage && index === 0) ? "bg-blue-600 text-white" : "bg-white text-blue-600 hover:bg-gray-100"}`}
+                          title="Set as Primary"
+                        >
+                          <CheckIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="p-2 bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors shadow-sm"
+                          title="Remove Image"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                      {(formData.primaryImage === img.url ||
+                        (!formData.primaryImage && index === 0)) && (
+                          <div className="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded uppercase tracking-wider">
+                            Primary
+                          </div>
+                        )}
+                    </div>
+
+                    {/* Per-image fields (only for carousel) */}
+                    {currentPlacement?.showPerImageFields && (
+                      <div className="flex-1 p-4 bg-gray-50 flex flex-col justify-center space-y-3">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            Slide Title
+                          </label>
+                          <input
+                            type="text"
+                            value={img.title || ""}
+                            onChange={(e) =>
+                              handleImageFieldChange(index, "title", e.target.value)
+                            }
+                            className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="e.g., Discover Sparkle"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            Slide Subtitle
+                          </label>
+                          <input
+                            type="text"
+                            value={img.subtitle || ""}
+                            onChange={(e) =>
+                              handleImageFieldChange(index, "subtitle", e.target.value)
+                            }
+                            className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="e.g., With Style"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            Slide Description
+                          </label>
+                          <textarea
+                            value={img.description || ""}
+                            onChange={(e) =>
+                              handleImageFieldChange(index, "description", e.target.value)
+                            }
+                            rows="2"
+                            className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            placeholder="Text shown on this carousel slide"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </main>
+
+          {/* Step 4: Promo (only for promotional banners) */}
+          {currentPlacement?.showPromo && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Promotion Settings
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Promo Code
+                  </label>
+                  <input
+                    type="text"
+                    name="promoCode"
+                    value={formData.promoCode}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                    placeholder="e.g., SAVE20"
+                    maxLength="20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Discount Percentage (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="discountPercentage"
+                    value={formData.discountPercentage}
+                    onChange={handleInputChange}
+                    min="0"
+                    max="100"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 20"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Link & Scheduling */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Link & Scheduling
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Link Type
+                </label>
+                <select
+                  name="linkType"
+                  value={formData.linkType}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="none">No Link</option>
+                  <option value="product">Product</option>
+                  <option value="category">Category</option>
+                  <option value="collection">Collection</option>
+                  <option value="url">Custom URL</option>
+                </select>
+              </div>
+
+              {formData.linkType !== "none" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Link Target *
+                  </label>
+                  <input
+                    type="text"
+                    name="linkTarget"
+                    value={formData.linkTarget}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.linkTarget ? "border-red-500" : "border-gray-300"}`}
+                    placeholder={
+                      formData.linkType === "url"
+                        ? "https://example.com"
+                        : "Enter ID"
+                    }
+                  />
+                  {errors.linkTarget && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.linkTarget}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formData.startDate}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date
+                  {placement === "homepage_flash_sale" && (
+                    <span className="text-blue-600 font-normal ml-1">(Used for countdown timer)</span>
+                  )}
+                </label>
+                <input
+                  type="date"
+                  name="endDate"
+                  value={formData.endDate}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Leave empty for no end date
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  name="displayOrder"
+                  value={formData.displayOrder}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={formData.isActive}
+                    onChange={handleInputChange}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <span className="ml-3 text-sm font-medium text-gray-700">
+                    Active
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate("/banners")}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || uploading}
+              className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${loading || uploading
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-blue-700"
+                }`}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
+                  Creating...
+                </>
+              ) : (
+                "Create Banner"
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

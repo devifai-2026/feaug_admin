@@ -46,6 +46,8 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+import AdminLayout from "./components/AdminLayout";
+
 function AppContent() {
   return (
     <Routes>
@@ -59,238 +61,48 @@ function AppContent() {
         }
       />
 
-      {/* All other routes are protected */}
+      {/* Protected Routes wrapped in AdminLayout */}
       <Route
-        path="/"
         element={
           <PrivateRoute>
-            <Dashboard />
+            <AdminLayout />
           </PrivateRoute>
         }
-      />
+      >
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/products" element={<Product />} />
+        <Route path="/products/add" element={<AddProduct />} />
+        <Route path="/products/view/:id" element={<ProductView />} />
+        <Route path="/products/edit/:id" element={<ProductEdit />} />
 
-      <Route
-        path="/products"
-        element={
-          <PrivateRoute>
-            <Product />
-          </PrivateRoute>
-        }
-      />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/categories/add" element={<AddCategory />} />
+        <Route path="/categories/edit/:id" element={<EditCategory />} />
 
-      <Route
-        path="/products/add"
-        element={
-          <PrivateRoute>
-            <AddProduct />
-          </PrivateRoute>
-        }
-      />
+        <Route path="/subcategories" element={<Subcategories />} />
+        <Route path="/subcategories/add" element={<AddSubcategory />} />
+        <Route path="/subcategories/edit/:id" element={<EditSubcategory />} />
 
-      <Route
-        path="/products/view/:id"
-        element={
-          <PrivateRoute>
-            <ProductView />
-          </PrivateRoute>
-        }
-      />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/orders/view/:id" element={<OrderView />} />
+        <Route path="/orders/update/:id" element={<OrderUpdate />} />
 
-      <Route
-        path="/products/edit/:id"
-        element={
-          <PrivateRoute>
-            <ProductEdit />
-          </PrivateRoute>
-        }
-      />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/invoices/view/:id" element={<InvoiceView />} />
 
-      <Route
-        path="/categories/add"
-        element={
-          <PrivateRoute>
-            <AddCategory />
-          </PrivateRoute>
-        }
-      />
+        <Route path="/users" element={<Users />} />
+        <Route path="/users/add" element={<UserAdd />} />
+        <Route path="/users/edit/:id" element={<UserEdit />} />
 
-      <Route
-        path="/categories"
-        element={
-          <PrivateRoute>
-            <Categories />
-          </PrivateRoute>
-        }
-      />
+        <Route path="/banners" element={<Banners />} />
+        <Route path="/banners/add" element={<AddBanner />} />
+        <Route path="/banners/edit/:id" element={<EditBanner />} />
+        <Route path="/banners/view/:id" element={<EditBanner />} />
 
-      <Route
-        path="/categories/edit/:id"
-        element={
-          <PrivateRoute>
-            <EditCategory />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/subcategories"
-        element={
-          <PrivateRoute>
-            <Subcategories />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/subcategories/add"
-        element={
-          <PrivateRoute>
-            <AddSubcategory />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/subcategories/edit/:id"
-        element={
-          <PrivateRoute>
-            <EditSubcategory />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/orders"
-        element={
-          <PrivateRoute>
-            <Orders />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/orders/view/:id"
-        element={
-          <PrivateRoute>
-            <OrderView />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/orders/update/:id"
-        element={
-          <PrivateRoute>
-            <OrderUpdate />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/invoices"
-        element={
-          <PrivateRoute>
-            <Invoices />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/invoices/view/:id"
-        element={
-          <PrivateRoute>
-            <InvoiceView />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/users"
-        element={
-          <PrivateRoute>
-            <Users />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/users/add"
-        element={
-          <PrivateRoute>
-            <UserAdd />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/users/edit/:id"
-        element={
-          <PrivateRoute>
-            <UserEdit />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/banners"
-        element={
-          <PrivateRoute>
-            <Banners />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/banners/add"
-        element={
-          <PrivateRoute>
-            <AddBanner />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/banners/edit/:id"
-        element={
-          <PrivateRoute>
-            <EditBanner />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/banners/view/:id"
-        element={
-          <PrivateRoute>
-            <EditBanner />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/promo-codes"
-        element={
-          <PrivateRoute>
-            <PromoCodes />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/my-profile"
-        element={
-          <PrivateRoute>
-            <MyProfile />
-          </PrivateRoute>
-        }
-      />
-
-      <Route
-        path="/notifications"
-        element={
-          <PrivateRoute>
-            <Notifications />
-          </PrivateRoute>
-        }
-      />
+        <Route path="/promo-codes" element={<PromoCodes />} />
+        <Route path="/my-profile" element={<MyProfile />} />
+        <Route path="/notifications" element={<Notifications />} />
+      </Route>
 
       {/* Catch all route - redirect to login if route doesn't exist */}
       <Route path="*" element={<Navigate to="/login" replace />} />

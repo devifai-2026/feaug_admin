@@ -11,13 +11,12 @@ import {
   MapPinIcon,
   CreditCardIcon
 } from '@heroicons/react/24/outline'
-import Sidebar from '../Sidebar'
-import Navbar from '../Navbar'
+
 
 const OrderUpdate = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
@@ -95,8 +94,7 @@ const OrderUpdate = () => {
     }, 500)
   }, [id])
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
-  const closeSidebar = () => setSidebarOpen(false)
+
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -143,7 +141,7 @@ const OrderUpdate = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <div className="text-lg">Loading order details...</div>
       </div>
     )
@@ -151,7 +149,7 @@ const OrderUpdate = () => {
 
   if (!order) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <div className="text-lg text-red-600">Order not found</div>
         <button
           onClick={() => navigate('/orders')}
@@ -164,238 +162,230 @@ const OrderUpdate = () => {
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
+    <div>
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center">
+              <button
+                onClick={() => navigate('/orders')}
+                className="mr-4 p-2 rounded-lg hover:bg-gray-100"
+              >
+                <ArrowLeftIcon className="h-5 w-5" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Update Order</h1>
+                <p className="text-gray-600">Order ID: #{order.id}</p>
+              </div>
+            </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center">
+                {getStatusIcon(order.status)}
+                <span className={`ml-2 px-3 py-1 text-sm rounded-full ${getStatusColor(order.status)}`}>
+                  {order.status}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          <div className="mx-auto max-w-7xl">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center">
-                  <button
-                    onClick={() => navigate('/orders')}
-                    className="mr-4 p-2 rounded-lg hover:bg-gray-100"
-                  >
-                    <ArrowLeftIcon className="h-5 w-5" />
-                  </button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Order Update Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Update Order Details</h2>
+
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-6">
+                  {/* Status */}
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Update Order</h1>
-                    <p className="text-gray-600">Order ID: #{order.id}</p>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Order Status
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Method
+                    </label>
+                    <select
+                      name="paymentMethod"
+                      value={formData.paymentMethod}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Credit Card">Credit Card</option>
+                      <option value="Debit Card">Debit Card</option>
+                      <option value="PayPal">PayPal</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cash on Delivery">Cash on Delivery</option>
+                    </select>
+                  </div>
+
+                  {/* Shipping Method */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shipping Method
+                    </label>
+                    <select
+                      name="shippingMethod"
+                      value={formData.shippingMethod}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="Standard Shipping">Standard Shipping</option>
+                      <option value="Express Delivery">Express Delivery</option>
+                      <option value="Next Day Delivery">Next Day Delivery</option>
+                      <option value="Store Pickup">Store Pickup</option>
+                    </select>
+                  </div>
+
+                  {/* Shipping Address */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shipping Address
+                    </label>
+                    <textarea
+                      name="shippingAddress"
+                      value={formData.shippingAddress}
+                      onChange={handleInputChange}
+                      rows="3"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Billing Address */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Billing Address
+                    </label>
+                    <textarea
+                      name="billingAddress"
+                      value={formData.billingAddress}
+                      onChange={handleInputChange}
+                      rows="3"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex justify-end space-x-4 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/orders')}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Update Order
+                    </button>
                   </div>
                 </div>
+              </form>
+            </div>
+          </div>
 
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center">
-                    {getStatusIcon(order.status)}
-                    <span className={`ml-2 px-3 py-1 text-sm rounded-full ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </span>
+          {/* Order Summary Sidebar */}
+          <div className="space-y-6">
+            {/* Customer Info */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <img
+                    className="h-12 w-12 rounded-full"
+                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.customer}`}
+                    alt={order.customer}
+                  />
+                  <div className="ml-3">
+                    <div className="font-medium text-gray-900">{order.customer}</div>
+                    <div className="text-sm text-gray-500">Customer ID: CUST-{order.id.slice(-3)}</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center text-sm">
+                    <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <span>{order.email}</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <PhoneIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <span>{order.phone}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Order Update Form */}
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-6">Update Order Details</h2>
-
-                  <form onSubmit={handleSubmit}>
-                    <div className="space-y-6">
-                      {/* Status */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Order Status
-                        </label>
-                        <select
-                          name="status"
-                          value={formData.status}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Processing">Processing</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                      </div>
-
-                      {/* Payment Method */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Payment Method
-                        </label>
-                        <select
-                          name="paymentMethod"
-                          value={formData.paymentMethod}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="Credit Card">Credit Card</option>
-                          <option value="Debit Card">Debit Card</option>
-                          <option value="PayPal">PayPal</option>
-                          <option value="Bank Transfer">Bank Transfer</option>
-                          <option value="Cash on Delivery">Cash on Delivery</option>
-                        </select>
-                      </div>
-
-                      {/* Shipping Method */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Shipping Method
-                        </label>
-                        <select
-                          name="shippingMethod"
-                          value={formData.shippingMethod}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="Standard Shipping">Standard Shipping</option>
-                          <option value="Express Delivery">Express Delivery</option>
-                          <option value="Next Day Delivery">Next Day Delivery</option>
-                          <option value="Store Pickup">Store Pickup</option>
-                        </select>
-                      </div>
-
-                      {/* Shipping Address */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Shipping Address
-                        </label>
-                        <textarea
-                          name="shippingAddress"
-                          value={formData.shippingAddress}
-                          onChange={handleInputChange}
-                          rows="3"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-
-                      {/* Billing Address */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Billing Address
-                        </label>
-                        <textarea
-                          name="billingAddress"
-                          value={formData.billingAddress}
-                          onChange={handleInputChange}
-                          rows="3"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-
-                      {/* Buttons */}
-                      <div className="flex justify-end space-x-4 pt-4">
-                        <button
-                          type="button"
-                          onClick={() => navigate('/orders')}
-                          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          Update Order
-                        </button>
-                      </div>
-                    </div>
-                  </form>
+            {/* Order Summary */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Order ID:</span>
+                  <span className="font-medium">#{order.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Order Date:</span>
+                  <span>{order.date} at {order.time}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Items:</span>
+                  <span>{order.items.length} items</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Amount:</span>
+                  <span className="font-bold">{order.total}</span>
                 </div>
               </div>
+            </div>
 
-              {/* Order Summary Sidebar */}
-              <div className="space-y-6">
-                {/* Customer Info */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h2>
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <img
-                        className="h-12 w-12 rounded-full"
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.customer}`}
-                        alt={order.customer}
-                      />
-                      <div className="ml-3">
-                        <div className="font-medium text-gray-900">{order.customer}</div>
-                        <div className="text-sm text-gray-500">Customer ID: CUST-{order.id.slice(-3)}</div>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm">
-                        <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2" />
-                        <span>{order.email}</span>
-                      </div>
-                      <div className="flex items-center text-sm">
-                        <PhoneIcon className="h-4 w-4 text-gray-400 mr-2" />
-                        <span>{order.phone}</span>
-                      </div>
-                    </div>
+            {/* Current Details */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Details</h2>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Payment Method</h3>
+                  <div className="flex items-center">
+                    <CreditCardIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-sm text-gray-600">{order.paymentMethod}</span>
                   </div>
                 </div>
-
-                {/* Order Summary */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Order ID:</span>
-                      <span className="font-medium">#{order.id}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Order Date:</span>
-                      <span>{order.date} at {order.time}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Items:</span>
-                      <span>{order.items.length} items</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Total Amount:</span>
-                      <span className="font-bold">{order.total}</span>
-                    </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Shipping Method</h3>
+                  <div className="flex items-center">
+                    <TruckIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <span className="text-sm text-gray-600">{order.shippingMethod}</span>
                   </div>
                 </div>
-
-                {/* Current Details */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Details</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">Payment Method</h3>
-                      <div className="flex items-center">
-                        <CreditCardIcon className="h-4 w-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-600">{order.paymentMethod}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">Shipping Method</h3>
-                      <div className="flex items-center">
-                        <TruckIcon className="h-4 w-4 text-gray-400 mr-2" />
-                        <span className="text-sm text-gray-600">{order.shippingMethod}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">Shipping Address</h3>
-                      <div className="flex items-start">
-                        <MapPinIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                        <p className="text-sm text-gray-600">{order.shippingAddress}</p>
-                      </div>
-                    </div>
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Shipping Address</h3>
+                  <div className="flex items-start">
+                    <MapPinIcon className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
+                    <p className="text-sm text-gray-600">{order.shippingAddress}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   )

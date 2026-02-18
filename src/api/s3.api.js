@@ -7,7 +7,7 @@ const s3Api = {
     const formData = new FormData();
     formData.append('image', file);
 
-    const response = await axiosInstance.post(`/admin/upload?folder=${folder}`, formData, {
+    const response = await axiosInstance.post(`/admin/upload?folder=banners`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 60000,
       onUploadProgress: (progressEvent) => {
