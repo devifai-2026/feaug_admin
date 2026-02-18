@@ -44,8 +44,14 @@ const InvoiceView = () => {
       // Fetch the order as it contains all invoice data
       const response = await orderApi.getOrder(id);
 
-      if (response && response.data && response.data.order) {
-        const order = response.data.order;
+      // Robustly find order object
+      const order =
+        response?.data?.order ||
+        response?.data ||
+        response?.order ||
+        response;
+
+      if (order && (order._id || order.id)) {
         const shippingAddr =
           order.shippingAddress ||
           (order.addresses &&
@@ -53,8 +59,12 @@ const InvoiceView = () => {
 
         // Transform real order data to invoice format
         const transformedInvoice = {
-          id: order.invoiceNumber || order.orderNumber || order._id,
-          orderId: order._id,
+          id:
+            order.invoiceNumber ||
+            order.orderNumber ||
+            order.orderId ||
+            order._id,
+          orderId: order._id || order.id,
           client:
             shippingAddr?.fullName ||
             shippingAddr?.name ||
@@ -67,8 +77,8 @@ const InvoiceView = () => {
           clientEmail: order.user?.email || shippingAddr?.email || "N/A",
           clientAddress: shippingAddr
             ? `${shippingAddr.addressLine1 || shippingAddr.street || ""}, ${shippingAddr.city || ""}, ${shippingAddr.state || ""} ${shippingAddr.pincode || shippingAddr.zipCode || ""}`
-                .trim()
-                .replace(/^, /, "")
+              .trim()
+              .replace(/^, /, "")
             : "N/A",
           date: order.createdAt,
           dueDate:
@@ -76,11 +86,11 @@ const InvoiceView = () => {
             new Date(
               new Date(order.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000,
             ).toISOString(),
-          amount: `₹${(order.grandTotal || order.totalAmount || 0).toLocaleString()}`,
+          amount: `₹${(order.grandTotal || order.totalAmount || order.total || 0).toLocaleString()}`,
           tax: `₹${(order.tax || order.taxAmount || 0).toLocaleString()}`,
           subtotal: `₹${(order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)).toLocaleString()}`,
           status:
-            order.paymentStatus === "paid"
+            order.paymentStatus === "paid" || order.status === "delivered"
               ? "Paid"
               : order.paymentStatus === "pending"
                 ? "Pending"
@@ -90,6 +100,7 @@ const InvoiceView = () => {
               item.productName ||
               item.description ||
               item.product?.name ||
+              item.name ||
               "Product",
             quantity: item.quantity || 1,
             price: `₹${(item.price || 0).toLocaleString()}`,
@@ -101,6 +112,8 @@ const InvoiceView = () => {
         };
 
         setInvoice(transformedInvoice);
+      } else {
+        console.error("Order not found in response:", response);
       }
     } catch (error) {
       console.error("Error fetching invoice details:", error);
@@ -510,8 +523,8 @@ const InvoiceView = () => {
             </thead>
             <tbody>
               ${invoice.items
-                .map(
-                  (item) => `
+          .map(
+            (item) => `
                 <tr>
                   <td>${item.description}</td>
                   <td>${item.quantity}</td>
@@ -519,8 +532,8 @@ const InvoiceView = () => {
                   <td class="currency"><strong>${item.total}</strong></td>
                 </tr>
               `,
-                )
-                .join("")}
+          )
+          .join("")}
             </tbody>
           </table>
           
@@ -668,11 +681,10 @@ const InvoiceView = () => {
                   <button
                     onClick={generatePDF}
                     disabled={downloadingPDF}
-                    className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors ${
-                      downloadingPDF
+                    className={`flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors ${downloadingPDF
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:bg-blue-700"
-                    }`}
+                      }`}
                   >
                     {downloadingPDF ? (
                       <>
@@ -692,13 +704,12 @@ const InvoiceView = () => {
 
             {/* Invoice Status Banner */}
             <div
-              className={`mb-8 p-6 rounded-xl ${getStatusColor(invoice.status)} border-l-4 ${
-                invoice.status === "Paid"
+              className={`mb-8 p-6 rounded-xl ${getStatusColor(invoice.status)} border-l-4 ${invoice.status === "Paid"
                   ? "border-green-500"
                   : invoice.status === "Pending"
                     ? "border-yellow-500"
                     : "border-red-500"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -883,11 +894,10 @@ const InvoiceView = () => {
                   <button
                     onClick={generatePDF}
                     disabled={downloadingPDF}
-                    className={`w-full flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg transition-colors border border-green-200 ${
-                      downloadingPDF
+                    className={`w-full flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg transition-colors border border-green-200 ${downloadingPDF
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:bg-green-100"
-                    }`}
+                      }`}
                   >
                     {downloadingPDF ? (
                       <>

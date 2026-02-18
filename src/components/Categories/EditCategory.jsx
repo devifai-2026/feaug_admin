@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { 
+import {
   ArrowLeftIcon,
   CheckIcon,
   XMarkIcon,
@@ -9,6 +9,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
 import categoryApi from '../../api/categories.api'
+import s3Api from '../../api/s3.api'
 import { useToast } from '../../context/ToastContext'
 
 const EditCategory = () => {
@@ -17,7 +18,12 @@ const EditCategory = () => {
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState(null)
   const [parentCategories, setParentCategories] = useState([])
-  
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const [s3UploadError, setS3UploadError] = useState(null)
+
   const { id } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
@@ -40,12 +46,21 @@ const EditCategory = () => {
     fetchParentCategories()
   }, [id])
 
+  useEffect(() => {
+    // Create preview for new image file
+    if (imageFile) {
+      const objectUrl = URL.createObjectURL(imageFile)
+      setImagePreview(objectUrl)
+      return () => URL.revokeObjectURL(objectUrl)
+    }
+  }, [imageFile])
+
   const fetchCategory = async () => {
     try {
       setFetching(true)
       const response = await categoryApi.getAllCategories()
       const category = response.data.categories.find(cat => cat._id === id)
-      
+
       if (category) {
         setFormData({
           name: category.name || '',
@@ -81,9 +96,27 @@ const EditCategory = () => {
     }
   }
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Please select an image file', 'error')
+        return
+      }
+
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        showToast('Image size must be less than 5MB', 'error')
+        return
+      }
+
+      setImageFile(file)
+      setS3UploadError(null)
+    }
+  }
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    
+
     if (type === 'checkbox') {
       setFormData(prev => ({
         ...prev,
@@ -105,13 +138,41 @@ const EditCategory = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     try {
       setLoading(true)
+      setIsUploading(true)
       setError(null)
-      
-      await categoryApi.updateCategory(id, formData)
-      
+
+      let imageUrl = formData.image
+
+      // Upload new image if selected
+      if (imageFile) {
+        try {
+          setUploadProgress(20)
+          const { presignedUrl, fileUrl } = await s3Api.getPresignedUrl(
+            imageFile.name,
+            imageFile.type
+          )
+
+          setUploadProgress(40)
+          await s3Api.uploadToS3(presignedUrl, imageFile, (progress) => {
+            setUploadProgress(40 + (progress * 0.4))
+          })
+
+          imageUrl = fileUrl
+          setUploadProgress(80)
+        } catch (uploadError) {
+          console.error('S3 upload error:', uploadError)
+          throw new Error('Failed to upload image')
+        }
+      }
+
+      setUploadProgress(90)
+      const dataToSubmit = { ...formData, image: imageUrl }
+      await categoryApi.updateCategory(id, dataToSubmit)
+
+      setUploadProgress(100)
       showToast('Category updated successfully', 'success')
       navigate('/categories')
     } catch (err) {
@@ -120,6 +181,8 @@ const EditCategory = () => {
       showToast(errorMessage, 'error')
     } finally {
       setLoading(false)
+      setIsUploading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -140,10 +203,10 @@ const EditCategory = () => {
   return (
     <div className="flex h-screen">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        
+
         <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
           <div className="mx-auto max-w-4xl">
             {/* Header */}
@@ -171,6 +234,23 @@ const EditCategory = () => {
               </div>
             )}
 
+            {(loading || isUploading) && (
+              <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="font-medium text-blue-700">
+                    {uploadProgress < 100 ? 'Processing...' : 'Complete!'}
+                  </span>
+                  <span className="text-blue-600 font-bold">{Math.round(uploadProgress)}%</span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
+
             {/* Edit Form */}
             <div className="bg-white rounded-lg shadow p-6">
               <form onSubmit={handleSubmit}>
@@ -192,7 +272,7 @@ const EditCategory = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Parent Category
@@ -211,7 +291,7 @@ const EditCategory = () => {
                           ))}
                         </select>
                       </div>
-                      
+
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Description
@@ -245,7 +325,7 @@ const EditCategory = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Icon
@@ -259,19 +339,39 @@ const EditCategory = () => {
                           placeholder="Icon class or name"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Image URL
+                          Category Image
                         </label>
-                        <input
-                          type="text"
-                          name="image"
-                          value={formData.image}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Image URL"
-                        />
+                        <div className="flex items-start gap-4">
+                          {(imagePreview || formData.image) && (
+                            <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={imagePreview || formData.image}
+                                alt="Category"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              disabled={loading || isUploading}
+                              className="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-blue-50 file:text-blue-700
+                                hover:file:bg-blue-100"
+                            />
+                            <p className="mt-1 text-xs text-gray-500">
+                              Upload new image to replace current one (Max 5MB)
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -311,7 +411,7 @@ const EditCategory = () => {
                           placeholder="Meta title for SEO"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Meta Description
@@ -325,7 +425,7 @@ const EditCategory = () => {
                           placeholder="Meta description for SEO"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Meta Keywords
@@ -355,13 +455,13 @@ const EditCategory = () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={loading}
+                      disabled={loading || isUploading}
                       className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {loading ? (
+                      {loading || isUploading ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Saving...
+                          {isUploading ? 'Uploading...' : 'Saving...'}
                         </>
                       ) : (
                         <>

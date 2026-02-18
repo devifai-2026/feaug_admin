@@ -3,11 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftIcon,
   PhotoIcon,
-  CloudArrowUpIcon,
-  XMarkIcon,
   ArrowUpTrayIcon,
   CheckIcon,
   TrashIcon,
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useRef } from "react";
 import Sidebar from "../Sidebar";
@@ -15,6 +14,109 @@ import Navbar from "../Navbar";
 import bannerApi from "../../api/banners.api";
 import s3Api from "../../api/s3.api";
 import { useToast } from "../../context/ToastContext";
+
+// Placement presets — single dropdown maps to bannerType + page + position
+const PLACEMENT_OPTIONS = [
+  {
+    value: "homepage_carousel",
+    label: "Homepage Top Carousel",
+    description: "Main hero slider at the top of the homepage. Add multiple images for carousel slides.",
+    bannerType: "header",
+    page: "home",
+    position: "top",
+    showPerImageFields: true,
+    showPromo: false,
+    showButtonText: true,
+    showSubheader: true,
+    showBody: true,
+  },
+  {
+    value: "homepage_hero",
+    label: "Homepage Hero (Cleopatra Section)",
+    description: "Large hero image with text overlay in the Cleopatra Glam section.",
+    bannerType: "hero",
+    page: "home",
+    position: "hero",
+    showPerImageFields: false,
+    showPromo: false,
+    showButtonText: true,
+    showSubheader: true,
+    showBody: true,
+  },
+  {
+    value: "homepage_promotional",
+    label: "Homepage Promotional Card",
+    description: "Small promo card below the hero section. Create 2 of these for the side-by-side layout.",
+    bannerType: "promotional",
+    page: "home",
+    position: "top",
+    showPerImageFields: false,
+    showPromo: true,
+    showButtonText: true,
+    showSubheader: true,
+    showBody: false,
+  },
+  {
+    value: "homepage_flash_sale",
+    label: "Homepage Flash Sale",
+    description: "Background banner for the Flash Sale section with countdown timer. Set an End Date for the timer.",
+    bannerType: "slider",
+    page: "home",
+    position: "top",
+    showPerImageFields: false,
+    showPromo: false,
+    showButtonText: false,
+    showSubheader: false,
+    showBody: true,
+  },
+  {
+    value: "homepage_sidebar",
+    label: "Homepage Sidebar (BestSeller Sale)",
+    description: "Sale panel on the left side of the BestSeller section.",
+    bannerType: "header",
+    page: "home",
+    position: "sidebar",
+    showPerImageFields: false,
+    showPromo: false,
+    showButtonText: true,
+    showSubheader: true,
+    showBody: false,
+  },
+  {
+    value: "homepage_bottom",
+    label: "Homepage Bottom Banner",
+    description: "Full-width banner near the bottom of the homepage, before the footer.",
+    bannerType: "header",
+    page: "home",
+    position: "bottom",
+    showPerImageFields: false,
+    showPromo: false,
+    showButtonText: true,
+    showSubheader: true,
+    showBody: true,
+  },
+  {
+    value: "homepage_middle",
+    label: "Homepage Middle Banner",
+    description: "Full-width banner between content sections on the homepage.",
+    bannerType: "header",
+    page: "home",
+    position: "middle",
+    showPerImageFields: false,
+    showPromo: false,
+    showButtonText: true,
+    showSubheader: true,
+    showBody: true,
+  },
+];
+
+// Detect placement from existing banner data
+const detectPlacement = (bannerType, page, position) => {
+  const match = PLACEMENT_OPTIONS.find(
+    (p) => p.bannerType === bannerType && p.page === page && p.position === position
+  );
+  return match?.value || "homepage_carousel";
+};
 
 const EditBanner = () => {
   const { id } = useParams();
@@ -24,11 +126,14 @@ const EditBanner = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
+
+  const [placement, setPlacement] = useState("homepage_carousel");
 
   const [formData, setFormData] = useState({
     title: "",
-    subheader: "", // Adjusted to match model 'subheader'
+    subheader: "",
     body: "",
     footer: "",
     bannerType: "header",
@@ -51,8 +156,9 @@ const EditBanner = () => {
 
   const [images, setImages] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState("");
-
   const [errors, setErrors] = useState({});
+
+  const currentPlacement = PLACEMENT_OPTIONS.find((p) => p.value === placement);
 
   useEffect(() => {
     fetchBanner();
@@ -64,9 +170,17 @@ const EditBanner = () => {
       const response = await bannerApi.getBanner(id);
       const banner = response.data.banner;
 
+      // Auto-detect placement from saved data
+      const detectedPlacement = detectPlacement(
+        banner.bannerType,
+        banner.page,
+        banner.position
+      );
+      setPlacement(detectedPlacement);
+
       setFormData({
         title: banner.title || "",
-        subheader: banner.subheader || banner.subtitle || "", // Fallback to subtitle if subheader missing
+        subheader: banner.subheader || banner.subtitle || "",
         body: banner.body || "",
         footer: banner.footer || "",
         bannerType: banner.bannerType || "header",
@@ -94,6 +208,9 @@ const EditBanner = () => {
         setImages(
           banner.images.map((img) => ({
             url: img.url,
+            title: img.title || img.alt || "",
+            subtitle: img.subtitle || img.subheader || "",
+            description: img.description || "",
             subheader: img.subheader || "",
           })),
         );
@@ -110,6 +227,20 @@ const EditBanner = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
+  const handlePlacementChange = (e) => {
+    const newPlacement = e.target.value;
+    setPlacement(newPlacement);
+    const preset = PLACEMENT_OPTIONS.find((p) => p.value === newPlacement);
+    if (preset) {
+      setFormData((prev) => ({
+        ...prev,
+        bannerType: preset.bannerType,
+        page: preset.page,
+        position: preset.position,
+      }));
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -124,7 +255,16 @@ const EditBanner = () => {
 
   const handleAddImageUrl = () => {
     if (!newImageUrl.trim()) return;
-    setImages((prev) => [...prev, { url: newImageUrl.trim(), subheader: "" }]);
+    setImages((prev) => [
+      ...prev,
+      {
+        url: newImageUrl.trim(),
+        title: "",
+        subtitle: "",
+        description: "",
+        subheader: "",
+      },
+    ]);
     setNewImageUrl("");
   };
 
@@ -136,10 +276,10 @@ const EditBanner = () => {
     }
   };
 
-  const handleImageSubheaderChange = (index, subheader) => {
+  const handleImageFieldChange = (index, field, value) => {
     setImages((prev) => {
       const newImages = [...prev];
-      newImages[index] = { ...newImages[index], subheader };
+      newImages[index] = { ...newImages[index], [field]: value };
       return newImages;
     });
   };
@@ -152,36 +292,53 @@ const EditBanner = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setUploading(true);
-    try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-
-        // Get presigned URL
-        const presignedResponse = await s3Api.getPresignedUrl(
-          file.name,
-          file.type,
-          "banners",
-        );
-
-        // Upload to S3
-        await fetch(presignedResponse.uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: {
-            "Content-Type": file.type,
-          },
-        });
-
-        const uploadedUrl = presignedResponse.fileUrl;
-        setImages((prev) => [...prev, { url: uploadedUrl, subheader: "" }]);
+    // Validate all files first
+    for (let i = 0; i < files.length; i++) {
+      if (!files[i].type.startsWith("image/")) {
+        showToast(`"${files[i].name}" is not an image file`, "error");
+        return;
       }
+      if (files[i].size > 10 * 1024 * 1024) {
+        showToast(`"${files[i].name}" exceeds 10MB limit`, "error");
+        return;
+      }
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      if (files.length === 1) {
+        // Single file upload
+        const result = await s3Api.uploadImage(files[0], "banners", (percent) => {
+          setUploadProgress(percent);
+        });
+        setImages((prev) => [
+          ...prev,
+          { url: result.url, title: "", subtitle: "", description: "", subheader: "" },
+        ]);
+      } else {
+        // Multiple files upload
+        const result = await s3Api.uploadImages(files, "banners", (percent) => {
+          setUploadProgress(percent);
+        });
+        const newImages = result.files.map((f) => ({
+          url: f.url, title: "", subtitle: "", description: "", subheader: "",
+        }));
+        setImages((prev) => [...prev, ...newImages]);
+      }
+
+      setUploadProgress(100);
       showToast("Images uploaded successfully", "success");
     } catch (error) {
       console.error("Error uploading images:", error);
-      showToast("Error uploading images", "error");
+      showToast(
+        error.response?.data?.message || error.message || "Error uploading images. Please try again.",
+        "error",
+      );
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -221,11 +378,14 @@ const EditBanner = () => {
         ...formData,
         displayOrder: parseInt(formData.displayOrder) || 0,
         name: formData.title.toLowerCase().replace(/\s+/g, "-"),
-        images: images.map((img, index) => ({
+        images: images.map((img) => ({
           url: img.url,
-          subheader: img.subheader || "",
+          title: img.title || "",
+          subtitle: img.subtitle || "",
+          description: img.description || "",
+          subheader: img.subtitle || img.subheader || "",
           isPrimary: img.url === (formData.primaryImage || images[0]?.url),
-          alt: formData.title,
+          alt: img.title || formData.title,
         })),
       };
 
@@ -234,9 +394,7 @@ const EditBanner = () => {
       if (!bannerData.endDate) delete bannerData.endDate;
       if (!bannerData.backgroundColor) delete bannerData.backgroundColor;
       if (!bannerData.textColor) delete bannerData.textColor;
-      if (!bannerData.buttonText) delete bannerData.buttonText;
       if (!bannerData.buttonColor) delete bannerData.buttonColor;
-      if (!bannerData.subheader) delete bannerData.subheader;
 
       await bannerApi.updateBanner(id, bannerData);
       showToast("Banner updated successfully", "success");
@@ -294,13 +452,41 @@ const EditBanner = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Basic Information */}
+              {/* Step 1: Placement */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Basic Information
+                  Where should this banner appear?
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
+                <div>
+                  <select
+                    value={placement}
+                    onChange={handlePlacementChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base font-medium"
+                  >
+                    {PLACEMENT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  {currentPlacement && (
+                    <div className="mt-3 flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
+                      <InformationCircleIcon className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-blue-700">
+                        {currentPlacement.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 2: Content */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Banner Content
+                </h2>
+                <div className="space-y-4">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Title *
                     </label>
@@ -309,9 +495,7 @@ const EditBanner = () => {
                       name="title"
                       value={formData.title}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.title ? "border-red-500" : "border-gray-300"
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.title ? "border-red-500" : "border-gray-300"}`}
                       placeholder="Enter banner title"
                     />
                     {errors.title && (
@@ -321,125 +505,68 @@ const EditBanner = () => {
                     )}
                   </div>
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Subheader
-                    </label>
-                    <input
-                      type="text"
-                      name="subheader"
-                      value={formData.subheader}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter banner subheader (optional)"
-                    />
-                  </div>
+                  {currentPlacement?.showSubheader && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Subtitle
+                      </label>
+                      <input
+                        type="text"
+                        name="subheader"
+                        value={formData.subheader}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter subtitle (optional)"
+                      />
+                    </div>
+                  )}
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Body Content
-                    </label>
-                    <textarea
-                      name="body"
-                      value={formData.body}
-                      onChange={handleInputChange}
-                      rows="3"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter main banner content (optional)"
-                    ></textarea>
-                  </div>
+                  {currentPlacement?.showBody && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        name="body"
+                        value={formData.body}
+                        onChange={handleInputChange}
+                        rows="3"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter description (optional)"
+                      ></textarea>
+                    </div>
+                  )}
 
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Footer Text
-                    </label>
-                    <input
-                      type="text"
-                      name="footer"
-                      value={formData.footer}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter footer text (optional)"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Banner Type *
-                    </label>
-                    <select
-                      name="bannerType"
-                      value={formData.bannerType}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="header">Header Banner</option>
-                      <option value="footer">Footer Banner</option>
-                      <option value="promotional">Promotional Banner</option>
-                      <option value="slider">Slider Banner</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Display Page
-                    </label>
-                    <select
-                      name="page"
-                      value={formData.page}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="home">Home Page</option>
-                      <option value="category">Category Page</option>
-                      <option value="product">Product Page</option>
-                      <option value="cart">Cart Page</option>
-                      <option value="checkout">Checkout Page</option>
-                      <option value="all">All Pages</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Position
-                    </label>
-                    <select
-                      name="position"
-                      value={formData.position}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="top">Top</option>
-                      <option value="middle">Middle</option>
-                      <option value="bottom">Bottom</option>
-                      <option value="sidebar">Sidebar</option>
-                      <option value="popup">Popup</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Display Order
-                    </label>
-                    <input
-                      type="number"
-                      name="displayOrder"
-                      value={formData.displayOrder}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                  {currentPlacement?.showButtonText && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Button Text
+                      </label>
+                      <input
+                        type="text"
+                        name="buttonText"
+                        value={formData.buttonText}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., Shop Now"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Media Management (Banners) */}
+              {/* Step 3: Images */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                   <h2 className="text-lg font-bold text-gray-900 flex items-center">
                     <PhotoIcon className="h-5 w-5 mr-2 text-blue-600" />
-                    Media Management
+                    Images
                   </h2>
+                  {placement === "homepage_carousel" && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      Each image becomes a carousel slide. Add title, subtitle & description per slide.
+                    </p>
+                  )}
                 </div>
                 <div className="p-6 space-y-6">
                   {/* Image URL Input */}
@@ -495,29 +622,26 @@ const EditBanner = () => {
                         <p className="text-sm text-gray-500 mt-1 font-medium italic">
                           or drag and drop images here
                         </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          PNG, JPG, WEBP up to 10MB each
+                        </p>
                       </div>
                       {uploading && (
-                        <div className="mt-4 flex items-center text-blue-600 font-bold text-sm animate-pulse">
-                          <svg
-                            className="animate-spin h-4 w-4 mr-2"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              fill="none"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                          </svg>
-                          Uploading Assets...
+                        <div className="mt-4 w-full max-w-xs">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-semibold text-blue-600">
+                              Uploading...
+                            </span>
+                            <span className="text-sm font-semibold text-blue-600">
+                              {uploadProgress}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            ></div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -530,18 +654,18 @@ const EditBanner = () => {
                   )}
 
                   {/* Image Gallery */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+                  <div className="grid grid-cols-1 gap-6 mt-6">
                     {images.map((img, index) => (
                       <div
                         key={index}
-                        className={`group relative flex flex-col bg-white rounded-xl overflow-hidden border-2 transition-all shadow-sm ${
-                          formData.primaryImage === img.url ||
+                        className={`group relative flex flex-col md:flex-row bg-white rounded-xl overflow-hidden border-2 transition-all shadow-sm ${formData.primaryImage === img.url ||
                           (!formData.primaryImage && index === 0)
-                            ? "border-blue-500 ring-2 ring-blue-100"
-                            : "border-gray-100 hover:border-blue-300"
-                        }`}
+                          ? "border-blue-500 ring-2 ring-blue-100"
+                          : "border-gray-100 hover:border-blue-300"
+                          }`}
                       >
-                        <div className="relative aspect-video">
+                        {/* Image Preview */}
+                        <div className="relative w-full md:w-1/3 aspect-video md:aspect-auto">
                           <img
                             src={img.url}
                             alt="Banner"
@@ -567,35 +691,110 @@ const EditBanner = () => {
                           </div>
                           {(formData.primaryImage === img.url ||
                             (!formData.primaryImage && index === 0)) && (
-                            <div className="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded uppercase tracking-wider">
-                              Primary
+                              <div className="absolute top-2 left-2 px-2 py-0.5 bg-blue-500 text-white text-[10px] font-bold rounded uppercase tracking-wider">
+                                Primary
+                              </div>
+                            )}
+                        </div>
+
+                        {/* Per-image fields (only for carousel) */}
+                        {currentPlacement?.showPerImageFields && (
+                          <div className="flex-1 p-4 bg-gray-50 flex flex-col justify-center space-y-3">
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                Slide Title
+                              </label>
+                              <input
+                                type="text"
+                                value={img.title || ""}
+                                onChange={(e) =>
+                                  handleImageFieldChange(index, "title", e.target.value)
+                                }
+                                className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                placeholder="e.g., Discover Sparkle"
+                              />
                             </div>
-                          )}
-                        </div>
-                        <div className="p-3 bg-gray-50 border-t border-gray-100">
-                          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">
-                            Image Subheader (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            value={img.subheader}
-                            onChange={(e) =>
-                              handleImageSubheaderChange(index, e.target.value)
-                            }
-                            className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                            placeholder="e.g., Shop our summer deals"
-                          />
-                        </div>
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                Slide Subtitle
+                              </label>
+                              <input
+                                type="text"
+                                value={img.subtitle || ""}
+                                onChange={(e) =>
+                                  handleImageFieldChange(index, "subtitle", e.target.value)
+                                }
+                                className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                placeholder="e.g., With Style"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                                Slide Description
+                              </label>
+                              <textarea
+                                value={img.description || ""}
+                                onChange={(e) =>
+                                  handleImageFieldChange(index, "description", e.target.value)
+                                }
+                                rows="2"
+                                className="w-full px-3 py-1.5 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                placeholder="Text shown on this carousel slide"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Link Settings */}
+              {/* Step 4: Promo (only for promotional banners) */}
+              {currentPlacement?.showPromo && (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Promotion Settings
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Promo Code
+                      </label>
+                      <input
+                        type="text"
+                        name="promoCode"
+                        value={formData.promoCode}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                        placeholder="e.g., SAVE20"
+                        maxLength="20"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Discount Percentage (%)
+                      </label>
+                      <input
+                        type="number"
+                        name="discountPercentage"
+                        value={formData.discountPercentage}
+                        onChange={handleInputChange}
+                        min="0"
+                        max="100"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., 20"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 5: Link & Scheduling */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Link Settings
+                  Link & Scheduling
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -626,11 +825,7 @@ const EditBanner = () => {
                         name="linkTarget"
                         value={formData.linkTarget}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.linkTarget
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.linkTarget ? "border-red-500" : "border-gray-300"}`}
                         placeholder={
                           formData.linkType === "url"
                             ? "https://example.com"
@@ -647,67 +842,6 @@ const EditBanner = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Button Text
-                    </label>
-                    <input
-                      type="text"
-                      name="buttonText"
-                      value={formData.buttonText}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g., Shop Now"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Promo Code (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      name="promoCode"
-                      value={formData.promoCode}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
-                      placeholder="e.g., SAVE20"
-                      maxLength="20"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Enter a promo code that will only work when this banner is
-                      active
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Discount Percentage (%)
-                    </label>
-                    <input
-                      type="number"
-                      name="discountPercentage"
-                      value={formData.discountPercentage}
-                      onChange={handleInputChange}
-                      min="0"
-                      max="100"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g., 20"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Set the discount percentage for the automatically created
-                      promo code
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Scheduling */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Scheduling
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Start Date
                     </label>
                     <input
@@ -722,6 +856,9 @@ const EditBanner = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       End Date
+                      {placement === "homepage_flash_sale" && (
+                        <span className="text-blue-600 font-normal ml-1">(Used for countdown timer)</span>
+                      )}
                     </label>
                     <input
                       type="date"
@@ -733,6 +870,20 @@ const EditBanner = () => {
                     <p className="mt-1 text-xs text-gray-500">
                       Leave empty for no end date
                     </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Display Order
+                    </label>
+                    <input
+                      type="number"
+                      name="displayOrder"
+                      value={formData.displayOrder}
+                      onChange={handleInputChange}
+                      min="0"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
                   </div>
 
                   <div className="flex items-center">
@@ -765,11 +916,10 @@ const EditBanner = () => {
                 <button
                   type="submit"
                   disabled={saving || uploading}
-                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${
-                    saving || uploading
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-blue-700"
-                  }`}
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${saving || uploading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-blue-700"
+                    }`}
                 >
                   {saving ? (
                     <>

@@ -54,8 +54,12 @@ const Invoices = () => {
 
       const response = await orderApi.getAllOrders(params);
 
-      if (response.status === "success" && response.data) {
-        const ordersData = response.data.orders || [];
+      if (response && (response.status === "success" || response.success)) {
+        const ordersData =
+          response.data?.orders ||
+          response.data ||
+          response.orders ||
+          [];
 
         // Transform orders to invoice format
         const invoicesData = ordersData.map((order) => {
@@ -79,8 +83,8 @@ const Invoices = () => {
             clientEmail: order.user?.email || shippingAddr?.email || "N/A",
             clientAddress: shippingAddr
               ? `${shippingAddr.addressLine1 || shippingAddr.street || ""}, ${shippingAddr.city || ""}, ${shippingAddr.state || ""} ${shippingAddr.pincode || shippingAddr.zipCode || ""}`
-                  .trim()
-                  .replace(/^, /, "")
+                .trim()
+                .replace(/^, /, "")
               : "N/A",
             date: order.createdAt,
             dueDate:
@@ -580,21 +584,21 @@ const Invoices = () => {
             </thead>
             <tbody>
               ${invoice.items
-                .map((item) => {
-                  const description =
-                    item.productName ||
-                    item.description ||
-                    item.product?.name ||
-                    "Product";
-                  const price =
-                    typeof item.price === "number"
-                      ? `₹${item.price.toLocaleString()}`
-                      : item.price || "₹0";
-                  const total =
-                    typeof item.total === "number"
-                      ? `₹${item.total.toLocaleString()}`
-                      : item.total || price;
-                  return `
+          .map((item) => {
+            const description =
+              item.productName ||
+              item.description ||
+              item.product?.name ||
+              "Product";
+            const price =
+              typeof item.price === "number"
+                ? `₹${item.price.toLocaleString()}`
+                : item.price || "₹0";
+            const total =
+              typeof item.total === "number"
+                ? `₹${item.total.toLocaleString()}`
+                : item.total || price;
+            return `
                 <tr>
                   <td>${description}</td>
                   <td>${item.quantity}</td>
@@ -602,8 +606,8 @@ const Invoices = () => {
                   <td><strong>${total}</strong></td>
                 </tr>
               `;
-                })
-                .join("")}
+          })
+          .join("")}
             </tbody>
           </table>
           
@@ -834,7 +838,7 @@ const Invoices = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <Link
-                              to={`/invoices/view/${invoice.id}`}
+                              to={`/invoices/view/${invoice.orderId}`}
                               className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-all duration-200"
                               title="View Invoice Details"
                             >
@@ -843,11 +847,10 @@ const Invoices = () => {
                             <button
                               onClick={() => downloadPDF(invoice)}
                               disabled={downloading === invoice.id}
-                              className={`p-1 rounded transition-all duration-200 ${
-                                downloading === invoice.id
+                              className={`p-1 rounded transition-all duration-200 ${downloading === invoice.id
                                   ? "text-gray-400 cursor-not-allowed"
                                   : "text-purple-600 hover:text-purple-800 hover:bg-purple-50"
-                              }`}
+                                }`}
                               title="Download PDF"
                             >
                               {downloading === invoice.id ? (

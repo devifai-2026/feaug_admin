@@ -19,6 +19,7 @@ import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import categoryApi from "../../api/categories.api";
 import productApi from "../../api/product.api";
+import s3Api from "../../api/s3.api";
 
 const modules = {
   toolbar: [["bold", "italic", "underline"], ["clean"]],
@@ -64,6 +65,7 @@ const AddProduct = () => {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState({});
   const fileInputRef = React.useRef(null);
   const navigate = useNavigate();
@@ -138,34 +140,50 @@ const AddProduct = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    // Validate files
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    for (let i = 0; i < files.length; i++) {
+      if (!allowedTypes.includes(files[i].type)) {
+        alert(`"${files[i].name}" is not a supported image format. Use JPG, PNG, WebP, or GIF.`);
+        return;
+      }
+      if (files[i].size > 10 * 1024 * 1024) {
+        alert(`"${files[i].name}" exceeds the 10MB size limit.`);
+        return;
+      }
+    }
+
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const formData = new FormData();
-      for (let i = 0; i < files.length; i++) {
-        formData.append("images", files[i]);
+      if (files.length === 1) {
+        // Single file upload
+        const result = await s3Api.uploadImage(files[0], "products", (percent) => {
+          setUploadProgress(percent);
+        });
+        setImageUrls((prev) => [...prev, result.url]);
+        if (imageUrls.length === 0 && !formData.image) {
+          setFormData((prev) => ({ ...prev, image: result.url }));
+        }
+      } else {
+        // Multiple files upload
+        const result = await s3Api.uploadImages(files, "products", (percent) => {
+          setUploadProgress(percent);
+        });
+        const urls = result.files.map((f) => f.url);
+        setImageUrls((prev) => [...prev, ...urls]);
+        if (imageUrls.length === 0 && !formData.image && urls.length > 0) {
+          setFormData((prev) => ({ ...prev, image: urls[0] }));
+        }
       }
-
-      // Note: Backend currently needs a productId for upload.
-      // For NEW products, we might need a generic upload endpoint OR upload during create.
-      // Assuming for now we use a placeholder or ID if available, or just log error if not possible yet.
-      // But let's try calling it anyway if the backend supports it or use a specific "temp" product ID if defined.
-      // For now, let's keep it as is but warn if no ID.
-      alert(
-        "File upload for new products is being integrated. For now, please use image URLs.",
-      );
-
-      /*
-      const response = await productApi.uploadProductImages('new', formData); 
-      if (response && response.data && response.data.images) {
-        const newUrls = response.data.images.map(img => img.url);
-        setImageUrls(prev => [...prev, ...newUrls]);
-      }
-      */
+      setUploadProgress(100);
+      alert("Images uploaded successfully!");
     } catch (error) {
       console.error("Error uploading images:", error);
-      alert(error.message || "Error uploading images");
+      alert(error.response?.data?.message || error.message || "Error uploading images");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -269,7 +287,7 @@ const AddProduct = () => {
       console.error("Error creating product:", error);
       alert(
         error.response?.data?.message ||
-          "Error creating product. Please try again.",
+        "Error creating product. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -743,27 +761,17 @@ const AddProduct = () => {
                         </p>
                       </div>
                       {uploading && (
-                        <div className="mt-4 flex items-center text-blue-600 font-bold text-sm animate-pulse">
-                          <svg
-                            className="animate-spin h-4 w-4 mr-2"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                              fill="none"
+                        <div className="mt-4 w-full max-w-xs">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-bold text-blue-600">Uploading...</span>
+                            <span className="text-sm font-bold text-blue-600">{uploadProgress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
                             />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                          </svg>
-                          Uploading Assets...
+                          </div>
                         </div>
                       )}
                     </div>

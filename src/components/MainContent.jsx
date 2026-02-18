@@ -22,6 +22,7 @@ const MainContent = ({ sidebarOpen }) => {
   const [error, setError] = useState(null);
   const [targetPeriod, setTargetPeriod] = useState("monthly");
   const [selectedGrowthPeriod, setSelectedGrowthPeriod] = useState("8weeks");
+  const [selectedRevenuePeriod, setSelectedRevenuePeriod] = useState("yearly");
   const { user } = useAuth();
 
   const iconMap = {
@@ -62,14 +63,15 @@ const MainContent = ({ sidebarOpen }) => {
       }
     } catch (err) {
       console.error("Error fetching user growth data:", err);
-      // Set default data if API fails
-      if (dashboardData) {
-        setDashboardData((prev) => ({
-          ...prev,
-          userGrowthProgress: getDefaultUserGrowthData(),
-        }));
-      }
-    }
+      // Set empty data if API fails to avoid static dummy data
+      setDashboardData((prev) => ({
+        ...prev,
+        userGrowthProgress: {
+          labels: [],
+          datasets: []
+        },
+      }));
+    };
   };
 
   // Default fallback data
@@ -127,8 +129,8 @@ const MainContent = ({ sidebarOpen }) => {
     fetchDashboardData(period);
   };
 
-  const handlePeriodChange = async (period) => {
-    setSelectedPeriod(period);
+  const handleRevenuePeriodChange = async (period) => {
+    setSelectedRevenuePeriod(period);
     try {
       const response = await dashboardApi.getRevenueOverview(period);
       if (response && response.data && response.data.revenueOverview) {
@@ -138,7 +140,7 @@ const MainContent = ({ sidebarOpen }) => {
         }));
       }
     } catch (err) {
-      console.error("Error changing period:", err);
+      console.error("Error changing revenue period:", err);
     }
   };
 
@@ -461,13 +463,12 @@ const MainContent = ({ sidebarOpen }) => {
             <div className="flex items-center space-x-4 mt-4 sm:mt-0">
               <select
                 className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                value={targetPeriod} // Reusing targetPeriod here or can be a separate state if users want independent control
-                onChange={(e) => handleTargetPeriodChange(e.target.value)}
+                value={selectedRevenuePeriod}
+                onChange={(e) => handleRevenuePeriodChange(e.target.value)}
               >
-                <option value="monthly">Monthly View</option>
-                <option value="quarterly">Quarterly View</option>
-                <option value="half-yearly">Half Yearly View</option>
-                <option value="annually">Annually View</option>
+                <option value="yearly">Yearly View</option>
+                <option value="6months">Last 6 Months</option>
+                <option value="3months">Last 3 Months</option>
               </select>
             </div>
           </div>
@@ -756,10 +757,10 @@ const MainContent = ({ sidebarOpen }) => {
                               "Last Week"}
                             {userGrowthProgress.summary.mostRecentWeek
                               .newUsers > 0 && (
-                              <span className="ml-2 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
-                                Active
-                              </span>
-                            )}
+                                <span className="ml-2 text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full">
+                                  Active
+                                </span>
+                              )}
                           </p>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
@@ -794,20 +795,20 @@ const MainContent = ({ sidebarOpen }) => {
                         </div>
                         {userGrowthProgress.summary.mostRecentWeek.conversion >
                           0 && (
-                          <div className="pt-3 border-t border-gray-100">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">
-                                Week Conversion
-                              </span>
-                              <span className="text-sm font-semibold text-emerald-600">
-                                {userGrowthProgress.summary.mostRecentWeek.conversion.toFixed(
-                                  2,
-                                )}
-                                %
-                              </span>
+                            <div className="pt-3 border-t border-gray-100">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">
+                                  Week Conversion
+                                </span>
+                                <span className="text-sm font-semibold text-emerald-600">
+                                  {userGrowthProgress.summary.mostRecentWeek.conversion.toFixed(
+                                    2,
+                                  )}
+                                  %
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     ) : (
                       <div className="text-center py-8">
@@ -916,9 +917,9 @@ const MainContent = ({ sidebarOpen }) => {
                         <p className="text-xl font-bold text-gray-900">
                           {userGrowthProgress.summary.totalNewUsers > 0
                             ? (
-                                userGrowthProgress.summary.totalOrders /
-                                userGrowthProgress.summary.totalNewUsers
-                              ).toFixed(2)
+                              userGrowthProgress.summary.totalOrders /
+                              userGrowthProgress.summary.totalNewUsers
+                            ).toFixed(2)
                             : 0}
                         </p>
                       </div>
@@ -1096,10 +1097,10 @@ const MainContent = ({ sidebarOpen }) => {
                       <div className="text-lg font-semibold text-gray-900">
                         {userGrowthProgress.summary.avgWeeklyVisitors > 0
                           ? (
-                              (userGrowthProgress.summary.avgWeeklyUsers /
-                                userGrowthProgress.summary.avgWeeklyVisitors) *
-                              100
-                            ).toFixed(1)
+                            (userGrowthProgress.summary.avgWeeklyUsers /
+                              userGrowthProgress.summary.avgWeeklyVisitors) *
+                            100
+                          ).toFixed(1)
                           : 0}
                         %
                       </div>
