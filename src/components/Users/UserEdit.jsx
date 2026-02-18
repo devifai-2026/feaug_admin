@@ -6,27 +6,20 @@ import {
   PhoneIcon,
   CheckCircleIcon,
   XCircleIcon,
-
   TrashIcon,
   ExclamationTriangleIcon,
   ShoppingBagIcon,
-
   ArrowTrendingUpIcon,
   ClockIcon,
   HeartIcon,
-
   CalendarIcon,
-
   DocumentDuplicateIcon,
   ShieldCheckIcon as ShieldCheckSolid,
   EyeIcon,
-
   ArrowDownTrayIcon,
   ChartPieIcon,
   UsersIcon,
-
   BanknotesIcon,
-
 } from "@heroicons/react/24/outline";
 import {
   CheckBadgeIcon,
@@ -66,7 +59,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 );
 
 const UserEdit = () => {
@@ -139,56 +132,60 @@ const UserEdit = () => {
   // Premium chart configurations
 
   const spendingTrendChart = {
-  labels: (() => {
-    // Generate last 6 months labels
-    const months = [];
-    const now = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push(date.toLocaleDateString("en-US", { month: "short" }));
-    }
-    
-    return months;
-  })(),
-  datasets: [
-    {
-      label: "Spending Trend",
-      data: (() => {
-        // Create a map of month->amount from analytics data
-        const monthlyMap = {};
-        analytics?.monthlyData?.forEach(item => {
-          const date = new Date(item.month);
-          const monthKey = date.toLocaleDateString("en-US", { month: "short" });
-          monthlyMap[monthKey] = item.amount;
-        });
-        
-        // Generate last 6 months data
-        const now = new Date();
-        const data = [];
-        
-        for (let i = 5; i >= 0; i--) {
-          const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const monthKey = date.toLocaleDateString("en-US", { month: "short" });
-          const amount = monthlyMap[monthKey] || 0;
-          data.push(amount / 1000); // Convert to thousands
-        }
-        
-        return data;
-      })(),
-      borderColor: "rgba(139, 92, 246, 0.9)",
-      backgroundColor: "rgba(139, 92, 246, 0.1)",
-      borderWidth: 3,
-      fill: true,
-      tension: 0.5,
-      pointBackgroundColor: "rgb(139, 92, 246)",
-      pointBorderColor: "#fff",
-      pointBorderWidth: 3,
-      pointRadius: 6,
-      pointHoverRadius: 8,
-    },
-  ],
-};
+    labels: (() => {
+      // Generate last 6 months labels
+      const months = [];
+      const now = new Date();
+
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push(date.toLocaleDateString("en-US", { month: "short" }));
+      }
+
+      return months;
+    })(),
+    datasets: [
+      {
+        label: "Spending Trend",
+        data: (() => {
+          // Create a map of month->amount from analytics data
+          const monthlyMap = {};
+          analytics?.monthlyData?.forEach((item) => {
+            const date = new Date(item.month);
+            const monthKey = date.toLocaleDateString("en-US", {
+              month: "short",
+            });
+            monthlyMap[monthKey] = item.amount;
+          });
+
+          // Generate last 6 months data
+          const now = new Date();
+          const data = [];
+
+          for (let i = 5; i >= 0; i--) {
+            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthKey = date.toLocaleDateString("en-US", {
+              month: "short",
+            });
+            const amount = monthlyMap[monthKey] || 0;
+            data.push(amount / 1000); // Convert to thousands
+          }
+
+          return data;
+        })(),
+        borderColor: "rgba(139, 92, 246, 0.9)",
+        backgroundColor: "rgba(139, 92, 246, 0.1)",
+        borderWidth: 3,
+        fill: true,
+        tension: 0.5,
+        pointBackgroundColor: "rgb(139, 92, 246)",
+        pointBorderColor: "#fff",
+        pointBorderWidth: 3,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+      },
+    ],
+  };
 
   const spendingTrendOptions = {
     responsive: true,
@@ -382,7 +379,7 @@ const UserEdit = () => {
         isActive: !prev.isActive,
       }));
       setSuccessMessage(
-        `User ${!formData.isActive ? "activated" : "deactivated"} successfully`
+        `User ${!formData.isActive ? "activated" : "deactivated"} successfully`,
       );
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
@@ -404,6 +401,20 @@ const UserEdit = () => {
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
       setErrorMessage("Error updating user");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      await userApi.deleteUser(id);
+      setSuccessMessage("User deleted successfully");
+      setShowDeleteModal(false);
+      setTimeout(() => {
+        navigate("/users");
+      }, 1500);
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || "Error deleting user");
+      setShowDeleteModal(false);
     }
   };
 
@@ -547,6 +558,10 @@ const UserEdit = () => {
                         formData.profileImage ||
                         `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.email}&backgroundColor=8b5cf6`
                       }
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.email}&backgroundColor=8b5cf6`;
+                      }}
                       alt="Profile"
                     />
                     {formData.isActive && (
@@ -594,7 +609,7 @@ const UserEdit = () => {
                       </>
                     )}
                   </button>
-                   <button
+                  <button
                     onClick={() => setShowDeleteModal(true)}
                     className="px-4 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg font-medium transition-colors flex items-center gap-2"
                   >
@@ -602,7 +617,6 @@ const UserEdit = () => {
                     Delete User
                   </button>
                 </div>
-
               </div>
             </div>
 
@@ -758,7 +772,6 @@ const UserEdit = () => {
                     </button>
                   ))}
                 </div>
-
               </div>
             </div>
 
@@ -782,7 +795,7 @@ const UserEdit = () => {
                         <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-lg text-sm font-medium">
                           ₹
                           {(analytics?.orderStats?.totalSpent / 1000).toFixed(
-                            1
+                            1,
                           )}
                           K Total
                         </span>
@@ -832,9 +845,7 @@ const UserEdit = () => {
                           Multi-dimensional analysis
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                       
-                      </div>
+                      <div className="flex items-center gap-2"></div>
                     </div>
                     <div className="h-64">
                       <Radar
@@ -875,7 +886,7 @@ const UserEdit = () => {
                         <span className="font-medium">
                           {activityLog[0]
                             ? formatDate(activityLog[0].createdAt).split(
-                                " at "
+                                " at ",
                               )[0]
                             : "N/A"}
                         </span>
@@ -903,8 +914,6 @@ const UserEdit = () => {
                             Send Email
                           </span>
                         </button>
-
-        
                       </div>
                     </div>
                   </div>
@@ -1110,7 +1119,7 @@ const UserEdit = () => {
                         </span>
                         <span className="font-semibold">
                           {formatCurrency(
-                            analytics?.orderStats?.avgOrderValue || 0
+                            analytics?.orderStats?.avgOrderValue || 0,
                           )}
                         </span>
                       </div>
@@ -1217,8 +1226,8 @@ const UserEdit = () => {
                             activity.action.includes("ACTIVATED")
                               ? "bg-emerald-100"
                               : activity.action.includes("DEACTIVATED")
-                              ? "bg-rose-100"
-                              : "bg-purple-100"
+                                ? "bg-rose-100"
+                                : "bg-purple-100"
                           }`}
                         >
                           {activity.action.includes("ACTIVATED") ? (
@@ -1331,7 +1340,7 @@ const UserEdit = () => {
                                       day: "numeric",
                                       month: "short",
                                       year: "numeric",
-                                    }
+                                    },
                                   )}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
@@ -1340,7 +1349,7 @@ const UserEdit = () => {
                                     {
                                       hour: "2-digit",
                                       minute: "2-digit",
-                                    }
+                                    },
                                   )}
                                 </p>
                               </div>
@@ -1352,10 +1361,10 @@ const UserEdit = () => {
                                     order.status === "delivered"
                                       ? "bg-emerald-100 text-emerald-700"
                                       : order.status === "pending"
-                                      ? "bg-amber-100 text-amber-700"
-                                      : order.status === "shipped"
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-gray-100 text-gray-700"
+                                        ? "bg-amber-100 text-amber-700"
+                                        : order.status === "shipped"
+                                          ? "bg-blue-100 text-blue-700"
+                                          : "bg-gray-100 text-gray-700"
                                   }`}
                                 >
                                   {order.status}
@@ -1385,7 +1394,7 @@ const UserEdit = () => {
                                 <p className="text-xs text-gray-500 mt-1">
                                   {order.items?.reduce(
                                     (sum, item) => sum + (item.quantity || 1),
-                                    0
+                                    0,
                                   ) || 0}{" "}
                                   units
                                 </p>
@@ -1510,10 +1519,7 @@ const UserEdit = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  navigate("/users");
-                }}
+                onClick={handleDeleteUser}
                 className="px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl transition-all duration-300 font-medium"
               >
                 Delete User

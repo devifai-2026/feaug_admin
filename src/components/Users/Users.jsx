@@ -45,7 +45,7 @@ const Users = () => {
   });
 
   const statusOptions = ["All", "Active", "Inactive"];
-  const roleOptions = ["All", "admin", "customer", "manager"];
+  const roleOptions = ["All", "admin", "customer"];
 
   useEffect(() => {
     fetchUsers();
