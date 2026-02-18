@@ -11,14 +11,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import { jsPDF } from "jspdf";
-import Sidebar from "../Sidebar";
-import Navbar from "../Navbar";
+
 import invoiceApi from "../../api/invoices.api";
 import orderApi from "../../api/orders.api";
 import moment from "moment";
 
 const Invoices = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [downloading, setDownloading] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -170,8 +169,7 @@ const Invoices = () => {
     }
   };
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-  const closeSidebar = () => setSidebarOpen(false);
+
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -659,216 +657,204 @@ const Invoices = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        toggleSidebar={toggleSidebar}
-        closeSidebar={closeSidebar}
-      />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          <div className="mx-auto max-w-7xl">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
-                  <p className="text-gray-600">
-                    Manage and track your invoices
-                  </p>
-                </div>
-              </div>
+    <div>
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+              <p className="text-gray-600">
+                Manage and track your invoices
+              </p>
             </div>
+          </div>
+        </div>
 
-            {/* Filters */}
-            <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-1">
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search invoices..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="paid">Paid</option>
-                <option value="pending">Pending</option>
-                <option value="overdue">Overdue</option>
-              </select>
-              <select
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Time</option>
-                <option value="thismonth">This Month</option>
-                <option value="3months">Last 3 Months</option>
-                <option value="6months">Last 6 Months</option>
-                <option value="12months">Last 12 Months</option>
-              </select>
-              <select
-                value={amountFilter}
-                onChange={(e) => setAmountFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Amounts</option>
-                <option value="under1000">Under ₹1,000</option>
-                <option value="1000to5000">₹1,000 - ₹5,000</option>
-                <option value="over5000">Over ₹5,000</option>
-              </select>
+        {/* Filters */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="md:col-span-1">
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search invoices..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">All Status</option>
+            <option value="paid">Paid</option>
+            <option value="pending">Pending</option>
+            <option value="overdue">Overdue</option>
+          </select>
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">All Time</option>
+            <option value="thismonth">This Month</option>
+            <option value="3months">Last 3 Months</option>
+            <option value="6months">Last 6 Months</option>
+            <option value="12months">Last 12 Months</option>
+          </select>
+          <select
+            value={amountFilter}
+            onChange={(e) => setAmountFilter(e.target.value)}
+            className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="all">All Amounts</option>
+            <option value="under1000">Under ₹1,000</option>
+            <option value="1000to5000">₹1,000 - ₹5,000</option>
+            <option value="over5000">Over ₹5,000</option>
+          </select>
+        </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <ReceiptRefundIcon className="h-8 w-8 text-blue-500 mr-4" />
-                  <div>
-                    <div className="text-sm text-gray-600">Total Invoices</div>
-                    <div className="text-2xl font-bold mt-1">{stats.total}</div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CheckCircleIcon className="h-8 w-8 text-green-500 mr-4" />
-                  <div>
-                    <div className="text-sm text-gray-600">Paid</div>
-                    <div className="text-2xl font-bold mt-1">{stats.paid}</div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <ClockIcon className="h-8 w-8 text-yellow-500 mr-4" />
-                  <div>
-                    <div className="text-sm text-gray-600">Pending</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.pending}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <XCircleIcon className="h-8 w-8 text-red-500 mr-4" />
-                  <div>
-                    <div className="text-sm text-gray-600">Overdue</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.overdue}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Invoices Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Invoice ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Due In
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {invoices.map((invoice) => (
-                      <tr key={invoice.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {invoice.id}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {invoice.client}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {moment(invoice.date).format("DD-MM-YYYY")}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {invoice.amount}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {moment(invoice.dueDate).format("DD-MM-YYYY")}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            {getStatusIcon(invoice.status)}
-                            <span
-                              className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}
-                            >
-                              {invoice.status}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center space-x-2">
-                            <Link
-                              to={`/invoices/view/${invoice.orderId}`}
-                              className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-all duration-200"
-                              title="View Invoice Details"
-                            >
-                              <EyeIcon className="h-5 w-5" />
-                            </Link>
-                            <button
-                              onClick={() => downloadPDF(invoice)}
-                              disabled={downloading === invoice.id}
-                              className={`p-1 rounded transition-all duration-200 ${downloading === invoice.id
-                                  ? "text-gray-400 cursor-not-allowed"
-                                  : "text-purple-600 hover:text-purple-800 hover:bg-purple-50"
-                                }`}
-                              title="Download PDF"
-                            >
-                              {downloading === invoice.id ? (
-                                <div className="animate-spin h-5 w-5 border-2 border-purple-600 border-t-transparent rounded-full"></div>
-                              ) : (
-                                <ArrowDownTrayIcon className="h-5 w-5" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <ReceiptRefundIcon className="h-8 w-8 text-blue-500 mr-4" />
+              <div>
+                <div className="text-sm text-gray-600">Total Invoices</div>
+                <div className="text-2xl font-bold mt-1">{stats.total}</div>
               </div>
             </div>
           </div>
-        </main>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <CheckCircleIcon className="h-8 w-8 text-green-500 mr-4" />
+              <div>
+                <div className="text-sm text-gray-600">Paid</div>
+                <div className="text-2xl font-bold mt-1">{stats.paid}</div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <ClockIcon className="h-8 w-8 text-yellow-500 mr-4" />
+              <div>
+                <div className="text-sm text-gray-600">Pending</div>
+                <div className="text-2xl font-bold mt-1">
+                  {stats.pending}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center">
+              <XCircleIcon className="h-8 w-8 text-red-500 mr-4" />
+              <div>
+                <div className="text-sm text-gray-600">Overdue</div>
+                <div className="text-2xl font-bold mt-1">
+                  {stats.overdue}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Invoices Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Invoice ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Due In
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {invoices.map((invoice) => (
+                  <tr key={invoice.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {invoice.id}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {invoice.client}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {moment(invoice.date).format("DD-MM-YYYY")}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {invoice.amount}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {moment(invoice.dueDate).format("DD-MM-YYYY")}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {getStatusIcon(invoice.status)}
+                        <span
+                          className={`ml-2 px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}
+                        >
+                          {invoice.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <Link
+                          to={`/invoices/view/${invoice.orderId}`}
+                          className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-all duration-200"
+                          title="View Invoice Details"
+                        >
+                          <EyeIcon className="h-5 w-5" />
+                        </Link>
+                        <button
+                          onClick={() => downloadPDF(invoice)}
+                          disabled={downloading === invoice.id}
+                          className={`p-1 rounded transition-all duration-200 ${downloading === invoice.id
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                            }`}
+                          title="Download PDF"
+                        >
+                          {downloading === invoice.id ? (
+                            <div className="animate-spin h-5 w-5 border-2 border-purple-600 border-t-transparent rounded-full"></div>
+                          ) : (
+                            <ArrowDownTrayIcon className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );
