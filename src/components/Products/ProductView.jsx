@@ -148,6 +148,13 @@ const ProductView = () => {
     }
   };
 
+  const decodeHtml = (html) => {
+    if (!html) return "";
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+  };
+
   if (loading) {
     return (
       <div className="h-full">
@@ -484,7 +491,7 @@ const ProductView = () => {
                         className="text-gray-600 leading-relaxed prose prose-sm max-w-none break-words"
                         dangerouslySetInnerHTML={{
                           __html:
-                            product.shortDescription ||
+                            decodeHtml(product.shortDescription) ||
                             "No short description provided.",
                         }}
                       />
@@ -497,7 +504,7 @@ const ProductView = () => {
                         className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 prose prose-sm max-w-none break-words"
                         dangerouslySetInnerHTML={{
                           __html:
-                            product.description ||
+                            decodeHtml(product.description) ||
                             "<p>No detailed description available.</p>",
                         }}
                       />

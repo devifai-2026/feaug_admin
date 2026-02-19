@@ -22,6 +22,9 @@ import UserAdd from "./components/Users/UserAdd";
 import UserEdit from "./components/Users/UserEdit";
 import MyProfile from "./components/MyProfile/MyProfile";
 import Login from "./components/MyProfile/Login";
+import Signup from "./components/Auth/Signup";
+import VerifyEmail from "./components/Auth/VerifyEmail";
+import OTPPage from "./components/Auth/OTPPage";
 import OrderView from "./components/Orders/OrderView";
 import OrderUpdate from "./components/Orders/OrderUpdate";
 import EditCategory from "./components/Categories/EditCategory";
@@ -57,6 +60,30 @@ function AppContent() {
         element={
           <PublicRoute>
             <Login />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PublicRoute>
+            <Signup />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/verify-email/:token"
+        element={
+          <PublicRoute>
+            <VerifyEmail />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/otp-verify"
+        element={
+          <PublicRoute>
+            <OTPPage />
           </PublicRoute>
         }
       />
