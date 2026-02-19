@@ -285,12 +285,12 @@ const Invoices = () => {
           "Product";
         const price =
           typeof item.price === "number"
-            ? `₹${item.price.toLocaleString()}`
-            : item.price || "₹0";
+            ? `Rs ${item.price.toLocaleString()}`
+            : (item.price || "Rs 0").replace("₹", "Rs ");
         const total =
           typeof item.total === "number"
-            ? `₹${item.total.toLocaleString()}`
-            : item.total || price;
+            ? `Rs ${item.total.toLocaleString()}`
+            : (item.total || price).replace("₹", "Rs ");
 
         pdf.text(description, 25, yPos);
         pdf.text(item.quantity.toString(), 110, yPos);
@@ -307,11 +307,11 @@ const Invoices = () => {
 
       pdf.setFontSize(12);
       pdf.text("Subtotal:", 140, yPos);
-      pdf.text(invoice.subtotal, 170, yPos);
+      pdf.text(invoice.subtotal.replace("₹", "Rs "), 170, yPos);
 
       yPos += 8;
       pdf.text("Tax (10%):", 140, yPos);
-      pdf.text(invoice.tax, 170, yPos);
+      pdf.text(invoice.tax.replace("₹", "Rs "), 170, yPos);
 
       yPos += 8;
       pdf.setDrawColor(200, 200, 200);
@@ -321,8 +321,8 @@ const Invoices = () => {
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(59, 130, 246);
-      pdf.text("Total Amount:", 140, yPos);
-      pdf.text(invoice.amount, 170, yPos);
+      pdf.text("Total Amount:", 130, yPos);
+      pdf.text(invoice.amount.replace("₹", "Rs "), 170, yPos);
 
       // Notes section
       yPos += 20;

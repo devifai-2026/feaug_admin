@@ -47,6 +47,11 @@ const authApi = {
     axiosInstance.post('/auth/resend-verification', { email })
       .then(response => response.data),
 
+  // Verify OTP
+  verifyOTP: (data) => 
+    axiosInstance.post('/auth/verify-otp', data)
+      .then(response => response.data),
+
   // Logout
   logout: () => 
     axiosInstance.post('/auth/logout')

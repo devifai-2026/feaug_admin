@@ -109,12 +109,12 @@ export const AuthProvider = ({ children }) => {
       const data = await authApi.register(userData);
       
       // Auto-login after registration if token is provided
-      if (data.token || data.data) {
-        const userData = data.data || data.user;
-        if (userData) {
-          setUser(userData);
-        }
-      }
+      // if (data.token || data.data) {
+      //   const userData = data.data || data.user;
+      //   if (userData) {
+      //     setUser(userData);
+      //   }
+      // }
       
       return {
         success: true,

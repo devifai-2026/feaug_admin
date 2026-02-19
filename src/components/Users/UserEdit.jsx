@@ -891,14 +891,7 @@ const UserEdit = () => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-3 mt-6">
-                    <button className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-lg transition-all duration-300 flex flex-col items-center justify-center">
-                      <EnvelopeIcon className="h-5 w-5 text-blue-600 mb-2" />
-                      <span className="text-sm font-medium text-gray-900">
-                        Send Email
-                      </span>
-                    </button>
-                  </div>
+                
                 </div>
               </div>
             </div>
