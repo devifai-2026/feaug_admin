@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   ArrowLeftIcon,
   UserIcon,
@@ -12,13 +12,13 @@ import {
   PencilIcon,
   CheckCircleIcon,
   LockClosedIcon,
-  KeyIcon
-} from '@heroicons/react/24/outline';
-import { useNavigate } from 'react-router-dom';
+  KeyIcon,
+} from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
 
-import profileApi from '../../api/profile.api';
-import s3Api from '../../api/s3.api';
-import { useToast } from '../../context/ToastContext';
+import profileApi from "../../api/profile.api";
+import s3Api from "../../api/s3.api";
+import { useToast } from "../../context/ToastContext";
 
 const MyProfile = () => {
   const navigate = useNavigate();
@@ -28,31 +28,31 @@ const MyProfile = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState("profile");
   const [profileData, setProfileData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    role: '',
-    department: '',
-    createdAt: '',
-    location: '',
-    bio: '',
-    profileImage: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    role: "",
+    department: "",
+    createdAt: "",
+    location: "",
+    bio: "",
+    profileImage: "",
   });
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    department: '',
-    location: '',
-    bio: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    department: "",
+    location: "",
+    bio: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -68,51 +68,51 @@ const MyProfile = () => {
       const user = response.data.user;
 
       setProfileData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        role: user.role || 'admin',
-        department: user.department || '',
-        createdAt: user.createdAt || '',
-        location: user.location || '',
-        bio: user.bio || '',
-        profileImage: user.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        role: user.role || "admin",
+        department: user.department || "",
+        createdAt: user.createdAt || "",
+        location: user.location || "",
+        bio: user.bio || "",
+        profileImage:
+          user.profileImage ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
       });
 
       setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-        department: user.department || '',
-        location: user.location || '',
-        bio: user.bio || ''
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+        department: user.department || "",
+        location: user.location || "",
+        bio: user.bio || "",
       });
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      showToast('Error fetching profile data', 'error');
+      console.error("Error fetching profile:", error);
+      showToast("Error fetching profile data", "error");
     } finally {
       setLoading(false);
     }
   };
 
-
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
 
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
@@ -120,10 +120,12 @@ const MyProfile = () => {
   const validateProfileForm = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
+    if (!formData.firstName.trim())
+      newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = "Invalid email format";
 
     return newErrors;
   };
@@ -131,11 +133,15 @@ const MyProfile = () => {
   const validatePasswordForm = () => {
     const newErrors = {};
 
-    if (!formData.currentPassword) newErrors.currentPassword = 'Current password is required';
-    if (!formData.newPassword) newErrors.newPassword = 'New password is required';
-    else if (formData.newPassword.length < 8) newErrors.newPassword = 'Password must be at least 8 characters';
+    if (!formData.currentPassword)
+      newErrors.currentPassword = "Current password is required";
+    if (!formData.newPassword)
+      newErrors.newPassword = "New password is required";
+    else if (formData.newPassword.length < 8)
+      newErrors.newPassword = "Password must be at least 8 characters";
 
-    if (formData.newPassword !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    if (formData.newPassword !== formData.confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
 
     return newErrors;
   };
@@ -159,13 +165,13 @@ const MyProfile = () => {
         phone: formData.phone,
         department: formData.department,
         location: formData.location,
-        bio: formData.bio
+        bio: formData.bio,
       };
 
       const response = await profileApi.updateProfile(updateData);
       const user = response.data.user;
 
-      setProfileData(prev => ({
+      setProfileData((prev) => ({
         ...prev,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -173,15 +179,18 @@ const MyProfile = () => {
         phone: user.phone,
         department: user.department,
         location: user.location,
-        bio: user.bio
+        bio: user.bio,
       }));
 
       setIsEditing(false);
       setErrors({});
-      showToast('Profile updated successfully!', 'success');
+      showToast("Profile updated successfully!", "success");
     } catch (error) {
-      console.error('Error updating profile:', error);
-      showToast(error.response?.data?.message || 'Error updating profile', 'error');
+      console.error("Error updating profile:", error);
+      showToast(
+        error.response?.data?.message || "Error updating profile",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
@@ -202,21 +211,24 @@ const MyProfile = () => {
       await profileApi.updatePassword({
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,
-        confirmPassword: formData.confirmPassword
+        confirmPassword: formData.confirmPassword,
       });
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       }));
 
       setErrors({});
-      showToast('Password changed successfully!', 'success');
+      showToast("Password changed successfully!", "success");
     } catch (error) {
-      console.error('Error changing password:', error);
-      showToast(error.response?.data?.message || 'Error changing password', 'error');
+      console.error("Error changing password:", error);
+      showToast(
+        error.response?.data?.message || "Error changing password",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
@@ -229,12 +241,12 @@ const MyProfile = () => {
       lastName: profileData.lastName,
       email: profileData.email,
       phone: profileData.phone,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
       department: profileData.department,
       location: profileData.location,
-      bio: profileData.bio
+      bio: profileData.bio,
     });
     setErrors({});
   };
@@ -243,13 +255,13 @@ const MyProfile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Please upload an image file', 'error');
+    if (!file.type.startsWith("image/")) {
+      showToast("Please upload an image file", "error");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      showToast('Image size should be less than 5MB', 'error');
+      showToast("Image size should be less than 5MB", "error");
       return;
     }
 
@@ -260,42 +272,42 @@ const MyProfile = () => {
       const presignedResponse = await s3Api.getPresignedUrl({
         fileName: file.name,
         fileType: file.type,
-        folder: 'profile-images',
+        folder: "profile-images",
       });
 
       // Upload to S3
       await fetch(presignedResponse.data.uploadUrl, {
-        method: 'PUT',
+        method: "PUT",
         body: file,
         headers: {
-          'Content-Type': file.type,
+          "Content-Type": file.type,
         },
       });
 
       // Update profile with new image URL
       await profileApi.uploadProfileImage(presignedResponse.data.fileUrl);
 
-      setProfileData(prev => ({
+      setProfileData((prev) => ({
         ...prev,
-        profileImage: presignedResponse.data.fileUrl
+        profileImage: presignedResponse.data.fileUrl,
       }));
 
-      showToast('Profile picture updated successfully!', 'success');
+      showToast("Profile picture updated successfully!", "success");
     } catch (error) {
-      console.error('Error uploading avatar:', error);
-      showToast('Error uploading profile picture', 'error');
+      console.error("Error uploading avatar:", error);
+      showToast("Error uploading profile picture", "error");
     } finally {
       setUploading(false);
     }
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -331,7 +343,7 @@ const MyProfile = () => {
               </p>
             </div>
 
-            {!isEditing && activeTab === 'profile' && (
+            {!isEditing && activeTab === "profile" && (
               <button
                 onClick={() => setIsEditing(true)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -346,30 +358,12 @@ const MyProfile = () => {
         {/* Profile Header Card */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mb-8">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
-            {/* Avatar */}
+            {/* Avatar Initials Placeholder */}
             <div className="relative">
-              <img
-                className="h-24 w-24 rounded-full border-4 border-white shadow-lg object-cover"
-                src={profileData.profileImage}
-                alt={`${profileData.firstName} ${profileData.lastName}`}
-              />
-              <label
-                className={`absolute bottom-0 right-0 h-10 w-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg cursor-pointer ${uploading ? 'opacity-50' : ''}`}
-                title="Change photo"
-              >
-                {uploading ? (
-                  <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                ) : (
-                  <CameraIcon className="h-5 w-5" />
-                )}
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  disabled={uploading}
-                />
-              </label>
+              <div className="h-24 w-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center bg-blue-600 text-white text-3xl font-bold uppercase">
+                {(profileData.firstName?.[0] || "") +
+                  (profileData.lastName?.[0] || "")}
+              </div>
             </div>
 
             {/* Profile Info */}
@@ -393,7 +387,9 @@ const MyProfile = () => {
 
                 <div className="mt-4 md:mt-0 text-right">
                   <div className="text-sm text-gray-600">Member Since</div>
-                  <div className="text-lg font-semibold text-gray-900">{formatDate(profileData.createdAt)}</div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    {formatDate(profileData.createdAt)}
+                  </div>
                 </div>
               </div>
 
@@ -405,15 +401,15 @@ const MyProfile = () => {
                 </div>
                 <div className="flex items-center text-gray-700">
                   <PhoneIcon className="h-5 w-5 mr-3 text-gray-400" />
-                  <span>{profileData.phone || 'Not provided'}</span>
+                  <span>{profileData.phone || "Not provided"}</span>
                 </div>
                 <div className="flex items-center text-gray-700">
                   <BuildingOfficeIcon className="h-5 w-5 mr-3 text-gray-400" />
-                  <span>{profileData.department || 'Not assigned'}</span>
+                  <span>{profileData.department || "Not assigned"}</span>
                 </div>
                 <div className="flex items-center text-gray-700">
                   <MapPinIcon className="h-5 w-5 mr-3 text-gray-400" />
-                  <span>{profileData.location || 'Not provided'}</span>
+                  <span>{profileData.location || "Not provided"}</span>
                 </div>
               </div>
             </div>
@@ -423,21 +419,23 @@ const MyProfile = () => {
         {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-8">
           <button
-            onClick={() => setActiveTab('profile')}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'profile'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+            onClick={() => setActiveTab("profile")}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "profile"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             <UserIcon className="h-5 w-5 inline mr-2" />
             Profile Information
           </button>
           <button
-            onClick={() => setActiveTab('security')}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'security'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
+            onClick={() => setActiveTab("security")}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "security"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
           >
             <LockClosedIcon className="h-5 w-5 inline mr-2" />
             Security
@@ -445,16 +443,20 @@ const MyProfile = () => {
         </div>
 
         {/* Profile Information Tab */}
-        {activeTab === 'profile' && (
+        {activeTab === "profile" && (
           <div className="bg-white rounded-xl shadow-lg p-6">
             {!isEditing ? (
               <>
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Personal Information</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">
+                  Personal Information
+                </h3>
 
                 <div className="space-y-6">
                   {profileData.bio && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">About</h4>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        About
+                      </h4>
                       <div className="bg-gray-50 rounded-lg p-4">
                         <p className="text-gray-700">{profileData.bio}</p>
                       </div>
@@ -463,35 +465,55 @@ const MyProfile = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">First Name</h4>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        First Name
+                      </h4>
                       <p className="text-gray-900">{profileData.firstName}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Last Name</h4>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Last Name
+                      </h4>
                       <p className="text-gray-900">{profileData.lastName}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Email Address</h4>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                      </h4>
                       <p className="text-gray-900">{profileData.email}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Phone Number</h4>
-                      <p className="text-gray-900">{profileData.phone || 'Not provided'}</p>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Phone Number
+                      </h4>
+                      <p className="text-gray-900">
+                        {profileData.phone || "Not provided"}
+                      </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Department</h4>
-                      <p className="text-gray-900">{profileData.department || 'Not assigned'}</p>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Department
+                      </h4>
+                      <p className="text-gray-900">
+                        {profileData.department || "Not assigned"}
+                      </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Location</h4>
-                      <p className="text-gray-900">{profileData.location || 'Not provided'}</p>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Location
+                      </h4>
+                      <p className="text-gray-900">
+                        {profileData.location || "Not provided"}
+                      </p>
                     </div>
                   </div>
                 </div>
               </>
             ) : (
               <form onSubmit={handleProfileUpdate}>
-                <h3 className="text-xl font-semibold text-gray-900 mb-6">Edit Profile Information</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-6">
+                  Edit Profile Information
+                </h3>
 
                 <div className="space-y-6">
                   <div>
@@ -518,11 +540,16 @@ const MyProfile = () => {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.firstName ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                          errors.firstName
+                            ? "border-red-500"
+                            : "border-gray-300"
+                        }`}
                       />
                       {errors.firstName && (
-                        <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.firstName}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -534,11 +561,14 @@ const MyProfile = () => {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.lastName ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                          errors.lastName ? "border-red-500" : "border-gray-300"
+                        }`}
                       />
                       {errors.lastName && (
-                        <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.lastName}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -550,11 +580,14 @@ const MyProfile = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.email ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                          errors.email ? "border-red-500" : "border-gray-300"
+                        }`}
                       />
                       {errors.email && (
-                        <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {errors.email}
+                        </p>
                       )}
                     </div>
                     <div>
@@ -586,7 +619,9 @@ const MyProfile = () => {
                         <option value="Finance">Finance</option>
                         <option value="HR">HR</option>
                         <option value="Operations">Operations</option>
-                        <option value="Customer Support">Customer Support</option>
+                        <option value="Customer Support">
+                          Customer Support
+                        </option>
                         <option value="Management">Management</option>
                       </select>
                     </div>
@@ -617,8 +652,11 @@ const MyProfile = () => {
                   <button
                     type="submit"
                     disabled={saving}
-                    className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${saving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-                      }`}
+                    className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${
+                      saving
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-blue-700"
+                    }`}
                   >
                     {saving ? (
                       <>
@@ -639,18 +677,23 @@ const MyProfile = () => {
         )}
 
         {/* Security Tab */}
-        {activeTab === 'security' && (
+        {activeTab === "security" && (
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Security Settings</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-6">
+              Security Settings
+            </h3>
 
             <form onSubmit={handlePasswordChange} className="space-y-6">
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <div className="flex">
                   <KeyIcon className="h-5 w-5 text-yellow-600 mr-3 flex-shrink-0" />
                   <div>
-                    <h4 className="text-sm font-medium text-yellow-800">Change Password</h4>
+                    <h4 className="text-sm font-medium text-yellow-800">
+                      Change Password
+                    </h4>
                     <p className="text-sm text-yellow-700 mt-1">
-                      For security reasons, please enter your current password before setting a new one.
+                      For security reasons, please enter your current password
+                      before setting a new one.
                     </p>
                   </div>
                 </div>
@@ -666,12 +709,17 @@ const MyProfile = () => {
                     name="currentPassword"
                     value={formData.currentPassword}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.currentPassword ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.currentPassword
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
                     placeholder="Enter current password"
                   />
                   {errors.currentPassword && (
-                    <p className="mt-1 text-sm text-red-600">{errors.currentPassword}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.currentPassword}
+                    </p>
                   )}
                 </div>
 
@@ -684,12 +732,15 @@ const MyProfile = () => {
                     name="newPassword"
                     value={formData.newPassword}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.newPassword ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.newPassword ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="Enter new password"
                   />
                   {errors.newPassword && (
-                    <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.newPassword}
+                    </p>
                   )}
                   <p className="mt-1 text-xs text-gray-500">
                     Minimum 8 characters
@@ -705,12 +756,17 @@ const MyProfile = () => {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      errors.confirmPassword
+                        ? "border-red-500"
+                        : "border-gray-300"
+                    }`}
                     placeholder="Confirm new password"
                   />
                   {errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.confirmPassword}
+                    </p>
                   )}
                 </div>
               </div>
@@ -719,8 +775,11 @@ const MyProfile = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${saving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
-                    }`}
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg transition-colors flex items-center ${
+                    saving
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-blue-700"
+                  }`}
                 >
                   {saving ? (
                     <>
@@ -748,7 +807,9 @@ const MyProfile = () => {
               </div>
               <div>
                 <div className="text-sm text-gray-600">Member Since</div>
-                <div className="text-lg font-bold mt-1">{formatDate(profileData.createdAt)}</div>
+                <div className="text-lg font-bold mt-1">
+                  {formatDate(profileData.createdAt)}
+                </div>
               </div>
             </div>
           </div>
@@ -759,7 +820,9 @@ const MyProfile = () => {
               </div>
               <div>
                 <div className="text-sm text-gray-600">Role</div>
-                <div className="text-lg font-bold mt-1 capitalize">{profileData.role}</div>
+                <div className="text-lg font-bold mt-1 capitalize">
+                  {profileData.role}
+                </div>
               </div>
             </div>
           </div>
@@ -770,7 +833,9 @@ const MyProfile = () => {
               </div>
               <div>
                 <div className="text-sm text-gray-600">Status</div>
-                <div className="text-lg font-bold mt-1 text-green-600">Active</div>
+                <div className="text-lg font-bold mt-1 text-green-600">
+                  Active
+                </div>
               </div>
             </div>
           </div>
