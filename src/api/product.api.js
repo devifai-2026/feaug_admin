@@ -65,6 +65,15 @@ const productApi = {
   updateStock: (productId, data) =>
     axiosInstance.patch(`/admin/products/${productId}/stock`, data)
       .then(response => response.data),
+
+  // Restock a product (add quantity)
+  restockProduct: (productId, quantity, note = '') =>
+    axiosInstance.patch(`/admin/products/${productId}/stock`, {
+      type: 'stock_in',
+      quantity,
+      reason: 'Manual restock',
+      notes: note,
+    }).then(response => response.data),
 };
 
 export default productApi;

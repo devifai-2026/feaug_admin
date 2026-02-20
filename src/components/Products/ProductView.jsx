@@ -8,12 +8,11 @@ import {
   TagIcon,
   CubeIcon,
   ChartPieIcon,
-  DocumentDuplicateIcon,
   ArrowTrendingUpIcon,
-  ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
   PhotoIcon,
   ChevronDownIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 
 import productApi from "../../api/product.api";
@@ -29,6 +28,15 @@ const ProductView = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [imageGallery, setImageGallery] = useState([]);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [toast, setToast] = useState(null);
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+  const [showRestockModal, setShowRestockModal] = useState(false);
+  const [restockQuantity, setRestockQuantity] = useState("");
+  const [restockNote, setRestockNote] = useState("");
+  const [restockLoading, setRestockLoading] = useState(false);
 
   useEffect(() => {
     loadProduct();
@@ -132,21 +140,43 @@ const ProductView = () => {
 
 
 
-  const restockProduct = () => {
-    const quantity = prompt("Enter quantity to restock:", "50");
-    if (quantity && !isNaN(quantity)) {
-      const updatedProduct = {
-        ...product,
-        stock: product.stock + parseInt(quantity),
-        status:
-          product.stock + parseInt(quantity) > product.minStock
-            ? "In Stock"
-            : "Low Stock",
-      };
-      setProduct(updatedProduct);
+  const handleRestock = async () => {
+    const qty = parseInt(restockQuantity);
+    if (!qty || qty <= 0) return;
 
-      // In a real app, you would update localStorage here
-      alert(`Restocked ${quantity} units successfully.`);
+    setRestockLoading(true);
+    try {
+      await productApi.restockProduct(product._id || product.id, qty, restockNote.trim());
+
+      const newStock = product.stock + qty;
+      setProduct((prev) => ({
+        ...prev,
+        stock: newStock,
+        status:
+          newStock === 0
+            ? "Out of Stock"
+            : newStock <= prev.minStock
+            ? "Low Stock"
+            : "In Stock",
+      }));
+
+      // Prepend to stock history
+      const newEntry = {
+        date: new Date().toISOString().split("T")[0],
+        action: "Restocked",
+        quantity: qty,
+        user: "Admin",
+      };
+      setStockHistory((prev) => [newEntry, ...prev]);
+
+      setShowRestockModal(false);
+      setRestockQuantity("");
+      setRestockNote("");
+    } catch (error) {
+      console.error("Error restocking product:", error);
+      showToast("error", error?.response?.data?.message || "Failed to restock. Please try again.");
+    } finally {
+      setRestockLoading(false);
     }
   };
 
@@ -694,17 +724,12 @@ const ProductView = () => {
               <div className="p-6">
                 <div className="space-y-3">
                   <button
-                    onClick={restockProduct}
+                    onClick={() => setShowRestockModal(true)}
                     className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     <CubeIcon className="h-5 w-5 mr-2" />
                     Restock Product
                   </button>
-                  <button className="w-full flex items-center justify-center px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50">
-                    <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
-                    Duplicate Product
-                  </button>
-                
                 </div>
               </div>
             </div>
@@ -713,85 +738,6 @@ const ProductView = () => {
 
         {/* Additional Information & Alerts */}
         <div className="mt-8">
-          {/* Stock History Card - Full Width */}
-          <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Stock History
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead>
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Date
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Action
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Quantity
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        User
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Balance
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {stockHistory.map((item, index) => {
-                      const balance = stockHistory
-                        .slice(0, index + 1)
-                        .reduce((sum, hist) => sum + hist.quantity, 0);
-
-                      return (
-                        <tr key={index}>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {item.date}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full ${item.action === "Sold"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-green-100 text-green-800"
-                                }`}
-                            >
-                              {item.action}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm font-medium">
-                            <span
-                              className={
-                                item.action === "Sold"
-                                  ? "text-red-600"
-                                  : "text-green-600"
-                              }
-                            >
-                              {item.action === "Sold" ? "-" : "+"}
-                              {Math.abs(item.quantity)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {item.user}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-medium">
-                            {balance} units
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {/* <button className="w-full mt-4 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center">
-                View Full History
-              </button> */}
-            </div>
-          </div>
 
           {/* Alerts & Notifications */}
           {(product.stock <= (product.minStock || 10) ||
@@ -812,7 +758,7 @@ const ProductView = () => {
                     </p>
                     <div className="flex space-x-3">
                       <button
-                        onClick={restockProduct}
+                        onClick={() => setShowRestockModal(true)}
                         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                       >
                         Restock Now
@@ -827,6 +773,129 @@ const ProductView = () => {
             )}
         </div>
       </div>
+
+      {/* Restock Modal */}
+      {showRestockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center">
+                <CubeIcon className="h-5 w-5 text-blue-600 mr-2" />
+                <h3 className="text-lg font-bold text-gray-900">Restock Product</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRestockModal(false);
+                  setRestockQuantity("");
+                  setRestockNote("");
+                }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5">
+              <div className="flex items-center justify-between bg-blue-50 rounded-xl px-4 py-3">
+                <span className="text-sm font-semibold text-blue-700">Current Stock</span>
+                <span className="text-lg font-bold text-blue-900">{product.stock} units</span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Quantity to Add <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={restockQuantity}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "" || parseInt(v) > 0) setRestockQuantity(v);
+                  }}
+                  onBlur={(e) => {
+                    const num = parseInt(e.target.value);
+                    if (!num || num < 1) setRestockQuantity("");
+                  }}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="Enter quantity"
+                  autoFocus
+                />
+                {restockQuantity && parseInt(restockQuantity) > 0 && (
+                  <p className="mt-1.5 text-xs text-green-600 font-medium">
+                    New stock will be: {product.stock + parseInt(restockQuantity)} units
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Note <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={restockNote}
+                  onChange={(e) => setRestockNote(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  placeholder="e.g. Supplier delivery, manual adjustment"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+              <button
+                onClick={() => {
+                  setShowRestockModal(false);
+                  setRestockQuantity("");
+                  setRestockNote("");
+                }}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRestock}
+                disabled={restockLoading || !restockQuantity || parseInt(restockQuantity) < 1}
+                className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {restockLoading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Restocking...
+                  </>
+                ) : (
+                  "Confirm Restock"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
+          toast.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+        }`}>
+          <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
+            toast.type === "success" ? "bg-green-500" : "bg-red-500"
+          }`}>
+            {toast.type === "success" ? "✓" : "!"}
+          </div>
+          <p className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+            {toast.message}
+          </p>
+          <button onClick={() => setToast(null)} className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

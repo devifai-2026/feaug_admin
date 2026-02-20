@@ -6,7 +6,6 @@ import {
   PhoneIcon,
   CalendarIcon,
   MapPinIcon,
-  BuildingOfficeIcon,
   ShieldCheckIcon,
   CameraIcon,
   PencilIcon,
@@ -35,7 +34,6 @@ const MyProfile = () => {
     email: "",
     phone: "",
     role: "",
-    department: "",
     createdAt: "",
     location: "",
     bio: "",
@@ -50,7 +48,6 @@ const MyProfile = () => {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-    department: "",
     location: "",
     bio: "",
   });
@@ -73,7 +70,6 @@ const MyProfile = () => {
         email: user.email || "",
         phone: user.phone || "",
         role: user.role || "admin",
-        department: user.department || "",
         createdAt: user.createdAt || "",
         location: user.location || "",
         bio: user.bio || "",
@@ -90,7 +86,6 @@ const MyProfile = () => {
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
-        department: user.department || "",
         location: user.location || "",
         bio: user.bio || "",
       });
@@ -163,7 +158,6 @@ const MyProfile = () => {
         lastName: formData.lastName,
         email: formData.email,
         phone: formData.phone,
-        department: formData.department,
         location: formData.location,
         bio: formData.bio,
       };
@@ -177,7 +171,6 @@ const MyProfile = () => {
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
-        department: user.department,
         location: user.location,
         bio: user.bio,
       }));
@@ -244,7 +237,6 @@ const MyProfile = () => {
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
-      department: profileData.department,
       location: profileData.location,
       bio: profileData.bio,
     });
@@ -404,10 +396,6 @@ const MyProfile = () => {
                   <span>{profileData.phone || "Not provided"}</span>
                 </div>
                 <div className="flex items-center text-gray-700">
-                  <BuildingOfficeIcon className="h-5 w-5 mr-3 text-gray-400" />
-                  <span>{profileData.department || "Not assigned"}</span>
-                </div>
-                <div className="flex items-center text-gray-700">
                   <MapPinIcon className="h-5 w-5 mr-3 text-gray-400" />
                   <span>{profileData.location || "Not provided"}</span>
                 </div>
@@ -488,14 +476,6 @@ const MyProfile = () => {
                       </h4>
                       <p className="text-gray-900">
                         {profileData.phone || "Not provided"}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Department
-                      </h4>
-                      <p className="text-gray-900">
-                        {profileData.department || "Not assigned"}
                       </p>
                     </div>
                     <div>
@@ -601,29 +581,6 @@ const MyProfile = () => {
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Department
-                      </label>
-                      <select
-                        name="department"
-                        value={formData.department}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                      >
-                        <option value="">Select Department</option>
-                        <option value="Sales">Sales</option>
-                        <option value="Marketing">Marketing</option>
-                        <option value="IT">IT</option>
-                        <option value="Finance">Finance</option>
-                        <option value="HR">HR</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Customer Support">
-                          Customer Support
-                        </option>
-                        <option value="Management">Management</option>
-                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
