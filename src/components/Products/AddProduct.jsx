@@ -11,6 +11,7 @@ import {
   TrashIcon,
   ArrowUpTrayIcon,
   CheckIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import ReactQuill from "react-quill-new";
 import "quill/dist/quill.snow.css";
@@ -66,8 +67,14 @@ const AddProduct = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState(null);
   const fileInputRef = React.useRef(null);
   const navigate = useNavigate();
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   // Fetch categories on mount
   React.useEffect(() => {
@@ -174,11 +181,11 @@ const AddProduct = () => {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     for (let i = 0; i < files.length; i++) {
       if (!allowedTypes.includes(files[i].type)) {
-        alert(`"${files[i].name}" is not a supported image format. Use JPG, PNG, WebP, or GIF.`);
+        showToast("error", `"${files[i].name}" is not a supported image format. Use JPG, PNG, WebP, or GIF.`);
         return;
       }
       if (files[i].size > 10 * 1024 * 1024) {
-        alert(`"${files[i].name}" exceeds the 10MB size limit.`);
+        showToast("error", `"${files[i].name}" exceeds the 10MB size limit.`);
         return;
       }
     }
@@ -207,10 +214,10 @@ const AddProduct = () => {
         }
       }
       setUploadProgress(100);
-      alert("Images uploaded successfully!");
+      showToast("success", "Images uploaded successfully!");
     } catch (error) {
       console.error("Error uploading images:", error);
-      alert(error.response?.data?.message || error.message || "Error uploading images");
+      showToast("error", error.response?.data?.message || error.message || "Error uploading images");
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -223,7 +230,7 @@ const AddProduct = () => {
       setImageUrls((prev) => [...prev, newImageUrl.trim()]);
       setNewImageUrl("");
     } else {
-      alert("Please enter a valid URL");
+      showToast("error", "Please enter a valid URL");
     }
   };
 
@@ -308,17 +315,11 @@ const AddProduct = () => {
 
       await productApi.createProduct(payload);
 
-      // Show success message
-      alert("Product added successfully!");
-
-      // Redirect to products page
-      navigate("/products");
+      showToast("success", "Product added successfully!");
+      setTimeout(() => navigate("/products"), 1500);
     } catch (error) {
       console.error("Error creating product:", error);
-      alert(
-        error.response?.data?.message ||
-        "Error creating product. Please try again.",
-      );
+      showToast("error", error.response?.data?.message || "Error creating product. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -1086,6 +1087,25 @@ const AddProduct = () => {
           </div>
         </form>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
+          toast.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+        }`}>
+          <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
+            toast.type === "success" ? "bg-green-500" : "bg-red-500"
+          }`}>
+            {toast.type === "success" ? "✓" : "!"}
+          </div>
+          <p className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+            {toast.message}
+          </p>
+          <button onClick={() => setToast(null)} className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
