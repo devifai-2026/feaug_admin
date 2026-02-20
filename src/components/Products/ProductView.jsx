@@ -678,10 +678,7 @@ const ProductView = () => {
                     <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
                     Duplicate Product
                   </button>
-                  <button className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    <ClipboardDocumentListIcon className="h-5 w-5 mr-2" />
-                    Generate Report
-                  </button>
+                
                 </div>
               </div>
             </div>

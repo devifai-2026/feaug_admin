@@ -546,14 +546,7 @@ const OrderView = () => {
                     <TruckIcon className="h-5 w-5 text-blue-600" />
                   </a>
                 )}
-                <button
-                  onClick={handleSendInvoiceEmail}
-                  disabled={updating}
-                  className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                  title="Send Invoice via Email"
-                >
-                  <EnvelopeIcon className="h-5 w-5 text-gray-600" />
-                </button>
+             
               </div>
             </div>
           </div>
