@@ -9,6 +9,7 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
   ShoppingBagIcon,
+  ShoppingCartIcon,
   ArrowTrendingUpIcon,
   ClockIcon,
   HeartIcon,
@@ -90,6 +91,7 @@ const UserEdit = () => {
   const [activityLog, setActivityLog] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
 
   useEffect(() => {
     fetchUserData();
@@ -101,7 +103,7 @@ const UserEdit = () => {
       setErrorMessage("");
 
       const response = await userApi.getUserById(id);
-      const { user, analytics, activityLog, recentOrders, wishlistItems } =
+      const { user, analytics, activityLog, recentOrders, wishlistItems, cartItems } =
         response.data;
 
       setFormData({
@@ -121,6 +123,7 @@ const UserEdit = () => {
       setActivityLog(activityLog || []);
       setRecentOrders(recentOrders || []);
       setWishlistItems(wishlistItems || []);
+      setCartItems(cartItems || []);
     } catch (err) {
       console.error("Error loading user:", err);
       setErrorMessage("Failed to load user data");
@@ -426,7 +429,9 @@ const UserEdit = () => {
         navigate("/users");
       }, 1500);
     } catch (err) {
-      setErrorMessage(err?.message || "Error deleting user");
+      const msg = err?.response?.data?.message || err?.message || "Error deleting user";
+      setErrorMessage(msg);
+      showToast(msg, "error");
       setShowDeleteModal(false);
     }
   };
@@ -719,29 +724,24 @@ const UserEdit = () => {
               </div>
             </div>
 
-            {/* <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                    <ClockIcon className="h-6 w-6 text-amber-600" />
-                  </div>
-                  <span className="text-sm font-medium text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
-                    {activityLog.length} Events
-                  </span>
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                  <ShoppingCartIcon className="h-6 w-6 text-amber-600" />
                 </div>
-                <p className="text-sm text-gray-600">Recent Activity</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {activityLog.length}
-                </p>
-                <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>
-                    Last:{" "}
-                    {activityLog[0]
-                      ? formatDate(activityLog[0].createdAt).split(",")[0]
-                      : "N/A"}
-                  </span>
-                </div>
-              </div> */}
+                <span className="text-sm font-medium text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full">
+                  {analytics?.cartItemsCount || 0} Items
+                </span>
+              </div>
+              <p className="text-sm text-gray-600">Cart</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">
+                {analytics?.cartItemsCount || 0}
+              </p>
+              <div className="mt-3 flex items-center gap-1 text-sm text-amber-600">
+                <BanknotesIcon className="h-4 w-4" />
+                <span>{formatCurrency(analytics?.cartTotal || 0)} total</span>
+              </div>
+            </div>
           </div>
 
           {/* Premium Tabs */}
@@ -774,6 +774,94 @@ const UserEdit = () => {
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div className="space-y-8">
+              {/* Wishlist & Cart Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Wishlist */}
+                <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Wishlist</h3>
+                      <p className="text-sm text-gray-500 mt-0.5">{analytics?.wishlistCount || 0} saved items</p>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-rose-100 flex items-center justify-center">
+                      <HeartIcon className="h-5 w-5 text-rose-600" />
+                    </div>
+                  </div>
+                  {wishlistItems.length > 0 ? (
+                    <div className="space-y-3">
+                      {wishlistItems.map((product, i) => (
+                        <div key={product?._id || i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                          <img
+                            src={product?.images?.find(img => img.isPrimary)?.url || product?.images?.[0]?.url || `https://via.placeholder.com/40`}
+                            alt={product?.name}
+                            className="h-10 w-10 rounded-lg object-cover border border-gray-200"
+                            onError={e => { e.target.src = `https://via.placeholder.com/40`; }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{product?.name}</p>
+                            <p className="text-xs text-gray-500">{product?.category?.name || "—"}</p>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900 shrink-0">
+                            {formatCurrency(product?.sellingPrice || 0)}
+                          </span>
+                        </div>
+                      ))}
+                      {analytics?.wishlistCount > 10 && (
+                        <p className="text-xs text-gray-400 text-center pt-1">+{analytics.wishlistCount - wishlistItems.length} more items</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <HeartIcon className="h-10 w-10 mx-auto text-gray-200 mb-2" />
+                      <p className="text-sm text-gray-400">No wishlist items</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Cart */}
+                <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 shadow-sm border border-gray-200">
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">Cart</h3>
+                      <p className="text-sm text-gray-500 mt-0.5">{analytics?.cartItemsCount || 0} items · {formatCurrency(analytics?.cartTotal || 0)}</p>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                      <ShoppingCartIcon className="h-5 w-5 text-amber-600" />
+                    </div>
+                  </div>
+                  {cartItems.length > 0 ? (
+                    <div className="space-y-3">
+                      {cartItems.map((item, i) => (
+                        <div key={item?._id || i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                          <img
+                            src={item?.product?.images?.find(img => img.isPrimary)?.url || item?.product?.images?.[0]?.url || `https://via.placeholder.com/40`}
+                            alt={item?.product?.name}
+                            className="h-10 w-10 rounded-lg object-cover border border-gray-200"
+                            onError={e => { e.target.src = `https://via.placeholder.com/40`; }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{item?.product?.name}</p>
+                            <p className="text-xs text-gray-500">Qty: {item?.quantity || 1}</p>
+                          </div>
+                          <span className="text-sm font-semibold text-gray-900 shrink-0">
+                            {formatCurrency((item?.price || item?.product?.sellingPrice || 0) * (item?.quantity || 1))}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-2">
+                        <span className="text-sm font-medium text-gray-600">Total</span>
+                        <span className="text-base font-bold text-gray-900">{formatCurrency(analytics?.cartTotal || 0)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <ShoppingCartIcon className="h-10 w-10 mx-auto text-gray-200 mb-2" />
+                      <p className="text-sm text-gray-400">Cart is empty</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Spending Trend Chart */}
@@ -1474,21 +1562,35 @@ const UserEdit = () => {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-4 mb-6">
-              <p className="text-sm text-rose-800">
-                Warning: Deleting{" "}
-                <span className="font-semibold">
-                  {formData.firstName} {formData.lastName}
-                </span>{" "}
-                will permanently remove:
-              </p>
-              <ul className="mt-2 text-sm text-rose-700 space-y-1">
-                <li>• All user data and profile information</li>
-                <li>• Order history and transaction records</li>
-                <li>• Wishlist and saved preferences</li>
-                <li>• Activity logs and engagement data</li>
-              </ul>
-            </div>
+            {(analytics?.wishlistCount > 0 || analytics?.cartItemsCount > 0) ? (
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 mb-6">
+                <p className="text-sm font-semibold text-amber-800 mb-2">Cannot delete this user</p>
+                <p className="text-sm text-amber-700">This user has active items that must be cleared first:</p>
+                <ul className="mt-2 text-sm text-amber-700 space-y-1">
+                  {analytics?.wishlistCount > 0 && (
+                    <li>• <span className="font-semibold">{analytics.wishlistCount}</span> item(s) in wishlist</li>
+                  )}
+                  {analytics?.cartItemsCount > 0 && (
+                    <li>• <span className="font-semibold">{analytics.cartItemsCount}</span> item(s) in cart</li>
+                  )}
+                </ul>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl p-4 mb-6">
+                <p className="text-sm text-rose-800">
+                  Warning: Deleting{" "}
+                  <span className="font-semibold">
+                    {formData.firstName} {formData.lastName}
+                  </span>{" "}
+                  will permanently remove:
+                </p>
+                <ul className="mt-2 text-sm text-rose-700 space-y-1">
+                  <li>• All user data and profile information</li>
+                  <li>• Order history and transaction records</li>
+                  <li>• Activity logs and engagement data</li>
+                </ul>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3">
               <button
@@ -1499,7 +1601,12 @@ const UserEdit = () => {
               </button>
               <button
                 onClick={handleDeleteUser}
-                className="px-4 py-2.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white rounded-xl transition-all duration-300 font-medium"
+                disabled={analytics?.wishlistCount > 0 || analytics?.cartItemsCount > 0}
+                className={`px-4 py-2.5 rounded-xl transition-all duration-300 font-medium ${
+                  (analytics?.wishlistCount > 0 || analytics?.cartItemsCount > 0)
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white"
+                }`}
               >
                 Delete User
               </button>
