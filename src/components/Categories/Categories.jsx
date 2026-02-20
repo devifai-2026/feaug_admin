@@ -225,13 +225,13 @@ const Categories = () => {
               <ArrowPathIcon className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <Link
+            {/* <Link
               to="/categories/add"
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Add Category
-            </Link>
+            </Link> */}
           </div>
         </div>
 
@@ -385,7 +385,7 @@ const Categories = () => {
                         <p className="text-sm text-gray-500 line-clamp-2">{category.description || 'No description'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    {/* <div className="flex items-center space-x-2">
                       <Link
                         to={`/categories/edit/${category._id}`}
                         className="p-1 text-blue-600 hover:text-blue-800"
@@ -401,7 +401,7 @@ const Categories = () => {
                       >
                         <TrashIcon className="h-5 w-5" />
                       </button>
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="space-y-3">
@@ -460,9 +460,9 @@ const Categories = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Parent
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -495,7 +495,7 @@ const Categories = () => {
                           ? category.parentCategory.name
                           : '—'}
                       </td>
-                      <td className="px-6 py-4">
+                      {/* <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <Link
                             to={`/categories/edit/${category._id}`}
@@ -504,13 +504,13 @@ const Categories = () => {
                           >
                             <PencilIcon className="h-5 w-5" />
                           </Link>
-                          {/* <button
+                          <button
                                   onClick={() => handleViewSubcategories(category)}
                                   className="text-green-600 hover:text-green-800"
                                   title="View Subcategories"
                                 >
                                   <FolderIcon className="h-5 w-5" />
-                                </button> */}
+                                </button>
                           <button
                             className={`${category.productCount > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
                             title={category.productCount > 0 ? 'Cannot delete category with products' : 'Delete'}
@@ -520,7 +520,7 @@ const Categories = () => {
                             <TrashIcon className="h-5 w-5" />
                           </button>
                         </div>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>
