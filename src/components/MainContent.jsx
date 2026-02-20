@@ -2,7 +2,7 @@ import {
   ArrowTrendingUpIcon,
   UserGroupIcon,
   ShoppingCartIcon,
-  CurrencyDollarIcon,
+  CurrencyRupeeIcon,
   ArrowUpIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
@@ -26,7 +26,8 @@ const MainContent = () => {
   const { user } = useAuth();
 
   const iconMap = {
-    CurrencyDollarIcon: CurrencyDollarIcon,
+    CurrencyDollarIcon: CurrencyRupeeIcon,
+    CurrencyRupeeIcon: CurrencyRupeeIcon,
     UserGroupIcon: UserGroupIcon,
     ShoppingCartIcon: ShoppingCartIcon,
     ChartBarIcon: ChartBarIcon,
@@ -231,7 +232,8 @@ const MainContent = () => {
   const getIconComponent = (iconName) => {
     switch (iconName) {
       case "CurrencyDollarIcon":
-        return <CurrencyDollarIcon className="h-6 w-6 text-white" />;
+      case "CurrencyRupeeIcon":
+        return <CurrencyRupeeIcon className="h-6 w-6 text-white" />;
       case "UserGroupIcon":
         return <UserGroupIcon className="h-6 w-6 text-white" />;
       case "ShoppingCartIcon":
@@ -242,7 +244,7 @@ const MainContent = () => {
       case "ArrowTrendingUpIcon":
         return <ArrowTrendingUpIcon className="h-6 w-6 text-white" />;
       default:
-        return <CurrencyDollarIcon className="h-6 w-6 text-white" />;
+        return <CurrencyRupeeIcon className="h-6 w-6 text-white" />;
     }
   };
 
@@ -260,7 +262,7 @@ const MainContent = () => {
       {/* Stats Grid */}
       <div className="grid gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => {
-          const IconComponent = iconMap[stat.icon] || CurrencyDollarIcon;
+          const IconComponent = iconMap[stat.icon] || CurrencyRupeeIcon;
           return (
             <StatCard
               key={index}

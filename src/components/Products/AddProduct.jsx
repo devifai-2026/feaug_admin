@@ -3,7 +3,7 @@ import {
   ArrowLeftIcon,
   PhotoIcon,
   TagIcon,
-  CurrencyDollarIcon,
+  CurrencyRupeeIcon,
   CubeIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
@@ -13,19 +13,11 @@ import {
   CheckIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import ReactQuill from "react-quill-new";
-import "quill/dist/quill.snow.css";
 import { Link, useNavigate } from "react-router-dom";
 
 import categoryApi from "../../api/categories.api";
 import productApi from "../../api/product.api";
 import s3Api from "../../api/s3.api";
-
-const modules = {
-  toolbar: [["bold", "italic", "underline"], ["clean"]],
-};
-
-const formats = ["bold", "italic", "underline", "clean"];
 
 const AddProduct = () => {
   const [formData, setFormData] = useState({
@@ -536,7 +528,7 @@ const AddProduct = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                <CurrencyDollarIcon className="h-5 w-5 mr-2 text-green-600" />
+                <CurrencyRupeeIcon className="h-5 w-5 mr-2 text-green-600" />
                 Pricing & Inventory
               </h2>
             </div>
@@ -671,42 +663,27 @@ const AddProduct = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Short Description
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.shortDescription}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        shortDescription: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className="h-24 mb-10"
-                    placeholder="Brief summary (appears in lists)"
-                  />
-                </div>
+                <textarea
+                  name="shortDescription"
+                  value={formData.shortDescription}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y"
+                  placeholder="Brief summary (appears in lists)"
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Description * (Min 50 chars)
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.description}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className={`h-64 mb-12 ${errors.description ? "border-red-300" : ""}`}
-                  />
-                </div>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={8}
+                  className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y ${errors.description ? "border-red-300" : "border-gray-200"}`}
+                  placeholder="Full product description..."
+                />
                 {errors.description && (
                   <p className="mt-1.5 text-xs text-red-600 font-medium">
                     {errors.description}
