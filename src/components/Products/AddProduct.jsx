@@ -66,6 +66,7 @@ const AddProduct = () => {
     image: "",
   });
   const [categoriesList, setCategoriesList] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [imageUrls, setImageUrls] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -85,12 +86,15 @@ const AddProduct = () => {
   React.useEffect(() => {
     const fetchCategories = async () => {
       try {
+        setCategoriesLoading(true);
         const response = await categoryApi.getAllCategories();
         if (response && response.data && response.data.categories) {
           setCategoriesList(response.data.categories);
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
+      } finally {
+        setCategoriesLoading(false);
       }
     };
     fetchCategories();
@@ -421,10 +425,13 @@ const AddProduct = () => {
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.category ? "border-red-300" : "border-gray-200"}`}
+                    disabled={categoriesLoading}
+                    className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.category ? "border-red-300" : "border-gray-200"} ${categoriesLoading ? "opacity-60 cursor-not-allowed" : ""}`}
                     required
                   >
-                    <option value="">Select category</option>
+                    <option value="">
+                      {categoriesLoading ? "Loading categories..." : "Select category"}
+                    </option>
                     {categoriesList.map((cat) => (
                       <option key={cat._id} value={cat._id}>
                         {cat.name}
