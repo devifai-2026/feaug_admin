@@ -565,7 +565,7 @@ const Invoices = () => {
             
             <div>
               <div class="section-title">Payment Information</div>
-              <p><strong>Payment Method:</strong> ${invoice.paymentMethod || "N/A"}</p>
+              <p><strong>Payment Intent:</strong> ${invoice.paymentMethod || "N/A"}</p>
               <p><strong>Payment Date:</strong> ${invoice.paymentDate ? formatDate(invoice.paymentDate) : "Pending"}</p>
             </div>
           </div>
