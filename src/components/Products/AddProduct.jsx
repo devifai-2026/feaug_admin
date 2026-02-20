@@ -125,6 +125,38 @@ const AddProduct = () => {
     }));
   };
 
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if (value === "") return;
+
+    if (["stockQuantity", "lowStockThreshold", "discountValue"].includes(name)) {
+      const num = parseInt(value);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+      }));
+    } else if (["basePrice", "sellingPrice", "weight"].includes(name)) {
+      const num = parseFloat(value);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+      }));
+    }
+  };
+
+  const handleDimensionBlur = (e) => {
+    const { name, value } = e.target;
+    if (value === "") return;
+    const num = parseFloat(value);
+    setFormData((prev) => ({
+      ...prev,
+      dimensions: {
+        ...prev.dimensions,
+        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+      },
+    }));
+  };
+
   const isValidUrl = (string) => {
     try {
       new URL(string);
@@ -510,6 +542,8 @@ const AddProduct = () => {
                       name="basePrice"
                       value={formData.basePrice}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      min="0"
                       className={`w-full pl-8 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.basePrice ? "border-red-300" : "border-gray-200"}`}
                       placeholder="0.00"
                     />
@@ -530,6 +564,8 @@ const AddProduct = () => {
                       name="sellingPrice"
                       value={formData.sellingPrice}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      min="0"
                       className={`w-full pl-8 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.sellingPrice ? "border-red-300" : "border-gray-200"}`}
                       placeholder="0.00"
                     />
@@ -562,6 +598,8 @@ const AddProduct = () => {
                       name="discountValue"
                       value={formData.discountValue}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      min="0"
                       disabled={formData.discountType === "none"}
                       className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all disabled:opacity-50"
                       placeholder="0"
@@ -579,6 +617,8 @@ const AddProduct = () => {
                     name="stockQuantity"
                     value={formData.stockQuantity}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    min="0"
                     className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.stockQuantity ? "border-red-300" : "border-gray-200"}`}
                     placeholder="0"
                   />
@@ -594,6 +634,8 @@ const AddProduct = () => {
                     name="lowStockThreshold"
                     value={formData.lowStockThreshold}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    min="0"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     placeholder="10"
                   />
@@ -830,6 +872,8 @@ const AddProduct = () => {
                     name="weight"
                     value={formData.weight}
                     onChange={handleChange}
+                    onBlur={handleBlur}
+                    min="0"
                     step="0.001"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0.000"
@@ -845,6 +889,8 @@ const AddProduct = () => {
                       name="length"
                       value={formData.dimensions.length}
                       onChange={handleDimensionChange}
+                      onBlur={handleDimensionBlur}
+                      min="0"
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                       placeholder="L"
                     />
@@ -858,6 +904,8 @@ const AddProduct = () => {
                       name="width"
                       value={formData.dimensions.width}
                       onChange={handleDimensionChange}
+                      onBlur={handleDimensionBlur}
+                      min="0"
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                       placeholder="W"
                     />
@@ -871,6 +919,8 @@ const AddProduct = () => {
                       name="height"
                       value={formData.dimensions.height}
                       onChange={handleDimensionChange}
+                      onBlur={handleDimensionBlur}
+                      min="0"
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                       placeholder="H"
                     />
