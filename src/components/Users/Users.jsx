@@ -19,8 +19,10 @@ import {
 
 import { Link } from "react-router-dom";
 import userApi from "../../api/user.api";
+import { useToast } from "../../context/ToastContext";
 
 const Users = () => {
+  const { showToast } = useToast();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +124,7 @@ const Users = () => {
       console.error("Error fetching users:", err);
       setError(
         err.response?.data?.message ||
-        "Failed to load users. Please try again.",
+          "Failed to load users. Please try again.",
       );
       setUsers([]);
     } finally {
@@ -138,8 +140,6 @@ const Users = () => {
       console.error("Error fetching user stats:", err);
     }
   };
-
-
 
   const getRoleColor = (role) => {
     switch (role) {
@@ -172,12 +172,12 @@ const Users = () => {
         fetchUserStats();
 
         // Show success message
-        alert(`User "${name}" has been deleted successfully.`);
+        showToast(`User "${name}" has been deleted successfully.`, "success");
       } catch (err) {
         console.error("Error deleting user:", err);
-        alert(
-          err.response?.data?.message ||
-          "Failed to delete user. Please try again.",
+        showToast(
+          err.message || "Failed to delete user. Please try again.",
+          "error",
         );
       }
     }
@@ -195,11 +195,12 @@ const Users = () => {
 
       // Refresh stats
       fetchUserStats();
+      showToast(`User status updated successfully.`, "success");
     } catch (err) {
       console.error("Error updating user status:", err);
-      alert(
-        err.response?.data?.message ||
-        "Failed to update user status. Please try again.",
+      showToast(
+        err.message || "Failed to update user status. Please try again.",
+        "error",
       );
     }
   };
@@ -243,14 +244,12 @@ const Users = () => {
 
   if (loading && users.length === 0) {
     return (
-
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading users...</p>
         </div>
       </div>
-
     );
   }
 
@@ -263,8 +262,8 @@ const Users = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Users</h1>
               <p className="text-gray-600">
-                Manage user accounts and permissions (
-                {pagination.totalUsers} users)
+                Manage user accounts and permissions ({pagination.totalUsers}{" "}
+                users)
               </p>
             </div>
             <div className="flex items-center gap-3"></div>
@@ -314,7 +313,7 @@ const Users = () => {
                     ((userStats?.activeUsers ||
                       users.filter((u) => u.isActive).length) /
                       (userStats?.totalUsers || users.length || 1)) *
-                    100 || 0,
+                      100 || 0,
                   )}
                   % of total
                 </div>
@@ -337,7 +336,7 @@ const Users = () => {
                     ((userStats?.verifiedUsers ||
                       users.filter((u) => u.isEmailVerified).length) /
                       (userStats?.totalUsers || users.length || 1)) *
-                    100 || 0,
+                      100 || 0,
                   )}
                   % verified
                 </div>
@@ -600,10 +599,11 @@ const Users = () => {
                             onClick={() =>
                               handleStatusToggle(user._id, user.isActive)
                             }
-                            className={`p-1 rounded-full transition-colors ${user.isActive
+                            className={`p-1 rounded-full transition-colors ${
+                              user.isActive
                                 ? "text-green-600 hover:text-green-800 hover:bg-green-50"
                                 : "text-red-600 hover:text-red-800 hover:bg-red-50"
-                              }`}
+                            }`}
                             title={`Toggle ${user.isActive ? "Inactive" : "Active"}`}
                           >
                             {user.isActive ? (
@@ -613,10 +613,11 @@ const Users = () => {
                             )}
                           </button>
                           <span
-                            className={`px-2 py-1 text-xs rounded-full ${user.isActive
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              user.isActive
                                 ? "bg-green-100 text-green-800 border border-green-200"
                                 : "bg-red-100 text-red-800 border border-red-200"
-                              }`}
+                            }`}
                           >
                             {user.isActive ? "Active" : "Inactive"}
                           </span>
@@ -639,7 +640,7 @@ const Users = () => {
                               handleDelete(
                                 user._id,
                                 `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                                user.email,
+                                  user.email,
                               )
                             }
                             className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
@@ -661,33 +662,28 @@ const Users = () => {
         {pagination.totalUsers > 0 && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white rounded-lg shadow p-4">
             <div className="text-sm text-gray-700">
-              Showing{" "}
-              <span className="font-medium">{indexOfFirstItem}</span> to{" "}
+              Showing <span className="font-medium">{indexOfFirstItem}</span> to{" "}
               <span className="font-medium">{indexOfLastItem}</span> of{" "}
-              <span className="font-medium">{pagination.totalUsers}</span>{" "}
-              users
+              <span className="font-medium">{pagination.totalUsers}</span> users
             </div>
 
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={!pagination.hasPrevPage}
-                className={`p-2 rounded-lg border ${!pagination.hasPrevPage
+                className={`p-2 rounded-lg border ${
+                  !pagination.hasPrevPage
                     ? "text-gray-400 border-gray-300 cursor-not-allowed"
                     : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                }`}
               >
                 <ChevronLeftIcon className="h-5 w-5" />
               </button>
 
-              {Array.from(
-                { length: pagination.totalPages },
-                (_, i) => i + 1,
-              )
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
                 .filter((page) => {
                   if (pagination.totalPages <= 5) return true;
-                  if (page === 1 || page === pagination.totalPages)
-                    return true;
+                  if (page === 1 || page === pagination.totalPages) return true;
                   if (page >= currentPage - 1 && page <= currentPage + 1)
                     return true;
                   return false;
@@ -703,10 +699,11 @@ const Users = () => {
                         <span className="px-2 text-gray-500">...</span>
                         <button
                           onClick={() => goToPage(page)}
-                          className={`px-3 py-1 rounded-lg ${currentPage === page
+                          className={`px-3 py-1 rounded-lg ${
+                            currentPage === page
                               ? "bg-blue-600 text-white"
                               : "text-gray-700 hover:bg-gray-100"
-                            }`}
+                          }`}
                         >
                           {page}
                         </button>
@@ -718,10 +715,11 @@ const Users = () => {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
-                      className={`px-3 py-1 rounded-lg ${currentPage === page
+                      className={`px-3 py-1 rounded-lg ${
+                        currentPage === page
                           ? "bg-blue-600 text-white"
                           : "text-gray-700 hover:bg-gray-100"
-                        }`}
+                      }`}
                     >
                       {page}
                     </button>
@@ -731,10 +729,11 @@ const Users = () => {
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={!pagination.hasNextPage}
-                className={`p-2 rounded-lg border ${!pagination.hasNextPage
+                className={`p-2 rounded-lg border ${
+                  !pagination.hasNextPage
                     ? "text-gray-400 border-gray-300 cursor-not-allowed"
                     : "text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                }`}
               >
                 <ChevronRightIcon className="h-5 w-5" />
               </button>

@@ -22,7 +22,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
   const navigation = [
     { name: "Dashboard", icon: HomeIcon, to: "/" },
     { name: "Products", icon: ShoppingCartIcon, to: "/products" },
-    { name: "Category", icon: TagIcon, to: "/categories" },
+    // { name: "Category", icon: TagIcon, to: "/categories" },
     { name: "Orders", icon: CreditCardIcon, to: "/orders" },
     { name: "Invoices", icon: ReceiptPercentIcon, to: "/invoices" },
     { name: "Banners", icon: PhotoIcon, to: "/banners" },
