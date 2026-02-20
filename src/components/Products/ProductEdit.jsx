@@ -163,8 +163,6 @@ const ProductEdit = () => {
     }
   };
 
-
-
   const handleInputChange = async (e) => {
     const { name, value, type, checked } = e.target;
     const finalValue = type === "checkbox" ? checked : value;
@@ -334,7 +332,10 @@ const ProductEdit = () => {
     e.preventDefault();
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
-      showToast("error", "Please fix the errors: " + Object.values(errors).join(", "));
+      showToast(
+        "error",
+        "Please fix the errors: " + Object.values(errors).join(", "),
+      );
       return;
     }
 
@@ -382,10 +383,13 @@ const ProductEdit = () => {
       );
 
       showToast("success", "Product updated successfully!");
-      setTimeout(() => navigate(`/products/view/${product._id || product.id}`), 1500);
+      setTimeout(() => navigate(-1), 1500);
     } catch (error) {
       console.error("Error saving product:", error);
-      showToast("error", "Error saving product. Please try again.");
+      showToast(
+        "error",
+        error.message || "Error saving product. Please try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -404,7 +408,10 @@ const ProductEdit = () => {
         setTimeout(() => navigate("/products"), 1500);
       } catch (error) {
         console.error("Error deleting product:", error);
-        showToast("error", error.response?.data?.message || "Error deleting product. Please try again.");
+        showToast(
+          "error",
+          error.message || "Error deleting product. Please try again.",
+        );
       }
     }
   };
@@ -425,10 +432,7 @@ const ProductEdit = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
           Product Not Found
         </h2>
-        <Link
-          to="/products"
-          className="text-blue-600 hover:text-blue-800"
-        >
+        <Link to="/products" className="text-blue-600 hover:text-blue-800">
           ← Back to Products
         </Link>
       </div>
@@ -460,9 +464,7 @@ const ProductEdit = () => {
                 <span className="mx-2">/</span>
                 <span className="text-gray-900 font-medium">Edit</span>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Edit Product
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
               <p className="text-gray-600">
                 Update product information and details
               </p>
@@ -1224,18 +1226,29 @@ const ProductEdit = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
-          toast.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-        }`}>
-          <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          }`}>
+        <div
+          className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
+            toast.type === "success"
+              ? "bg-green-50 border-green-200"
+              : "bg-red-50 border-red-200"
+          }`}
+        >
+          <div
+            className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
+              toast.type === "success" ? "bg-green-500" : "bg-red-500"
+            }`}
+          >
             {toast.type === "success" ? "✓" : "!"}
           </div>
-          <p className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+          <p
+            className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}
+          >
             {toast.message}
           </p>
-          <button onClick={() => setToast(null)} className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            onClick={() => setToast(null)}
+            className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <XMarkIcon className="h-4 w-4" />
           </button>
         </div>
