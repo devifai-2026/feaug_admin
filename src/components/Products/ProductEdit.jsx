@@ -18,24 +18,30 @@ import {
 import productApi from "../../api/product.api";
 import categoryApi from "../../api/categories.api";
 import s3Api from "../../api/s3.api";
-// Helper: strip HTML tags from stored rich-text values (handles both literal
-// tags like <p> and HTML-entity-encoded tags like &lt;p&gt;)
-const stripHtml = (html) => {
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+
+const quillModules = {
+  toolbar: [
+    ['bold', 'italic'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['clean']
+  ],
+};
+
+const quillFormats = [
+  'bold', 'italic', 'list'
+];
+
+const decodeHtml = (html) => {
   if (!html) return "";
-  // 1. Decode entity-encoded tags: &lt;...&gt; → <...>
-  let text = html.replace(/&lt;([^&]*)&gt;/g, "<$1>");
-  // 2. Strip all remaining literal HTML tags
-  text = text.replace(/<[^>]*>/g, "");
-  // 3. Decode common HTML entities
-  text = text
+  return html
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
-  // 4. Collapse excessive whitespace
-  return text.replace(/\s+/g, " ").trim();
+    .replace(/&nbsp;/g, " ");
 };
 
 const ProductEdit = () => {
@@ -127,8 +133,8 @@ const ProductEdit = () => {
           sellingPrice: foundProduct.sellingPrice?.toString() || "",
           stockQuantity: foundProduct.stockQuantity?.toString() || "",
           lowStockThreshold: foundProduct.lowStockThreshold?.toString() || "10",
-          description: stripHtml(foundProduct.description) || "",
-          shortDescription: stripHtml(foundProduct.shortDescription) || "",
+          description: decodeHtml(foundProduct.description) || "",
+          shortDescription: decodeHtml(foundProduct.shortDescription) || "",
           sku: foundProduct.sku || "",
           brand: foundProduct.brand || "",
           material: foundProduct.material || "",
@@ -787,27 +793,33 @@ const ProductEdit = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Short Description
                 </label>
-                <textarea
-                  name="shortDescription"
-                  value={formData.shortDescription}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y"
-                  placeholder="Brief summary (appears in lists)"
-                />
+                <div className="quill-editor-container">
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.shortDescription}
+                    onChange={(value) => setFormData(prev => ({ ...prev, shortDescription: value }))}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200"
+                    placeholder="Brief summary (appears in lists)"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Description * (Min 50 chars)
                 </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={8}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y"
-                  placeholder="Full product description..."
-                />
+                <div className="quill-editor-container">
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.description}
+                    onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200"
+                    placeholder="Full product description..."
+                  />
+                </div>
               </div>
             </div>
           </div>
