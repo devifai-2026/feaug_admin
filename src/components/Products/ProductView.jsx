@@ -17,6 +17,17 @@ import {
 
 import productApi from "../../api/product.api";
 
+const decodeHtml = (html) => {
+  if (!html) return "";
+  return html
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ");
+};
+
 const ProductView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -180,23 +191,6 @@ const ProductView = () => {
     }
   };
 
-  const stripHtml = (html) => {
-    if (!html) return "";
-    // Decode entity-encoded tags: &lt;...&gt; → <...>
-    let text = html.replace(/&lt;([^&]*)&gt;/g, "<$1>");
-    // Strip all literal HTML tags
-    text = text.replace(/<[^>]*>/g, "");
-    // Decode remaining HTML entities
-    text = text
-      .replace(/&amp;/g, "&")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">");
-    // Collapse excessive whitespace
-    return text.replace(/\s+/g, " ").trim();
-  };
 
   if (loading) {
     return (
@@ -528,43 +522,34 @@ const ProductView = () => {
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                         Short Description
                       </label>
-                      <div className="text-gray-600 leading-relaxed break-words whitespace-pre-wrap">
-                        {stripHtml(product.shortDescription) || "No short description provided."}
-                      </div>
+                      <div 
+                        className="text-gray-600 leading-relaxed break-words"
+                        dangerouslySetInnerHTML={{ __html: decodeHtml(product.shortDescription || "No short description provided.") }}
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                         Full Description
                       </label>
-                      {(() => {
-                        const plainDescription = stripHtml(product.description || "");
-                        const isLong = plainDescription.length > 300;
-                        
-                        return (
-                          <>
-                            <div className="relative">
-                              <div
-                                className={`text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 break-words whitespace-pre-wrap ${!showFullDescription && isLong ? "max-h-60 overflow-hidden" : ""}`}
-                                style={!showFullDescription && isLong ? { maxHeight: '240px', overflow: 'hidden' } : {}}
-                              >
-                                {plainDescription || "No detailed description available."}
-                              </div>
-                              {!showFullDescription && isLong && (
-                                <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none rounded-b-xl"></div>
-                              )}
-                            </div>
-                            {isLong && (
-                              <button
-                                onClick={() => setShowFullDescription(!showFullDescription)}
-                                className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors flex items-center"
-                              >
-                                {showFullDescription ? "See Less" : "See More"}
-                                <ChevronDownIcon className={`h-4 w-4 ml-1 transition-transform duration-200 ${showFullDescription ? "rotate-180" : ""}`} />
-                              </button>
-                            )}
-                          </>
-                        );
-                      })()}
+                      <div className="relative">
+                        <div
+                          className={`text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 break-words ${!showFullDescription ? "max-h-60 overflow-hidden" : ""}`}
+                          style={!showFullDescription ? { maxHeight: '240px', overflow: 'hidden' } : {}}
+                          dangerouslySetInnerHTML={{ __html: decodeHtml(product.description || "No detailed description available.") }}
+                        />
+                        {!showFullDescription && (product.description?.length > 300) && (
+                          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none rounded-b-xl"></div>
+                        )}
+                      </div>
+                      {(product.description?.length > 300) && (
+                        <button
+                          onClick={() => setShowFullDescription(!showFullDescription)}
+                          className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors flex items-center"
+                        >
+                          {showFullDescription ? "See Less" : "See More"}
+                          <ChevronDownIcon className={`h-4 w-4 ml-1 transition-transform duration-200 ${showFullDescription ? "rotate-180" : ""}`} />
+                        </button>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
