@@ -191,6 +191,19 @@ const ProductEdit = () => {
     }));
   };
 
+  const handleDimensionBlur = (e) => {
+    const { name, value } = e.target;
+    if (value === "") return;
+    const num = parseFloat(value);
+    setFormData((prev) => ({
+      ...prev,
+      dimensions: {
+        ...prev.dimensions,
+        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+      },
+    }));
+  };
+
   const validateForm = () => {
     const errors = {};
     if (!formData.name.trim()) errors.name = "Product name is required";
@@ -984,6 +997,8 @@ const ProductEdit = () => {
                     name="weight"
                     value={formData.weight}
                     onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    min="0"
                     step="0.001"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0.000"
@@ -999,6 +1014,8 @@ const ProductEdit = () => {
                       name="length"
                       value={formData.dimensions.length}
                       onChange={handleDimensionChange}
+                      onBlur={handleDimensionBlur}
+                      min="0"
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                       placeholder="L"
                     />
@@ -1012,6 +1029,8 @@ const ProductEdit = () => {
                       name="width"
                       value={formData.dimensions.width}
                       onChange={handleDimensionChange}
+                      onBlur={handleDimensionBlur}
+                      min="0"
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                       placeholder="W"
                     />
@@ -1025,6 +1044,8 @@ const ProductEdit = () => {
                       name="height"
                       value={formData.dimensions.height}
                       onChange={handleDimensionChange}
+                      onBlur={handleDimensionBlur}
+                      min="0"
                       className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                       placeholder="H"
                     />

@@ -787,9 +787,9 @@ const ProductView = () => {
                   </tbody>
                 </table>
               </div>
-              <button className="w-full mt-4 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center">
+              {/* <button className="w-full mt-4 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center">
                 View Full History
-              </button>
+              </button> */}
             </div>
           </div>
 
