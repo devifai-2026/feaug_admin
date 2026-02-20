@@ -283,14 +283,7 @@ const InvoiceView = () => {
         null,
         "center",
       );
-      pdf.text(
-        "Invoice Management System • Professional Invoice",
-        105,
-        yPos + 10,
-        null,
-        null,
-        "center",
-      );
+     
 
       // Save PDF
       pdf.save(
@@ -558,7 +551,7 @@ const InvoiceView = () => {
           <div class="footer">
             <p>Thank you for your business!</p>
             <p>Generated on: ${new Date().toLocaleString()}</p>
-            <p>Invoice Management System • Professional Invoice</p>
+            
           </div>
           
           <script>

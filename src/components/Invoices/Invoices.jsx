@@ -349,15 +349,7 @@ const Invoices = () => {
         null,
         "center",
       );
-      pdf.text(
-        "Invoice Management System • Professional Invoice",
-        105,
-        yPos + 10,
-        null,
-        null,
-        "center",
-      );
-
+    
       // Save PDF
       pdf.save(
         `Invoice_${invoice.id}_${invoice.client.replace(/\s+/g, "_")}.pdf`,
@@ -632,7 +624,7 @@ const Invoices = () => {
           <div class="footer">
             <p>Thank you for your business!</p>
             <p>Generated on: ${new Date().toLocaleString()}</p>
-            <p>Invoice Management System • Professional Invoice</p>
+         
           </div>
           
           <script>

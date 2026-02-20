@@ -12,20 +12,31 @@ import {
   CubeIcon,
   TagIcon,
   DocumentTextIcon,
-  CurrencyDollarIcon,
+  CurrencyRupeeIcon,
 } from "@heroicons/react/24/outline";
 
 import productApi from "../../api/product.api";
 import categoryApi from "../../api/categories.api";
 import s3Api from "../../api/s3.api";
-import ReactQuill from "react-quill-new";
-import "quill/dist/quill.snow.css";
-
-const modules = {
-  toolbar: [["bold", "italic", "underline"], ["clean"]],
+// Helper: strip HTML tags from stored rich-text values (handles both literal
+// tags like <p> and HTML-entity-encoded tags like &lt;p&gt;)
+const stripHtml = (html) => {
+  if (!html) return "";
+  // 1. Decode entity-encoded tags: &lt;...&gt; → <...>
+  let text = html.replace(/&lt;([^&]*)&gt;/g, "<$1>");
+  // 2. Strip all remaining literal HTML tags
+  text = text.replace(/<[^>]*>/g, "");
+  // 3. Decode common HTML entities
+  text = text
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+  // 4. Collapse excessive whitespace
+  return text.replace(/\s+/g, " ").trim();
 };
-
-const formats = ["bold", "italic", "underline", "clean"];
 
 const ProductEdit = () => {
   const { id } = useParams();
@@ -116,8 +127,8 @@ const ProductEdit = () => {
           sellingPrice: foundProduct.sellingPrice?.toString() || "",
           stockQuantity: foundProduct.stockQuantity?.toString() || "",
           lowStockThreshold: foundProduct.lowStockThreshold?.toString() || "10",
-          description: foundProduct.description || "",
-          shortDescription: foundProduct.shortDescription || "",
+          description: stripHtml(foundProduct.description) || "",
+          shortDescription: stripHtml(foundProduct.shortDescription) || "",
           sku: foundProduct.sku || "",
           brand: foundProduct.brand || "",
           material: foundProduct.material || "",
@@ -638,7 +649,7 @@ const ProductEdit = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                <CurrencyDollarIcon className="h-5 w-5 mr-2 text-green-600" />
+                <CurrencyRupeeIcon className="h-5 w-5 mr-2 text-green-600" />
                 Pricing & Inventory
               </h2>
             </div>
@@ -776,42 +787,27 @@ const ProductEdit = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Short Description
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.shortDescription}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        shortDescription: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className="h-24 mb-10"
-                    placeholder="Brief summary (appears in lists)"
-                  />
-                </div>
+                <textarea
+                  name="shortDescription"
+                  value={formData.shortDescription}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y"
+                  placeholder="Brief summary (appears in lists)"
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Description * (Min 50 chars)
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.description}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className="h-64 mb-12"
-                  />
-                </div>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={8}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-y"
+                  placeholder="Full product description..."
+                />
               </div>
             </div>
           </div>

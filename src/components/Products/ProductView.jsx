@@ -180,11 +180,22 @@ const ProductView = () => {
     }
   };
 
-  const decodeHtml = (html) => {
+  const stripHtml = (html) => {
     if (!html) return "";
-    const txt = document.createElement("textarea");
-    txt.innerHTML = html;
-    return txt.value;
+    // Decode entity-encoded tags: &lt;...&gt; → <...>
+    let text = html.replace(/&lt;([^&]*)&gt;/g, "<$1>");
+    // Strip all literal HTML tags
+    text = text.replace(/<[^>]*>/g, "");
+    // Decode remaining HTML entities
+    text = text
+      .replace(/&amp;/g, "&")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">");
+    // Collapse excessive whitespace
+    return text.replace(/\s+/g, " ").trim();
   };
 
   if (loading) {
@@ -484,10 +495,8 @@ const ProductView = () => {
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">
-                        ID: {product.id}
-                      </span>
-                      <span className="text-sm text-gray-500">|</span>
+                    
+                    
                       <span className="text-sm text-gray-500">
                         SKU: {product.sku || "N/A"}
                       </span>
@@ -519,35 +528,27 @@ const ProductView = () => {
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                         Short Description
                       </label>
-                      <div
-                        className="text-gray-600 leading-relaxed prose prose-sm max-w-none break-words"
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            decodeHtml(product.shortDescription) ||
-                            "No short description provided.",
-                        }}
-                      />
+                      <div className="text-gray-600 leading-relaxed break-words whitespace-pre-wrap">
+                        {stripHtml(product.shortDescription) || "No short description provided."}
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                         Full Description
                       </label>
                       {(() => {
-                        const decodedDescription = decodeHtml(product.description || "");
-                        const isLong = decodedDescription.length > 300 || (Array.isArray(product.description) && product.description.length > 5);
+                        const plainDescription = stripHtml(product.description || "");
+                        const isLong = plainDescription.length > 300;
                         
                         return (
                           <>
                             <div className="relative">
                               <div
-                                className={`text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 prose prose-sm max-w-none break-words ${!showFullDescription && isLong ? "max-h-60 overflow-hidden" : ""}`}
+                                className={`text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100 break-words whitespace-pre-wrap ${!showFullDescription && isLong ? "max-h-60 overflow-hidden" : ""}`}
                                 style={!showFullDescription && isLong ? { maxHeight: '240px', overflow: 'hidden' } : {}}
-                                dangerouslySetInnerHTML={{
-                                  __html:
-                                    decodedDescription ||
-                                    "<p>No detailed description available.</p>",
-                                }}
-                              />
+                              >
+                                {plainDescription || "No detailed description available."}
+                              </div>
                               {!showFullDescription && isLong && (
                                 <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent pointer-events-none rounded-b-xl"></div>
                               )}
@@ -606,16 +607,16 @@ const ProductView = () => {
                   </div>
 
                   <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="min-w-0">
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                           SKU
                         </label>
-                        <div className="font-mono text-sm text-gray-900 font-bold bg-gray-100 px-3 py-1.5 rounded-lg inline-block">
+                        <div className="font-mono text-sm text-gray-900 font-bold bg-gray-100 px-3 py-1.5 rounded-lg block w-full break-all">
                           {product.sku || "N/A"}
                         </div>
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                           Gender
                         </label>
