@@ -147,7 +147,7 @@ const Products = () => {
       } catch (err) {
         console.error("Error deleting product:", err);
         alert(
-          err.response?.data?.message ||
+          err?.message ||
           "Failed to delete product. Please try again.",
         );
       }
