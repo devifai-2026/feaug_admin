@@ -278,7 +278,10 @@ const AddProduct = () => {
     if (!formData.stockQuantity || formData.stockQuantity < 0)
       newErrors.stockQuantity = "Stock quantity is required";
     if (!formData.material) newErrors.material = "Material is required";
-    if (!formData.description || formData.description.length < 50)
+    const descriptionText = formData.description
+      ? formData.description.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+      : '';
+    if (!descriptionText || descriptionText.length < 50)
       newErrors.description = "Description must be at least 50 characters";
 
     return newErrors;
