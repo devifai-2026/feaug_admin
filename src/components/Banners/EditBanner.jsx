@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeftIcon,
@@ -7,10 +7,12 @@ import {
   CheckIcon,
   TrashIcon,
   InformationCircleIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { useRef } from "react";
 
 import bannerApi from "../../api/banners.api";
+import productApi from "../../api/product.api";
+import { getAllPromoCodes } from "../../api/promoCodes.api";
 import s3Api from "../../api/s3.api";
 import { useToast } from "../../context/ToastContext";
 
@@ -130,6 +132,15 @@ const EditBanner = () => {
 
   const [placement, setPlacement] = useState("homepage_carousel");
 
+  // Flash Sale specific state
+  const [featuredProductId, setFeaturedProductId] = useState("");
+  const [selectedProductDisplay, setSelectedProductDisplay] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [productSearchResults, setProductSearchResults] = useState([]);
+  const [productSearchLoading, setProductSearchLoading] = useState(false);
+  const [promoCodes, setPromoCodes] = useState([]);
+  const searchTimerRef = useRef(null);
+
   const [formData, setFormData] = useState({
     title: "",
     subheader: "",
@@ -158,6 +169,67 @@ const EditBanner = () => {
   const [errors, setErrors] = useState({});
 
   const currentPlacement = PLACEMENT_OPTIONS.find((p) => p.value === placement);
+
+  // Load promo codes when flash sale placement is active
+  useEffect(() => {
+    if (placement === "homepage_flash_sale") {
+      getAllPromoCodes()
+        .then((data) => {
+          const codes = data?.data?.promoCodes || data?.promoCodes || [];
+          setPromoCodes(codes);
+        })
+        .catch(() => {});
+    }
+  }, [placement]);
+
+  const handleProductSearch = (e) => {
+    const value = e.target.value;
+    setProductSearch(value);
+    setProductSearchResults([]);
+
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!value.trim()) return;
+
+    searchTimerRef.current = setTimeout(async () => {
+      setProductSearchLoading(true);
+      try {
+        const data = await productApi.getAllProducts({ search: value, limit: 8 });
+        setProductSearchResults(data?.data?.products || []);
+      } catch {
+        setProductSearchResults([]);
+      } finally {
+        setProductSearchLoading(false);
+      }
+    }, 350);
+  };
+
+  const selectProduct = (product) => {
+    setFeaturedProductId(product._id);
+    setSelectedProductDisplay(`${product.name} — ₹${product.sellingPrice?.toLocaleString("en-IN")}`);
+    setProductSearch("");
+    setProductSearchResults([]);
+  };
+
+  const clearProduct = () => {
+    setFeaturedProductId("");
+    setSelectedProductDisplay("");
+    setProductSearch("");
+    setProductSearchResults([]);
+  };
+
+  const handlePromoCodeSelect = (e) => {
+    const selectedId = e.target.value;
+    if (!selectedId) return;
+    const pc = promoCodes.find((p) => p._id === selectedId);
+    if (pc) {
+      setFormData((prev) => ({
+        ...prev,
+        promoCode: pc.code,
+        discountPercentage: pc.discountPercentage,
+      }));
+    }
+    e.target.value = "";
+  };
 
   useEffect(() => {
     fetchBanner();
@@ -212,6 +284,15 @@ const EditBanner = () => {
             description: img.description || "",
             subheader: img.subheader || "",
           })),
+        );
+      }
+
+      // Pre-populate featuredProduct if set
+      if (banner.featuredProduct) {
+        const fp = banner.featuredProduct;
+        setFeaturedProductId(fp._id);
+        setSelectedProductDisplay(
+          `${fp.name} — ₹${fp.sellingPrice?.toLocaleString("en-IN")}`
         );
       }
     } catch (error) {
@@ -385,6 +466,7 @@ const EditBanner = () => {
           isPrimary: img.url === (formData.primaryImage || images[0]?.url),
           alt: img.title || formData.title,
         })),
+        featuredProduct: featuredProductId || null,
       };
 
       delete bannerData.primaryImage;
@@ -772,6 +854,124 @@ const EditBanner = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., 20"
                   />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Flash Sale Settings */}
+          {placement === "homepage_flash_sale" && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                Flash Sale Settings
+              </h2>
+              <p className="text-sm text-gray-500 mb-5">
+                Pin a specific product to show in this flash sale, and optionally attach a promo code.
+              </p>
+
+              {/* Featured Product */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Featured Product
+                </label>
+                {featuredProductId ? (
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">{selectedProductDisplay}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">This product will be shown in the flash sale</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearProduct}
+                      className="flex items-center text-red-500 hover:text-red-700 text-sm font-medium ml-4 flex-shrink-0"
+                    >
+                      <XMarkIcon className="h-4 w-4 mr-1" />
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={handleProductSearch}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Search product by name..."
+                    />
+                    {productSearchLoading && (
+                      <div className="absolute right-3 top-2.5">
+                        <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      </div>
+                    )}
+                    {productSearchResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                        {productSearchResults.map((product) => (
+                          <button
+                            key={product._id}
+                            type="button"
+                            onClick={() => selectProduct(product)}
+                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0"
+                          >
+                            <p className="text-sm font-medium text-gray-900">{product.name}</p>
+                            <p className="text-xs text-gray-500">₹{product.sellingPrice?.toLocaleString("en-IN")}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Leave blank to auto-show the first on-sale product.
+                </p>
+              </div>
+
+              {/* Promo Code for Flash Sale */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Promo Code
+                </label>
+                {promoCodes.length > 0 && (
+                  <div className="mb-3">
+                    <select
+                      onChange={handlePromoCodeSelect}
+                      defaultValue=""
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">— Select existing promo code —</option>
+                      {promoCodes.map((pc) => (
+                        <option key={pc._id} value={pc._id}>
+                          {pc.code} ({pc.discountPercentage}% off)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <input
+                      type="text"
+                      name="promoCode"
+                      value={formData.promoCode}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase"
+                      placeholder="e.g., FLASH20"
+                      maxLength="20"
+                    />
+                    <p className="mt-1 text-xs text-gray-400">Code shown on the flash sale card</p>
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      name="discountPercentage"
+                      value={formData.discountPercentage}
+                      onChange={handleInputChange}
+                      min="0"
+                      max="100"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., 20"
+                    />
+                    <p className="mt-1 text-xs text-gray-400">Discount %</p>
+                  </div>
                 </div>
               </div>
             </div>
