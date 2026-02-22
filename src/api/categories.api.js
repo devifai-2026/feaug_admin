@@ -31,6 +31,11 @@ const categoryApi = {
     axiosInstance.get('/admin/subcategories', { params })
       .then(response => response.data),
 
+  // Get single subcategory by ID
+  getSubCategory: (subCategoryId) =>
+    axiosInstance.get(`/admin/subcategories/${subCategoryId}`)
+      .then(response => response.data),
+
   // Create new subcategory
   createSubCategory: (subCategoryData) =>
     axiosInstance.post('/admin/subcategories', subCategoryData)
