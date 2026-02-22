@@ -151,13 +151,13 @@ const Subcategories = () => {
               >
                 Refresh
               </button>
-              {/* <Link
+              <Link
                 to="/subcategories/add"
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Add Subcategory
-              </Link> */}
+              </Link>
             </div>
           </div>
 
@@ -225,9 +225,9 @@ const Subcategories = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
-                  </th> */}
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -239,13 +239,13 @@ const Subcategories = () => {
                       <p className="text-gray-500">
                         {searchTerm ? `No results for "${searchTerm}"` : 'Add your first subcategory'}
                       </p>
-                      {/* <Link
+                      <Link
                         to="/subcategories/add"
                         className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                       >
                         <PlusIcon className="h-5 w-5 mr-2" />
                         Add Subcategory
-                      </Link> */}
+                      </Link>
                     </td>
                   </tr>
                 ) : (
@@ -294,28 +294,21 @@ const Subcategories = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          {/* <Link
+                          <Link
                             to={`/subcategories/edit/${subcategory._id}`}
                             className="text-blue-600 hover:text-blue-800"
                             title="Edit"
                           >
                             <PencilIcon className="h-5 w-5" />
-                          </Link> */}
-                          {/* <button
-                            onClick={() => handleAddProduct(subcategory._id)}
-                            className="text-green-600 hover:text-green-800"
-                            title="Add Product"
-                          >
-                            <PlusIcon className="h-5 w-5" />
-                          </button> */}
-                          {/* <button
+                          </Link>
+                          <button
                             className={`${subcategory.productCount > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
                             title={subcategory.productCount > 0 ? 'Cannot delete subcategory with products' : 'Delete'}
                             onClick={() => handleDeleteSubcategory(subcategory._id)}
                             disabled={subcategory.productCount > 0}
                           >
                             <TrashIcon className="h-5 w-5" />
-                          </button> */}
+                          </button>
                         </div>
                       </td>
                     </tr>
