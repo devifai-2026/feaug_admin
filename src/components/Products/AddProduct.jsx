@@ -37,9 +37,9 @@ const AddProduct = () => {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
-    basePrice: "",
-    sellingPrice: "",
-    stockQuantity: "",
+    basePrice: "1",
+    sellingPrice: "1",
+    stockQuantity: "1",
     lowStockThreshold: "10",
     description: "",
     shortDescription: "",
@@ -149,13 +149,13 @@ const AddProduct = () => {
       const num = parseInt(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+        [name]: isNaN(num) || num < 0 ? (name === "stockQuantity" ? "1" : "0") : num.toString(),
       }));
     } else if (["basePrice", "sellingPrice", "weight"].includes(name)) {
       const num = parseFloat(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+        [name]: isNaN(num) || num < 0 ? (["basePrice", "sellingPrice"].includes(name) ? "1" : "0") : num.toString(),
       }));
     }
   };
@@ -575,7 +575,7 @@ const AddProduct = () => {
                       onBlur={handleBlur}
                       min="0"
                       className={`w-full pl-8 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.basePrice ? "border-red-300" : "border-gray-200"}`}
-                      placeholder="0.00"
+                      placeholder="1.00"
                     />
                   </div>
                 </div>
@@ -597,7 +597,7 @@ const AddProduct = () => {
                       onBlur={handleBlur}
                       min="0"
                       className={`w-full pl-8 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.sellingPrice ? "border-red-300" : "border-gray-200"}`}
-                      placeholder="0.00"
+                      placeholder="1.00"
                     />
                   </div>
                 </div>
@@ -650,7 +650,7 @@ const AddProduct = () => {
                     onBlur={handleBlur}
                     min="0"
                     className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.stockQuantity ? "border-red-300" : "border-gray-200"}`}
-                    placeholder="0"
+                    placeholder="1"
                   />
                 </div>
 
