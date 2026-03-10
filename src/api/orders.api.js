@@ -127,6 +127,16 @@ const orderApi = {
   generateManifest: (orderIds) =>
     axiosInstance.post('/admin/orders/generate-manifest', { orderIds })
       .then(response => response.data),
+
+  // Retry automated shipment process (for stuck/failed shipments with no AWB)
+  retryShipment: (orderId) =>
+    axiosInstance.post(`/admin/orders/${orderId}/retry-shipment`)
+      .then(response => response.data),
+
+  // Manually update AWB / tracking details
+  updateAWB: (orderId, data) =>
+    axiosInstance.patch(`/admin/orders/${orderId}/update-awb`, data)
+      .then(response => response.data),
 };
 
 export default orderApi;
