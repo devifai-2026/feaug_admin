@@ -3,7 +3,7 @@ import {
   ArrowLeftIcon,
   PhotoIcon,
   TagIcon,
-  CurrencyDollarIcon,
+  CurrencyRupeeIcon,
   CubeIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
@@ -13,28 +13,33 @@ import {
   CheckIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import ReactQuill from "react-quill-new";
-import "quill/dist/quill.snow.css";
 import { Link, useNavigate } from "react-router-dom";
 
 import categoryApi from "../../api/categories.api";
 import productApi from "../../api/product.api";
 import s3Api from "../../api/s3.api";
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
-const modules = {
-  toolbar: [["bold", "italic", "underline"], ["clean"]],
+const quillModules = {
+  toolbar: [
+    ['bold', 'italic'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['clean']
+  ],
 };
 
-const formats = ["bold", "italic", "underline", "clean"];
+const quillFormats = [
+  'bold', 'italic', 'list'
+];
 
 const AddProduct = () => {
-
   const [formData, setFormData] = useState({
     name: "",
     category: "",
-    basePrice: "",
-    sellingPrice: "",
-    stockQuantity: "",
+    basePrice: "1",
+    sellingPrice: "1",
+    stockQuantity: "1",
     lowStockThreshold: "10",
     description: "",
     shortDescription: "",
@@ -95,8 +100,6 @@ const AddProduct = () => {
     fetchCategories();
   }, []);
 
-
-
   const handleChange = async (e) => {
     const { name, value, type, checked } = e.target;
     const finalValue = type === "checkbox" ? checked : value;
@@ -140,17 +143,19 @@ const AddProduct = () => {
     const { name, value } = e.target;
     if (value === "") return;
 
-    if (["stockQuantity", "lowStockThreshold", "discountValue"].includes(name)) {
+    if (
+      ["stockQuantity", "lowStockThreshold", "discountValue"].includes(name)
+    ) {
       const num = parseInt(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+        [name]: isNaN(num) || num < 0 ? (name === "stockQuantity" ? "1" : "0") : num.toString(),
       }));
     } else if (["basePrice", "sellingPrice", "weight"].includes(name)) {
       const num = parseFloat(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+        [name]: isNaN(num) || num < 0 ? (["basePrice", "sellingPrice"].includes(name) ? "1" : "0") : num.toString(),
       }));
     }
   };
@@ -185,7 +190,10 @@ const AddProduct = () => {
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     for (let i = 0; i < files.length; i++) {
       if (!allowedTypes.includes(files[i].type)) {
-        showToast("error", `"${files[i].name}" is not a supported image format. Use JPG, PNG, WebP, or GIF.`);
+        showToast(
+          "error",
+          `"${files[i].name}" is not a supported image format. Use JPG, PNG, WebP, or GIF.`,
+        );
         return;
       }
       if (files[i].size > 10 * 1024 * 1024) {
@@ -199,18 +207,26 @@ const AddProduct = () => {
     try {
       if (files.length === 1) {
         // Single file upload
-        const result = await s3Api.uploadImage(files[0], "products", (percent) => {
-          setUploadProgress(percent);
-        });
+        const result = await s3Api.uploadImage(
+          files[0],
+          "products",
+          (percent) => {
+            setUploadProgress(percent);
+          },
+        );
         setImageUrls((prev) => [...prev, result.url]);
         if (imageUrls.length === 0 && !formData.image) {
           setFormData((prev) => ({ ...prev, image: result.url }));
         }
       } else {
         // Multiple files upload
-        const result = await s3Api.uploadImages(files, "products", (percent) => {
-          setUploadProgress(percent);
-        });
+        const result = await s3Api.uploadImages(
+          files,
+          "products",
+          (percent) => {
+            setUploadProgress(percent);
+          },
+        );
         const urls = result.files.map((f) => f.url);
         setImageUrls((prev) => [...prev, ...urls]);
         if (imageUrls.length === 0 && !formData.image && urls.length > 0) {
@@ -221,7 +237,7 @@ const AddProduct = () => {
       showToast("success", "Images uploaded successfully!");
     } catch (error) {
       console.error("Error uploading images:", error);
-      showToast("error", error.response?.data?.message || error.message || "Error uploading images");
+      showToast("error", error.message || "Error uploading images");
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -326,7 +342,10 @@ const AddProduct = () => {
       setTimeout(() => navigate("/products"), 1500);
     } catch (error) {
       console.error("Error creating product:", error);
-      showToast("error", error.response?.data?.message || "Error creating product. Please try again.");
+      showToast(
+        "error",
+        error.message || "Error creating product. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -533,7 +552,7 @@ const AddProduct = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                <CurrencyDollarIcon className="h-5 w-5 mr-2 text-green-600" />
+                <CurrencyRupeeIcon className="h-5 w-5 mr-2 text-green-600" />
                 Pricing & Inventory
               </h2>
             </div>
@@ -556,7 +575,7 @@ const AddProduct = () => {
                       onBlur={handleBlur}
                       min="0"
                       className={`w-full pl-8 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.basePrice ? "border-red-300" : "border-gray-200"}`}
-                      placeholder="0.00"
+                      placeholder="1.00"
                     />
                   </div>
                 </div>
@@ -578,7 +597,7 @@ const AddProduct = () => {
                       onBlur={handleBlur}
                       min="0"
                       className={`w-full pl-8 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.sellingPrice ? "border-red-300" : "border-gray-200"}`}
-                      placeholder="0.00"
+                      placeholder="1.00"
                     />
                   </div>
                 </div>
@@ -631,7 +650,7 @@ const AddProduct = () => {
                     onBlur={handleBlur}
                     min="0"
                     className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${errors.stockQuantity ? "border-red-300" : "border-gray-200"}`}
-                    placeholder="0"
+                    placeholder="1"
                   />
                 </div>
 
@@ -668,19 +687,14 @@ const AddProduct = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Short Description
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+                <div className="quill-editor-container">
                   <ReactQuill
                     theme="snow"
                     value={formData.shortDescription}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        shortDescription: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className="h-24 mb-10"
+                    onChange={(value) => setFormData(prev => ({ ...prev, shortDescription: value }))}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200"
                     placeholder="Brief summary (appears in lists)"
                   />
                 </div>
@@ -689,19 +703,15 @@ const AddProduct = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Description * (Min 50 chars)
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="quill-editor-container">
                   <ReactQuill
                     theme="snow"
                     value={formData.description}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className={`h-64 mb-12 ${errors.description ? "border-red-300" : ""}`}
+                    onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className={`bg-gray-50 rounded-xl overflow-hidden border ${errors.description ? "border-red-300" : "border-gray-200"}`}
+                    placeholder="Full product description..."
                   />
                 </div>
                 {errors.description && (
@@ -802,8 +812,12 @@ const AddProduct = () => {
                   {uploading && (
                     <div className="mt-4 w-full max-w-xs">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-bold text-blue-600">Uploading...</span>
-                        <span className="text-sm font-bold text-blue-600">{uploadProgress}%</span>
+                        <span className="text-sm font-bold text-blue-600">
+                          Uploading...
+                        </span>
+                        <span className="text-sm font-bold text-blue-600">
+                          {uploadProgress}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -1100,18 +1114,29 @@ const AddProduct = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
-          toast.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-        }`}>
-          <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          }`}>
+        <div
+          className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
+            toast.type === "success"
+              ? "bg-green-50 border-green-200"
+              : "bg-red-50 border-red-200"
+          }`}
+        >
+          <div
+            className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
+              toast.type === "success" ? "bg-green-500" : "bg-red-500"
+            }`}
+          >
             {toast.type === "success" ? "✓" : "!"}
           </div>
-          <p className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+          <p
+            className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}
+          >
             {toast.message}
           </p>
-          <button onClick={() => setToast(null)} className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            onClick={() => setToast(null)}
+            className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <XMarkIcon className="h-4 w-4" />
           </button>
         </div>

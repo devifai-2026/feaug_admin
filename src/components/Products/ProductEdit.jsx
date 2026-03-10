@@ -12,20 +12,37 @@ import {
   CubeIcon,
   TagIcon,
   DocumentTextIcon,
-  CurrencyDollarIcon,
+  CurrencyRupeeIcon,
 } from "@heroicons/react/24/outline";
 
 import productApi from "../../api/product.api";
 import categoryApi from "../../api/categories.api";
 import s3Api from "../../api/s3.api";
-import ReactQuill from "react-quill-new";
-import "quill/dist/quill.snow.css";
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 
-const modules = {
-  toolbar: [["bold", "italic", "underline"], ["clean"]],
+const quillModules = {
+  toolbar: [
+    ['bold', 'italic'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['clean']
+  ],
 };
 
-const formats = ["bold", "italic", "underline", "clean"];
+const quillFormats = [
+  'bold', 'italic', 'list'
+];
+
+const decodeHtml = (html) => {
+  if (!html) return "";
+  return html
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ");
+};
 
 const ProductEdit = () => {
   const { id } = useParams();
@@ -120,8 +137,8 @@ const ProductEdit = () => {
           sellingPrice: foundProduct.sellingPrice?.toString() || "",
           stockQuantity: foundProduct.stockQuantity?.toString() || "",
           lowStockThreshold: foundProduct.lowStockThreshold?.toString() || "10",
-          description: foundProduct.description || "",
-          shortDescription: foundProduct.shortDescription || "",
+          description: decodeHtml(foundProduct.description) || "",
+          shortDescription: decodeHtml(foundProduct.shortDescription) || "",
           sku: foundProduct.sku || "",
           brand: foundProduct.brand || "",
           material: foundProduct.material || "",
@@ -166,8 +183,6 @@ const ProductEdit = () => {
       setLoading(false);
     }
   };
-
-
 
   const handleInputChange = async (e) => {
     const { name, value, type, checked } = e.target;
@@ -321,7 +336,7 @@ const ProductEdit = () => {
       const num = parseInt(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+        [name]: isNaN(num) || num < 0 ? (name === "stockQuantity" ? "1" : "0") : num.toString(),
       }));
     }
     // Float fields
@@ -329,7 +344,7 @@ const ProductEdit = () => {
       const num = parseFloat(value);
       setFormData((prev) => ({
         ...prev,
-        [name]: isNaN(num) || num < 0 ? "0" : num.toString(),
+        [name]: isNaN(num) || num < 0 ? (["basePrice", "sellingPrice"].includes(name) ? "1" : "0") : num.toString(),
       }));
     }
   };
@@ -338,7 +353,10 @@ const ProductEdit = () => {
     e.preventDefault();
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
-      showToast("error", "Please fix the errors: " + Object.values(errors).join(", "));
+      showToast(
+        "error",
+        "Please fix the errors: " + Object.values(errors).join(", "),
+      );
       return;
     }
 
@@ -386,10 +404,13 @@ const ProductEdit = () => {
       );
 
       showToast("success", "Product updated successfully!");
-      setTimeout(() => navigate(`/products/view/${product._id || product.id}`), 1500);
+      setTimeout(() => navigate(-1), 1500);
     } catch (error) {
       console.error("Error saving product:", error);
-      showToast("error", "Error saving product. Please try again.");
+      showToast(
+        "error",
+        error.message || "Error saving product. Please try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -408,7 +429,10 @@ const ProductEdit = () => {
         setTimeout(() => navigate("/products"), 1500);
       } catch (error) {
         console.error("Error deleting product:", error);
-        showToast("error", error.response?.data?.message || "Error deleting product. Please try again.");
+        showToast(
+          "error",
+          error.message || "Error deleting product. Please try again.",
+        );
       }
     }
   };
@@ -429,10 +453,7 @@ const ProductEdit = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
           Product Not Found
         </h2>
-        <Link
-          to="/products"
-          className="text-blue-600 hover:text-blue-800"
-        >
+        <Link to="/products" className="text-blue-600 hover:text-blue-800">
           ← Back to Products
         </Link>
       </div>
@@ -464,9 +485,7 @@ const ProductEdit = () => {
                 <span className="mx-2">/</span>
                 <span className="text-gray-900 font-medium">Edit</span>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Edit Product
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
               <p className="text-gray-600">
                 Update product information and details
               </p>
@@ -645,7 +664,7 @@ const ProductEdit = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="text-lg font-bold text-gray-900 flex items-center">
-                <CurrencyDollarIcon className="h-5 w-5 mr-2 text-green-600" />
+                <CurrencyRupeeIcon className="h-5 w-5 mr-2 text-green-600" />
                 Pricing & Inventory
               </h2>
             </div>
@@ -691,7 +710,7 @@ const ProductEdit = () => {
                       onBlur={handleBlur}
                       min="0"
                       className="w-full pl-8 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      placeholder="0.00"
+                      placeholder="1.00"
                       required
                     />
                   </div>
@@ -745,7 +764,7 @@ const ProductEdit = () => {
                     onBlur={handleBlur}
                     min="0"
                     className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    placeholder="0"
+                    placeholder="1"
                     required
                   />
                 </div>
@@ -783,19 +802,14 @@ const ProductEdit = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Short Description
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+                <div className="quill-editor-container">
                   <ReactQuill
                     theme="snow"
                     value={formData.shortDescription}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        shortDescription: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className="h-24 mb-10"
+                    onChange={(value) => setFormData(prev => ({ ...prev, shortDescription: value }))}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200"
                     placeholder="Brief summary (appears in lists)"
                   />
                 </div>
@@ -804,19 +818,15 @@ const ProductEdit = () => {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Full Description * (Min 50 chars)
                 </label>
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="quill-editor-container">
                   <ReactQuill
                     theme="snow"
                     value={formData.description}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        description: value,
-                      }))
-                    }
-                    modules={modules}
-                    formats={formats}
-                    className="h-64 mb-12"
+                    onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200"
+                    placeholder="Full product description..."
                   />
                 </div>
               </div>
@@ -1231,18 +1241,29 @@ const ProductEdit = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
-          toast.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-        }`}>
-          <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          }`}>
+        <div
+          className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
+            toast.type === "success"
+              ? "bg-green-50 border-green-200"
+              : "bg-red-50 border-red-200"
+          }`}
+        >
+          <div
+            className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
+              toast.type === "success" ? "bg-green-500" : "bg-red-500"
+            }`}
+          >
             {toast.type === "success" ? "✓" : "!"}
           </div>
-          <p className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
+          <p
+            className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}
+          >
             {toast.message}
           </p>
-          <button onClick={() => setToast(null)} className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            onClick={() => setToast(null)}
+            className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <XMarkIcon className="h-4 w-4" />
           </button>
         </div>

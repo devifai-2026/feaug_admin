@@ -218,10 +218,10 @@ const OrderUpdate = () => {
                     </select>
                   </div>
 
-                  {/* Payment Method */}
+                  {/* Payment Intent */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Payment Method
+                      Payment Intent
                     </label>
                     <select
                       name="paymentMethod"
@@ -362,7 +362,7 @@ const OrderUpdate = () => {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Current Details</h2>
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Payment Method</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Payment Intent</h3>
                   <div className="flex items-center">
                     <CreditCardIcon className="h-4 w-4 text-gray-400 mr-2" />
                     <span className="text-sm text-gray-600">{order.paymentMethod}</span>

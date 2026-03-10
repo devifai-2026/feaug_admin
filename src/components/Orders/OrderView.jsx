@@ -908,7 +908,7 @@ const OrderView = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Payment Method
+                    Payment Intent
                   </h3>
                   <div className="flex items-center">
                     <CreditCardIcon className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />

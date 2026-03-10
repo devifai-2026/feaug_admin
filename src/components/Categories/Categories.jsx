@@ -455,11 +455,12 @@ const Categories = () => {
                       Products
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      Subcategory
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Parent
+                      Status
                     </th>
+
                     {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th> */}
@@ -485,16 +486,20 @@ const Categories = () => {
                         <span className="font-medium">{category.productCount || 0}</span>
                       </td>
                       <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleViewSubcategories(category)}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
+                        >
+                          View Subcategories
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
                         <span className={`px-2 py-1 text-xs rounded-full ${category.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}>
                           {category.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {category.parentCategory && typeof category.parentCategory === 'object'
-                          ? category.parentCategory.name
-                          : '—'}
-                      </td>
+
                       {/* <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <Link

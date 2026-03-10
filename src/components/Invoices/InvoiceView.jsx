@@ -283,14 +283,7 @@ const InvoiceView = () => {
         null,
         "center",
       );
-      pdf.text(
-        "Invoice Management System • Professional Invoice",
-        105,
-        yPos + 10,
-        null,
-        null,
-        "center",
-      );
+     
 
       // Save PDF
       pdf.save(
@@ -504,7 +497,7 @@ const InvoiceView = () => {
             
             <div>
               <div class="section-title">Payment Information</div>
-              <p><strong>Payment Method:</strong> ${invoice.paymentMethod || "N/A"}</p>
+              <p><strong>Payment Intent:</strong> ${invoice.paymentMethod || "N/A"}</p>
               <p><strong>Payment Date:</strong> ${invoice.paymentDate ? formatDate(invoice.paymentDate) : "Pending"}</p>
             </div>
           </div>
@@ -558,7 +551,7 @@ const InvoiceView = () => {
           <div class="footer">
             <p>Thank you for your business!</p>
             <p>Generated on: ${new Date().toLocaleString()}</p>
-            <p>Invoice Management System • Professional Invoice</p>
+            
           </div>
           
           <script>
@@ -784,7 +777,7 @@ const InvoiceView = () => {
               </p>
             </div>
             <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-500">Payment Method</p>
+              <p className="text-sm text-gray-500">Payment Intent</p>
               <p className="text-lg font-semibold text-gray-900">
                 {invoice.paymentMethod || "N/A"}
               </p>
