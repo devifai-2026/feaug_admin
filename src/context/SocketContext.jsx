@@ -113,6 +113,60 @@ export const SocketProvider = ({ children }) => {
       ]);
     });
 
+    // Listen for shipping issues (no couriers, failed automation)
+    socketInstance.on("shipping_issue", (data) => {
+      console.log("🔥 SOCKET API EVENT RECEIVED: shipping_issue", data);
+      setNotifications((prev) => [
+        {
+          id: Date.now(),
+          type: "shipping_issue",
+          title: "Shipping Issue",
+          message: data.message || `Order ${data.orderId}: Shipping issue - ${data.issue}`,
+          timestamp: data.timestamp || new Date().toISOString(),
+          read: false,
+          data: data,
+          color: "bg-orange-500",
+        },
+        ...prev,
+      ]);
+    });
+
+    // Listen for shipping confirmed (AWB assigned)
+    socketInstance.on("shipping_confirmed", (data) => {
+      console.log("🔥 SOCKET API EVENT RECEIVED: shipping_confirmed", data);
+      setNotifications((prev) => [
+        {
+          id: Date.now(),
+          type: "shipping_confirmed",
+          title: "Shipment Confirmed",
+          message: data.message || `Order ${data.orderId}: AWB ${data.awb} assigned`,
+          timestamp: data.timestamp || new Date().toISOString(),
+          read: false,
+          data: data,
+          color: "bg-green-500",
+        },
+        ...prev,
+      ]);
+    });
+
+    // Listen for shipping retry success
+    socketInstance.on("shipping_retry_success", (data) => {
+      console.log("🔥 SOCKET API EVENT RECEIVED: shipping_retry_success", data);
+      setNotifications((prev) => [
+        {
+          id: Date.now(),
+          type: "shipping_retry_success",
+          title: "Shipment Retry Succeeded",
+          message: data.message || `Order ${data.orderId}: Shipment retry successful`,
+          timestamp: data.timestamp || new Date().toISOString(),
+          read: false,
+          data: data,
+          color: "bg-green-500",
+        },
+        ...prev,
+      ]);
+    });
+
     // Listen for low stock alerts
     socketInstance.on("low_stock_alert", (data) => {
       console.log("🔥 SOCKET API EVENT RECEIVED: low_stock_alert", data);

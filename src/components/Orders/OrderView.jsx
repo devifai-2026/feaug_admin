@@ -27,12 +27,14 @@ import {
 import moment from "moment";
 import orderApi from "../../api/orders.api";
 import { useToast } from "../../context/ToastContext";
+import { useSocket } from "../../context/SocketContext";
 import StatusUpdateModal from "../../components/Modals/StatusUpdateModal";
 
 const OrderView = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { on, off } = useSocket();
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,12 +52,50 @@ const OrderView = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
 
+  // AWB manual edit
+  const [editingAWB, setEditingAWB] = useState(false);
+  const [awbInput, setAwbInput] = useState("");
+  const [courierNameInput, setCourierNameInput] = useState("");
+  const [awbSaving, setAwbSaving] = useState(false);
+
   useEffect(() => {
     if (id) {
       fetchOrderDetails();
       fetchOrderTimeline();
     }
   }, [id]);
+
+  // Listen for real-time shipping events for this order
+  useEffect(() => {
+    const handleShippingIssue = (data) => {
+      if (data.orderDbId === id || data.orderId === order?.orderId) {
+        showToast(data.message || `Shipping issue: ${data.issue}`, "error");
+        fetchOrderDetails();
+      }
+    };
+    const handleShippingConfirmed = (data) => {
+      if (data.orderDbId === id || data.orderId === order?.orderId) {
+        showToast(data.message || "Shipment confirmed!", "success");
+        fetchOrderDetails();
+      }
+    };
+    const handleRetrySuccess = (data) => {
+      if (data.orderDbId === id || data.orderId === order?.orderId) {
+        showToast(data.message || "Shipment retry succeeded!", "success");
+        fetchOrderDetails();
+      }
+    };
+
+    on("shipping_issue", handleShippingIssue);
+    on("shipping_confirmed", handleShippingConfirmed);
+    on("shipping_retry_success", handleRetrySuccess);
+
+    return () => {
+      off("shipping_issue", handleShippingIssue);
+      off("shipping_confirmed", handleShippingConfirmed);
+      off("shipping_retry_success", handleRetrySuccess);
+    };
+  }, [id, order?.orderId]);
 
   const fetchOrderDetails = async () => {
     try {
@@ -420,6 +460,48 @@ const OrderView = () => {
       );
     } finally {
       setShipmentLoading(false);
+    }
+  };
+
+  const handleRetryShipment = async () => {
+    if (!order) return;
+
+    try {
+      setShipmentLoading(true);
+      showToast("Retrying shipment automation...", "info");
+      const response = await orderApi.retryShipment(order._id);
+      if (response.warning) {
+        showToast(`Retry complete but: ${response.warning}`, "error");
+      } else {
+        showToast("Shipment automation completed successfully!", "success");
+      }
+      fetchOrderDetails();
+    } catch (error) {
+      console.error("Error retrying shipment:", error);
+      showToast(
+        error.response?.data?.message || "Error retrying shipment",
+        "error",
+      );
+    } finally {
+      setShipmentLoading(false);
+    }
+  };
+
+  const handleSaveAWB = async () => {
+    if (!awbInput.trim()) return;
+    try {
+      setAwbSaving(true);
+      await orderApi.updateAWB(order._id, {
+        awb: awbInput.trim(),
+        courierName: courierNameInput.trim() || undefined,
+      });
+      showToast("AWB updated successfully!", "success");
+      setEditingAWB(false);
+      fetchOrderDetails();
+    } catch (error) {
+      showToast(error.response?.data?.message || "Error updating AWB", "error");
+    } finally {
+      setAwbSaving(false);
     }
   };
 
@@ -890,6 +972,236 @@ const OrderView = () => {
                 </div>
               </div>
             </div>
+
+            {/* Shipment Management */}
+            {!['cancelled', 'returned', 'refunded'].includes(order.status) && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Shipment Management
+                  </h2>
+                  {getShipmentStatusBadge()}
+                </div>
+
+                {/* No courier warning */}
+                {!order.shiprocketAWB && order.shiprocketOrderId && (
+                  <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-start">
+                      <ExclamationCircleIcon className="h-5 w-5 text-orange-500 mr-2 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-orange-800">No AWB Assigned</p>
+                        <p className="text-xs text-orange-600 mt-1">
+                          Shiprocket order created but no courier could be assigned. Options:
+                        </p>
+                        <ul className="text-xs text-orange-600 mt-1 list-disc list-inside space-y-0.5">
+                          <li><strong>Retry Automation</strong> — try again (useful if this was a temporary Shiprocket issue)</li>
+                          <li><strong>Enter AWB manually</strong> — if you're shipping via a different courier outside Shiprocket</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* No shipment at all */}
+                {!order.shiprocketOrderId && (
+                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      No shipment created yet.{' '}
+                      {order.paymentStatus === 'paid'
+                        ? 'Use "Retry Automation" to trigger the full Shiprocket flow, or enter an AWB manually if shipping outside Shiprocket.'
+                        : 'Awaiting payment confirmation.'}
+                    </p>
+                  </div>
+                )}
+
+                {/* AWB info */}
+                {order.shiprocketAWB && !editingAWB && (
+                  <div className="mb-4 space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center">
+                        <TruckIcon className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-gray-600">AWB: <strong>{order.shiprocketAWB}</strong></span>
+                      </div>
+                      <button
+                        onClick={() => { setAwbInput(order.shiprocketAWB); setCourierNameInput(order.courierName || ""); setEditingAWB(true); }}
+                        className="text-xs text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                    {order.courierName && (
+                      <div className="flex items-center text-sm">
+                        <TruckIcon className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-gray-600">Courier: <strong>{order.courierName}</strong></span>
+                      </div>
+                    )}
+                    {order.trackingUrl && (
+                      <a
+                        href={order.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        <TruckIcon className="h-4 w-4 mr-2" />
+                        Track on Shiprocket →
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {/* Inline AWB edit form */}
+                {editingAWB && (
+                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                    <p className="text-xs font-medium text-gray-700">Edit AWB Details</p>
+                    <input
+                      type="text"
+                      value={awbInput}
+                      onChange={(e) => setAwbInput(e.target.value)}
+                      placeholder="AWB number"
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={courierNameInput}
+                      onChange={(e) => setCourierNameInput(e.target.value)}
+                      placeholder="Courier name (optional)"
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveAWB}
+                        disabled={awbSaving || !awbInput.trim()}
+                        className="flex-1 text-sm bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {awbSaving ? "Saving..." : "Save"}
+                      </button>
+                      <button
+                        onClick={() => setEditingAWB(false)}
+                        className="flex-1 text-sm border border-gray-300 text-gray-700 rounded px-3 py-1.5 hover:bg-gray-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual AWB entry when no AWB yet */}
+                {!order.shiprocketAWB && !editingAWB && (
+                  <div className="mb-2">
+                    <button
+                      onClick={() => { setAwbInput(""); setCourierNameInput(""); setEditingAWB(true); }}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      + Enter AWB manually
+                    </button>
+                  </div>
+                )}
+
+                {!order.shiprocketAWB && editingAWB && (
+                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                    <p className="text-xs font-medium text-gray-700">Enter AWB Manually</p>
+                    <input
+                      type="text"
+                      value={awbInput}
+                      onChange={(e) => setAwbInput(e.target.value)}
+                      placeholder="AWB number"
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={courierNameInput}
+                      onChange={(e) => setCourierNameInput(e.target.value)}
+                      placeholder="Courier name (optional)"
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveAWB}
+                        disabled={awbSaving || !awbInput.trim()}
+                        className="flex-1 text-sm bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {awbSaving ? "Saving..." : "Save"}
+                      </button>
+                      <button
+                        onClick={() => setEditingAWB(false)}
+                        className="flex-1 text-sm border border-gray-300 text-gray-700 rounded px-3 py-1.5 hover:bg-gray-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="space-y-2">
+                  {/* Retry / Create buttons (when no AWB) */}
+                  {!order.shiprocketAWB && (
+                    <>
+                      <button
+                        onClick={handleRetryShipment}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      >
+                        <ArrowPathIcon className="h-4 w-4 mr-2" />
+                        {shipmentLoading ? "Retrying..." : "Retry Shipment Automation"}
+                      </button>
+                      {!order.shiprocketOrderId && (
+                        <button
+                          onClick={handleCreateShipment}
+                          disabled={shipmentLoading}
+                          className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                          <TruckIcon className="h-4 w-4 mr-2" />
+                          {shipmentLoading ? "Creating..." : "Create Shipment Manually"}
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  {/* Actions when AWB exists */}
+                  {order.shiprocketAWB && (
+                    <>
+                      <button
+                        onClick={handleTrackShipment}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      >
+                        <TruckIcon className="h-4 w-4 mr-2" />
+                        {shipmentLoading ? "Loading..." : "Track Shipment"}
+                      </button>
+                      {!order.pickupScheduled && (
+                        <button
+                          onClick={handleSchedulePickup}
+                          disabled={shipmentLoading}
+                          className="w-full flex items-center justify-center px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          {shipmentLoading ? "Scheduling..." : "Schedule Pickup"}
+                        </button>
+                      )}
+                      <button
+                        onClick={handlePrintLabel}
+                        disabled={shipmentLoading}
+                        className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                      >
+                        <PrinterIcon className="h-4 w-4 mr-2" />
+                        Print Shipping Label
+                      </button>
+                      {!['delivered', 'returned'].includes(order.shippingStatus) && (
+                        <button
+                          onClick={() => setShowCancelModal(true)}
+                          disabled={shipmentLoading}
+                          className="w-full flex items-center justify-center px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        >
+                          <XMarkIcon className="h-4 w-4 mr-2" />
+                          Cancel Shipment
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Order Metadata */}
             <div className="bg-white rounded-lg shadow p-6">
