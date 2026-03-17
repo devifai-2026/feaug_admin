@@ -133,10 +133,6 @@ const orderApi = {
     axiosInstance.post(`/admin/orders/${orderId}/retry-shipment`)
       .then(response => response.data),
 
-  // Manually update AWB / tracking details
-  updateAWB: (orderId, data) =>
-    axiosInstance.patch(`/admin/orders/${orderId}/update-awb`, data)
-      .then(response => response.data),
 };
 
 export default orderApi;
