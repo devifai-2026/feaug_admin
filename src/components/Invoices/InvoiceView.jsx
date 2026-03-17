@@ -85,9 +85,9 @@ const InvoiceView = () => {
             new Date(
               new Date(order.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000,
             ).toISOString(),
-          amount: `₹${(order.grandTotal || order.totalAmount || order.total || 0).toLocaleString()}`,
-          tax: `₹${(order.tax || order.taxAmount || 0).toLocaleString()}`,
-          subtotal: `₹${(order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)).toLocaleString()}`,
+          amount: `₹${(order.grandTotal || order.totalAmount || order.total || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+          tax: `₹${(order.tax || order.taxAmount || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+          subtotal: `₹${(order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
           status:
             order.paymentStatus === "paid" || order.status === "delivered"
               ? "Paid"
@@ -102,8 +102,8 @@ const InvoiceView = () => {
               item.name ||
               "Product",
             quantity: item.quantity || 1,
-            price: `₹${(item.price || 0).toLocaleString()}`,
-            total: `₹${((item.price || 0) * (item.quantity || 1)).toLocaleString()}`,
+            price: `₹${(item.price || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
+            total: `₹${((item.price || 0) * (item.quantity || 1)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
           })),
           notes: order.notes || "Thank you for your business.",
           paymentMethod: order.paymentMethod || "N/A",
@@ -276,7 +276,7 @@ const InvoiceView = () => {
       pdf.setTextColor(128, 128, 128);
       pdf.text("Thank you for your business!", 105, yPos, null, null, "center");
       pdf.text(
-        `Generated on: ${new Date().toLocaleString()}`,
+        `Generated on: ${new Date().toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
         105,
         yPos + 5,
         null,
@@ -550,7 +550,7 @@ const InvoiceView = () => {
           
           <div class="footer">
             <p>Thank you for your business!</p>
-            <p>Generated on: ${new Date().toLocaleString()}</p>
+            <p>Generated on: ${new Date().toLocaleString("en-IN", { maximumFractionDigits: 0 })}</p>
             
           </div>
           

@@ -91,9 +91,9 @@ const Invoices = () => {
               new Date(
                 new Date(order.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000,
               ).toISOString(),
-            amount: `₹${order.grandTotal || order.totalAmount || 0}`,
-            tax: `₹${order.tax || order.taxAmount || 0}`,
-            subtotal: `₹${order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)}`,
+            amount: `₹${Math.round(order.grandTotal || order.totalAmount || 0).toLocaleString("en-IN")}`,
+            tax: `₹${Math.round(order.tax || order.taxAmount || 0).toLocaleString("en-IN")}`,
+            subtotal: `₹${Math.round(order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)).toLocaleString("en-IN")}`,
             status:
               order.paymentStatus === "paid"
                 ? "Paid"
@@ -285,11 +285,11 @@ const Invoices = () => {
           "Product";
         const price =
           typeof item.price === "number"
-            ? `Rs ${item.price.toLocaleString()}`
+            ? `Rs ${item.price.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
             : (item.price || "Rs 0").replace("₹", "Rs ");
         const total =
           typeof item.total === "number"
-            ? `Rs ${item.total.toLocaleString()}`
+            ? `Rs ${item.total.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
             : (item.total || price).replace("₹", "Rs ");
 
         pdf.text(description, 25, yPos);
@@ -342,7 +342,7 @@ const Invoices = () => {
       pdf.setTextColor(128, 128, 128);
       pdf.text("Thank you for your business!", 105, yPos, null, null, "center");
       pdf.text(
-        `Generated on: ${new Date().toLocaleString()}`,
+        `Generated on: ${new Date().toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
         105,
         yPos + 5,
         null,
@@ -582,11 +582,11 @@ const Invoices = () => {
               "Product";
             const price =
               typeof item.price === "number"
-                ? `₹${item.price.toLocaleString()}`
+                ? `₹${item.price.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                 : item.price || "₹0";
             const total =
               typeof item.total === "number"
-                ? `₹${item.total.toLocaleString()}`
+                ? `₹${item.total.toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                 : item.total || price;
             return `
                 <tr>
@@ -623,7 +623,7 @@ const Invoices = () => {
           
           <div class="footer">
             <p>Thank you for your business!</p>
-            <p>Generated on: ${new Date().toLocaleString()}</p>
+            <p>Generated on: ${new Date().toLocaleString("en-IN", { maximumFractionDigits: 0 })}</p>
          
           </div>
           

@@ -52,11 +52,6 @@ const OrderView = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  // AWB manual edit
-  const [editingAWB, setEditingAWB] = useState(false);
-  const [awbInput, setAwbInput] = useState("");
-  const [courierNameInput, setCourierNameInput] = useState("");
-  const [awbSaving, setAwbSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -487,23 +482,6 @@ const OrderView = () => {
     }
   };
 
-  const handleSaveAWB = async () => {
-    if (!awbInput.trim()) return;
-    try {
-      setAwbSaving(true);
-      await orderApi.updateAWB(order._id, {
-        awb: awbInput.trim(),
-        courierName: courierNameInput.trim() || undefined,
-      });
-      showToast("AWB updated successfully!", "success");
-      setEditingAWB(false);
-      fetchOrderDetails();
-    } catch (error) {
-      showToast(error.response?.data?.message || "Error updating AWB", "error");
-    } finally {
-      setAwbSaving(false);
-    }
-  };
 
   const getShipmentStatusBadge = () => {
     if (!order) return null;
@@ -991,12 +969,8 @@ const OrderView = () => {
                       <div>
                         <p className="text-sm font-medium text-orange-800">No AWB Assigned</p>
                         <p className="text-xs text-orange-600 mt-1">
-                          Shiprocket order created but no courier could be assigned. Options:
+                          Shiprocket order created but no courier could be assigned. Use <strong>Retry Automation</strong> to try again (useful if this was a temporary Shiprocket issue).
                         </p>
-                        <ul className="text-xs text-orange-600 mt-1 list-disc list-inside space-y-0.5">
-                          <li><strong>Retry Automation</strong> — try again (useful if this was a temporary Shiprocket issue)</li>
-                          <li><strong>Enter AWB manually</strong> — if you're shipping via a different courier outside Shiprocket</li>
-                        </ul>
                       </div>
                     </div>
                   </div>
@@ -1008,26 +982,18 @@ const OrderView = () => {
                     <p className="text-sm text-gray-600">
                       No shipment created yet.{' '}
                       {order.paymentStatus === 'paid'
-                        ? 'Use "Retry Automation" to trigger the full Shiprocket flow, or enter an AWB manually if shipping outside Shiprocket.'
+                        ? 'Use "Retry Automation" to trigger the full Shiprocket flow.'
                         : 'Awaiting payment confirmation.'}
                     </p>
                   </div>
                 )}
 
                 {/* AWB info */}
-                {order.shiprocketAWB && !editingAWB && (
+                {order.shiprocketAWB && (
                   <div className="mb-4 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center">
-                        <TruckIcon className="h-4 w-4 text-gray-400 mr-2" />
-                        <span className="text-gray-600">AWB: <strong>{order.shiprocketAWB}</strong></span>
-                      </div>
-                      <button
-                        onClick={() => { setAwbInput(order.shiprocketAWB); setCourierNameInput(order.courierName || ""); setEditingAWB(true); }}
-                        className="text-xs text-blue-600 hover:text-blue-800 underline"
-                      >
-                        Edit
-                      </button>
+                    <div className="flex items-center text-sm">
+                      <TruckIcon className="h-4 w-4 text-gray-400 mr-2" />
+                      <span className="text-gray-600">AWB: <strong>{order.shiprocketAWB}</strong></span>
                     </div>
                     {order.courierName && (
                       <div className="flex items-center text-sm">
@@ -1049,88 +1015,6 @@ const OrderView = () => {
                   </div>
                 )}
 
-                {/* Inline AWB edit form */}
-                {editingAWB && (
-                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                    <p className="text-xs font-medium text-gray-700">Edit AWB Details</p>
-                    <input
-                      type="text"
-                      value={awbInput}
-                      onChange={(e) => setAwbInput(e.target.value)}
-                      placeholder="AWB number"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      value={courierNameInput}
-                      onChange={(e) => setCourierNameInput(e.target.value)}
-                      placeholder="Courier name (optional)"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSaveAWB}
-                        disabled={awbSaving || !awbInput.trim()}
-                        className="flex-1 text-sm bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {awbSaving ? "Saving..." : "Save"}
-                      </button>
-                      <button
-                        onClick={() => setEditingAWB(false)}
-                        className="flex-1 text-sm border border-gray-300 text-gray-700 rounded px-3 py-1.5 hover:bg-gray-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Manual AWB entry when no AWB yet */}
-                {!order.shiprocketAWB && !editingAWB && (
-                  <div className="mb-2">
-                    <button
-                      onClick={() => { setAwbInput(""); setCourierNameInput(""); setEditingAWB(true); }}
-                      className="text-xs text-blue-600 hover:text-blue-800 underline"
-                    >
-                      + Enter AWB manually
-                    </button>
-                  </div>
-                )}
-
-                {!order.shiprocketAWB && editingAWB && (
-                  <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                    <p className="text-xs font-medium text-gray-700">Enter AWB Manually</p>
-                    <input
-                      type="text"
-                      value={awbInput}
-                      onChange={(e) => setAwbInput(e.target.value)}
-                      placeholder="AWB number"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      value={courierNameInput}
-                      onChange={(e) => setCourierNameInput(e.target.value)}
-                      placeholder="Courier name (optional)"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSaveAWB}
-                        disabled={awbSaving || !awbInput.trim()}
-                        className="flex-1 text-sm bg-blue-600 text-white rounded px-3 py-1.5 hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {awbSaving ? "Saving..." : "Save"}
-                      </button>
-                      <button
-                        onClick={() => setEditingAWB(false)}
-                        className="flex-1 text-sm border border-gray-300 text-gray-700 rounded px-3 py-1.5 hover:bg-gray-100"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Action buttons */}
                 <div className="space-y-2">
