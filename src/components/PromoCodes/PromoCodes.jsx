@@ -10,6 +10,7 @@ import {
   DocumentDuplicateIcon,
 } from "@heroicons/react/24/outline";
 import * as promoApi from "../../api/promoCodes.api";
+import categoryApi from "../../api/categories.api";
 
 
 const PromoCodes = () => {
@@ -19,11 +20,16 @@ const PromoCodes = () => {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     code: "",
     discountPercentage: "",
     isActive: true,
     isSecret: false,
+    applicableCategory: "",
+    minimumPurchase: 0,
+    firstTimeOnly: false,
+    maxUses: 0,
   });
   const [submitting, setSubmitting] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
@@ -48,8 +54,18 @@ const PromoCodes = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await categoryApi.getAllCategories();
+      setCategories(response.data?.categories || response.categories || []);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
   useEffect(() => {
     fetchPromoCodes();
+    fetchCategories();
   }, []);
 
   const handleOpenModal = (promo = null) => {
@@ -60,6 +76,10 @@ const PromoCodes = () => {
         discountPercentage: promo.discountPercentage,
         isActive: promo.isActive,
         isSecret: promo.isSecret || false,
+        applicableCategory: promo.applicableCategory || "",
+        minimumPurchase: promo.minimumPurchase || 0,
+        firstTimeOnly: promo.firstTimeOnly || false,
+        maxUses: promo.maxUses || 0,
       });
     } else {
       setEditingPromo(null);
@@ -68,6 +88,10 @@ const PromoCodes = () => {
         discountPercentage: "",
         isActive: true,
         isSecret: false,
+        applicableCategory: "",
+        minimumPurchase: 0,
+        firstTimeOnly: false,
+        maxUses: 0,
       });
     }
     setIsModalOpen(true);
@@ -81,6 +105,10 @@ const PromoCodes = () => {
       discountPercentage: "",
       isActive: true,
       isSecret: false,
+      applicableCategory: "",
+      minimumPurchase: 0,
+      firstTimeOnly: false,
+      maxUses: 0,
     });
   };
 
@@ -314,6 +342,32 @@ const PromoCodes = () => {
                   </div>
                 </div>
 
+                {/* Condition Badges */}
+                {(promo.minimumPurchase > 0 || promo.applicableCategory || promo.firstTimeOnly || promo.maxUses > 0) && (
+                  <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-dashed border-gray-100">
+                    {promo.minimumPurchase > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                        Min ₹{promo.minimumPurchase}
+                      </span>
+                    )}
+                    {promo.applicableCategory && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100">
+                        {categories.find(c => c._id === promo.applicableCategory)?.name || promo.applicableCategory} only
+                      </span>
+                    )}
+                    {promo.firstTimeOnly && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100">
+                        New users
+                      </span>
+                    )}
+                    {promo.maxUses > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-gray-50 text-gray-600 border border-gray-200">
+                        Max {promo.maxUses} uses
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {/* Ticket "Cuts" Effect */}
                 <div className="absolute top-1/2 -left-2 w-4 h-4 bg-gray-50/50 rounded-full border border-gray-200 -translate-y-1/2"></div>
                 <div className="absolute top-1/2 -right-2 w-4 h-4 bg-gray-50/50 rounded-full border border-gray-200 -translate-y-1/2"></div>
@@ -328,7 +382,7 @@ const PromoCodes = () => {
   {
     isModalOpen && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-[2px] transition-all animate-in fade-in duration-200">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-200 border border-gray-200 max-h-[90vh] overflow-y-auto">
           <div className="p-6">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-sm font-bold text-gray-900">
@@ -411,6 +465,81 @@ const PromoCodes = () => {
                   className="text-xs font-semibold text-gray-700 cursor-pointer flex-1"
                 >
                   Secret Code (Hidden from list)
+                </label>
+              </div>
+
+              {/* Applicable Category */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Applicable Category
+                </label>
+                <select
+                  name="applicableCategory"
+                  value={formData.applicableCategory}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-gray-50/50"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Minimum Purchase Amount */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Minimum Purchase Amount
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="minimumPurchase"
+                    value={formData.minimumPurchase}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="0"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-bold bg-gray-50/50"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">
+                    ₹
+                  </div>
+                </div>
+              </div>
+
+              {/* Max Uses */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Max Uses <span className="normal-case font-normal text-gray-400">(0 = unlimited)</span>
+                </label>
+                <input
+                  type="number"
+                  name="maxUses"
+                  value={formData.maxUses}
+                  onChange={handleInputChange}
+                  placeholder="0"
+                  min="0"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-bold bg-gray-50/50"
+                />
+              </div>
+
+              {/* First Time Users Only */}
+              <div className="flex items-center gap-2.5 bg-gray-50/80 p-3 rounded-lg border border-gray-100">
+                <input
+                  type="checkbox"
+                  id="firstTimeOnly"
+                  name="firstTimeOnly"
+                  checked={formData.firstTimeOnly}
+                  onChange={handleInputChange}
+                  className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <label
+                  htmlFor="firstTimeOnly"
+                  className="text-xs font-semibold text-gray-700 cursor-pointer flex-1"
+                >
+                  First Time Users Only
                 </label>
               </div>
 

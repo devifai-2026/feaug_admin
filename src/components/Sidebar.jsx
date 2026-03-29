@@ -15,6 +15,12 @@ import {
   ReceiptPercentIcon, // For Invoices
   PhotoIcon, // For Banners
   TicketIcon, // For Promo Codes
+  NewspaperIcon, // For Updates
+  BoltIcon, // For Flash Sales
+  StarIcon, // For Best Sellers
+  SparklesIcon, // For Featured
+  Cog6ToothIcon, // For Settings
+  ChatBubbleLeftRightIcon, // For Support
 } from "@heroicons/react/24/outline";
 import { NavLink } from "react-router-dom";
 
@@ -29,6 +35,12 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
     { name: "Promo Codes", icon: TicketIcon, to: "/promo-codes" },
 
     { name: "Users", icon: UsersIcon, to: "/users" },
+    { name: "Updates", icon: NewspaperIcon, to: "/updates" },
+    { name: "Flash Sales", icon: BoltIcon, to: "/flash-sales" },
+    { name: "Best Sellers", icon: StarIcon, to: "/best-sellers" },
+    { name: "Featured", icon: SparklesIcon, to: "/featured" },
+    { name: "Support", icon: ChatBubbleLeftRightIcon, to: "/support-tickets" },
+    { name: "Settings", icon: Cog6ToothIcon, to: "/settings" },
   ];
 
   const handleToggle = () => {

@@ -721,7 +721,77 @@ const EditBanner = () => {
                 </p>
               )}
 
-              {/* Image Gallery */}
+              {/* Image Thumbnail Previews */}
+              {images.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Uploaded Images ({images.length})
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {images.map((img, index) => (
+                      <div
+                        key={index}
+                        className={`group relative rounded-xl overflow-hidden border-2 transition-all ${
+                          formData.primaryImage === img.url ||
+                          (!formData.primaryImage && index === 0)
+                            ? "border-blue-500 ring-2 ring-blue-100"
+                            : "border-gray-200 hover:border-blue-300"
+                        }`}
+                      >
+                        <div className="aspect-video bg-gray-100">
+                          <img
+                            src={img.url}
+                            alt={img.title || formData.title || "Banner image"}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = "https://via.placeholder.com/200x120?text=Image";
+                            }}
+                          />
+                        </div>
+                        {/* Overlay with actions */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimaryImage(img.url)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              formData.primaryImage === img.url || (!formData.primaryImage && index === 0)
+                                ? "bg-blue-600 text-white"
+                                : "bg-white text-blue-600 hover:bg-gray-100"
+                            }`}
+                            title="Set as Primary"
+                          >
+                            <CheckIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="p-1.5 bg-white text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Remove Image"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                        {/* Primary badge */}
+                        {(formData.primaryImage === img.url ||
+                          (!formData.primaryImage && index === 0)) && (
+                          <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-bold rounded uppercase tracking-wider">
+                            Primary
+                          </div>
+                        )}
+                        {/* Alt text */}
+                        <div className="px-2 py-1.5 bg-white">
+                          <p className="text-xs text-gray-500 truncate">
+                            {img.title || formData.title || "No alt text"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Image Gallery (Detailed) */}
               <div className="grid grid-cols-1 gap-6 mt-6">
                 {images.map((img, index) => (
                   <div

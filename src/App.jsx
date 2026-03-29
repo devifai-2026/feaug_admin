@@ -35,6 +35,12 @@ import Banners from "./components/Banners/Banners";
 import AddBanner from "./components/Banners/AddBanner";
 import EditBanner from "./components/Banners/EditBanner";
 import PromoCodes from "./components/PromoCodes/PromoCodes";
+import Updates from "./components/Updates/Updates";
+import FlashSales from "./components/FlashSales/FlashSales";
+import BestSellers from "./components/BestSellers/BestSellers";
+import Featured from "./components/Featured/Featured";
+import Settings from "./components/Settings/Settings";
+import SupportTickets from "./components/Support/SupportTickets";
 import Notifications from "./components/Notifications";
 import { SocketProvider } from "./context/SocketContext";
 
@@ -127,6 +133,12 @@ function AppContent() {
         <Route path="/banners/view/:id" element={<EditBanner />} />
 
         <Route path="/promo-codes" element={<PromoCodes />} />
+        <Route path="/updates" element={<Updates />} />
+        <Route path="/flash-sales" element={<FlashSales />} />
+        <Route path="/best-sellers" element={<BestSellers />} />
+        <Route path="/featured" element={<Featured />} />
+        <Route path="/support-tickets" element={<SupportTickets />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/notifications" element={<Notifications />} />
       </Route>
