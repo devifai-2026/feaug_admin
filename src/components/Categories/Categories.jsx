@@ -225,13 +225,13 @@ const Categories = () => {
               <ArrowPathIcon className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            {/* <Link
+            <Link
               to="/categories/add"
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Add Category
-            </Link> */}
+            </Link>
           </div>
         </div>
 
