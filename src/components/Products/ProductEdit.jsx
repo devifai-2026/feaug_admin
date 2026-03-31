@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   ArrowLeftIcon,
   CheckIcon,
@@ -51,11 +52,6 @@ const ProductEdit = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -172,12 +168,12 @@ const ProductEdit = () => {
 
         setImageUrls(foundProduct.images?.map((img) => img.url) || []);
       } else {
-        showToast("error", "Product not found");
+        toast.error("Product not found");
         setTimeout(() => navigate("/products"), 1500);
       }
     } catch (error) {
       console.error("Error loading product:", error);
-      showToast("error", "Error loading product");
+      toast.error("Error loading product");
       setTimeout(() => navigate("/products"), 1500);
     } finally {
       setLoading(false);
@@ -315,10 +311,10 @@ const ProductEdit = () => {
         const newUrls = result.files.map((f) => f.url);
         setImageUrls((prev) => [...prev, ...newUrls]);
       }
-      showToast("success", "Images uploaded! Don't forget to save changes.");
+      toast.success("Images uploaded! Don't forget to save changes.");
     } catch (error) {
       console.error("Error uploading images:", error);
-      showToast("error", error.message || "Error uploading images");
+      toast.error(error.message || "Error uploading images");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -353,8 +349,7 @@ const ProductEdit = () => {
     e.preventDefault();
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
-      showToast(
-        "error",
+      toast.error(
         "Please fix the errors: " + Object.values(errors).join(", "),
       );
       return;
@@ -403,12 +398,11 @@ const ProductEdit = () => {
         updateData,
       );
 
-      showToast("success", "Product updated successfully!");
+      toast.success("Product updated successfully!");
       setTimeout(() => navigate(-1), 1500);
     } catch (error) {
       console.error("Error saving product:", error);
-      showToast(
-        "error",
+      toast.error(
         error.message || "Error saving product. Please try again.",
       );
     } finally {
@@ -416,24 +410,59 @@ const ProductEdit = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this product? This action cannot be undone.",
-      )
-    ) {
-      try {
-        await productApi.deleteProduct(product._id || product.id);
-
-        showToast("success", "Product deleted successfully!");
-        setTimeout(() => navigate("/products"), 1500);
-      } catch (error) {
-        console.error("Error deleting product:", error);
-        showToast(
-          "error",
-          error.message || "Error deleting product. Please try again.",
-        );
+  const handleDelete = () => {
+    toast((t) => (
+      <div className="flex flex-col gap-4 p-1">
+        <div className="flex items-start gap-4">
+          <div className="shrink-0 w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shadow-sm">
+            <TrashIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="font-bold text-gray-900 text-base">Permanently Delete?</p>
+            <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">
+              Are you sure you want to delete <span className="font-semibold text-gray-800">"{product?.name}"</span>? This cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 mt-1">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              await executeDelete();
+            }}
+            className="flex-1 px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all active:scale-[0.98]"
+          >
+            Yes, Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="flex-1 px-5 py-2.5 bg-gray-50 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-100 border border-gray-200 transition-all active:scale-[0.98]"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 6000,
+      position: 'top-center',
+      style: {
+        minWidth: '400px',
+        borderRadius: '24px',
+        padding: '20px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
       }
+    });
+  };
+
+  const executeDelete = async () => {
+    try {
+      await productApi.deleteProduct(product._id || product.id);
+      toast.success("Product deleted successfully!");
+      setTimeout(() => navigate("/products"), 1500);
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error(error.message || "Error deleting product.");
     }
   };
 
@@ -1239,35 +1268,6 @@ const ProductEdit = () => {
         </form>
       </div>
 
-      {/* Toast Notification */}
-      {toast && (
-        <div
-          className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
-            toast.type === "success"
-              ? "bg-green-50 border-green-200"
-              : "bg-red-50 border-red-200"
-          }`}
-        >
-          <div
-            className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
-              toast.type === "success" ? "bg-green-500" : "bg-red-500"
-            }`}
-          >
-            {toast.type === "success" ? "✓" : "!"}
-          </div>
-          <p
-            className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}
-          >
-            {toast.message}
-          </p>
-          <button
-            onClick={() => setToast(null)}
-            className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <XMarkIcon className="h-4 w-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 };

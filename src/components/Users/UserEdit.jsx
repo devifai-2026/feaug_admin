@@ -85,8 +85,6 @@ const UserEdit = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [originalData, setOriginalData] = useState(null);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const [analytics, setAnalytics] = useState(null);
   const [activityLog, setActivityLog] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
@@ -100,7 +98,6 @@ const UserEdit = () => {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      setErrorMessage("");
 
       const response = await userApi.getUserById(id);
       const { user, analytics, activityLog, recentOrders, wishlistItems, cartItems } =
@@ -126,7 +123,7 @@ const UserEdit = () => {
       setCartItems(cartItems || []);
     } catch (err) {
       console.error("Error loading user:", err);
-      setErrorMessage("Failed to load user data");
+      showToast("Failed to load user data", "error");
       setTimeout(() => navigate("/users"), 2000);
     } finally {
       setLoading(false);
@@ -382,20 +379,13 @@ const UserEdit = () => {
         ...prev,
         isActive: !prev.isActive,
       }));
-      setSuccessMessage(
-        `User ${!formData.isActive ? "activated" : "deactivated"} successfully`,
-      );
-      setTimeout(() => setSuccessMessage(""), 3000);
       showToast(
         `User ${!formData.isActive ? "activated" : "deactivated"} successfully`,
         "success",
       );
     } catch (err) {
       console.log(err)
-      setErrorMessage(
-        err.message || "Error updating user status",
-      );
-      setTimeout(() => setErrorMessage(""), 3000);
+      showToast(err.message || "Error updating user status", "error");
     }
   };
 
@@ -408,21 +398,17 @@ const UserEdit = () => {
         phone: formData.phone,
         role: formData.role,
       });
-      setSuccessMessage("User updated successfully");
       setShowSaveModal(false);
-      setTimeout(() => setSuccessMessage(""), 3000);
       showToast("User updated successfully", "success");
     } catch (err) {
       console.log(err)
-      setErrorMessage(err?.message || "Error updating user");
-      setTimeout(() => setErrorMessage(""), 3000);
+      showToast(err?.message || "Error updating user", "error");
     }
   };
 
   const handleDeleteUser = async () => {
     try {
       await userApi.deleteUser(id);
-      setSuccessMessage("User deleted successfully");
       setShowDeleteModal(false);
       showToast("User deleted successfully", "success");
       setTimeout(() => {
@@ -430,7 +416,6 @@ const UserEdit = () => {
       }, 1500);
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || "Error deleting user";
-      setErrorMessage(msg);
       showToast(msg, "error");
       setShowDeleteModal(false);
     }
@@ -625,28 +610,6 @@ const UserEdit = () => {
             </div>
           </div>
 
-          {/* Messages */}
-          {successMessage && (
-            <div className="mb-6 animate-slideDown">
-              <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl flex items-center gap-3 shadow-sm">
-                <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                  <CheckCircleIcon className="h-5 w-5 text-emerald-600" />
-                </div>
-                <p className="text-emerald-700 font-medium">{successMessage}</p>
-              </div>
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="mb-6 animate-slideDown">
-              <div className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-xl flex items-center gap-3 shadow-sm">
-                <div className="h-10 w-10 rounded-lg bg-rose-100 flex items-center justify-center">
-                  <ExclamationTriangleIcon className="h-5 w-5 text-rose-600" />
-                </div>
-                <p className="text-rose-700 font-medium">{errorMessage}</p>
-              </div>
-            </div>
-          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
