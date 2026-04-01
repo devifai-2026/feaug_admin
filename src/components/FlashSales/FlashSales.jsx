@@ -42,6 +42,18 @@ const FlashSales = () => {
     totalPages: 1,
   });
 
+  // Date limits for calendar
+  const [dateLimits, setDateLimits] = useState(() => {
+    const now = new Date();
+    const oneMonthFromNow = new Date(now);
+    oneMonthFromNow.setMonth(now.getMonth() + 1);
+    
+    return {
+      min: now.toISOString().slice(0, 16),
+      max: oneMonthFromNow.toISOString().slice(0, 16)
+    };
+  });
+
   // Form state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFlashSale, setEditingFlashSale] = useState(null);
@@ -646,6 +658,8 @@ const FlashSales = () => {
                       name="endDate"
                       value={formData.endDate}
                       onChange={handleInputChange}
+                      min={dateLimits.min}
+                      max={dateLimits.max}
                       className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-gray-50/50"
                       required
                     />

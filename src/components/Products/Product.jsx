@@ -8,8 +8,10 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ChevronDownIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import productApi from "../../api/product.api";
 import categoryApi from "../../api/categories.api";
@@ -118,42 +120,75 @@ const Products = () => {
     }
   };
 
-  // Also keep localStorage sync for user-added products (backwards compatibility)
-  useEffect(() => {
-    if (products.length > 0) {
-      const userProducts = products.filter((product) => !product.isDummy);
-      localStorage.setItem("products", JSON.stringify(userProducts));
+  // FIXED: Delete product function with proper refetch
+  // FIXED: Delete product function - handles 204 No Content response correctly
+  const handleDeleteProduct = (id) => {
+    const productToDelete = products.find((p) => p.id === id);
+
+    // Prevent deletion of dummy products
+    if (productToDelete?.isDummy) {
+      toast.error("Cannot delete demo products.");
+      return;
     }
-  }, [products]);
 
-
-
-  const deleteProduct = async (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      const productToDelete = products.find((p) => p.id === id);
-
-      // Prevent deletion of dummy products
-      if (productToDelete?.isDummy) {
-        alert(
-          "Cannot delete demo products. Add your own products to manage them.",
-        );
-        return;
+    toast((t) => (
+      <div className="flex flex-col gap-4 p-1">
+        <div className="flex items-start gap-4">
+          <div className="shrink-0 w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shadow-sm">
+            <TrashIcon className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="font-bold text-gray-900 text-base">Confirm Deletion</p>
+            <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">
+              Are you sure you want to delete <span className="font-semibold text-gray-800">"{productToDelete?.name}"</span>? This action is permanent.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 mt-1">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              await executeDelete(id);
+            }}
+            className="flex-1 px-5 py-2.5 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all active:scale-[0.98]"
+          >
+            Yes, Delete
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="flex-1 px-5 py-2.5 bg-gray-50 text-gray-600 text-xs font-bold rounded-xl hover:bg-gray-100 border border-gray-200 transition-all active:scale-[0.98]"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: 6000,
+      position: 'top-center',
+      style: {
+        minWidth: '400px',
+        borderRadius: '24px',
+        padding: '20px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
+        border: '1px solid rgba(0, 0, 0, 0.05)'
       }
-
-      try {
-        await productApi.deleteProduct(id);
-        const updatedProducts = products.filter((product) => product.id !== id);
-        setProducts(updatedProducts);
-      } catch (err) {
-        console.error("Error deleting product:", err);
-        alert(
-          err?.message ||
-          "Failed to delete product. Please try again.",
-        );
-      }
-    }
+    });
   };
 
+  const executeDelete = async (id) => {
+    setLoading(true);
+    try {
+      await productApi.deleteProduct(id);
+      toast.success("Product permanentely removed!");
+      await fetchProducts();
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      const errorMessage = err?.response?.data?.message || err?.message || "Failed to delete product.";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
     setPagination((prev) => ({ ...prev, page: 1 }));
@@ -507,7 +542,7 @@ const Products = () => {
                                 onClick={
                                   product.isDummy
                                     ? undefined
-                                    : () => deleteProduct(product.id)
+                                    : () => handleDeleteProduct(product.id)
                                 }
                                 disabled={product.isDummy}
                               >
@@ -568,6 +603,7 @@ const Products = () => {
           </>
         )}
       </div>
+
     </div>
   );
 };

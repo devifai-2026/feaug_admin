@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   ArrowLeftIcon,
   ShoppingCartIcon,
@@ -39,11 +40,6 @@ const ProductView = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [imageGallery, setImageGallery] = useState([]);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [toast, setToast] = useState(null);
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  };
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [restockQuantity, setRestockQuantity] = useState("");
   const [restockNote, setRestockNote] = useState("");
@@ -183,9 +179,10 @@ const ProductView = () => {
       setShowRestockModal(false);
       setRestockQuantity("");
       setRestockNote("");
+      toast.success("Stock updated successfully!");
     } catch (error) {
       console.error("Error restocking product:", error);
-      showToast("error", error?.response?.data?.message || "Failed to restock. Please try again.");
+      toast.error(error?.response?.data?.message || "Failed to restock. Please try again.");
     } finally {
       setRestockLoading(false);
     }
@@ -864,24 +861,6 @@ const ProductView = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed top-5 right-5 z-[70] flex items-start gap-3 px-5 py-4 rounded-xl shadow-2xl max-w-sm border ${
-          toast.type === "success" ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-        }`}>
-          <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold mt-0.5 ${
-            toast.type === "success" ? "bg-green-500" : "bg-red-500"
-          }`}>
-            {toast.type === "success" ? "✓" : "!"}
-          </div>
-          <p className={`flex-1 text-sm font-medium ${toast.type === "success" ? "text-green-800" : "text-red-800"}`}>
-            {toast.message}
-          </p>
-          <button onClick={() => setToast(null)} className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors">
-            <XMarkIcon className="h-4 w-4" />
-          </button>
-        </div>
-      )}
     </div>
   );
 };

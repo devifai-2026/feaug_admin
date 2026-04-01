@@ -76,7 +76,7 @@ const PromoCodes = () => {
         discountPercentage: promo.discountPercentage,
         isActive: promo.isActive,
         isSecret: promo.isSecret || false,
-        applicableCategory: promo.applicableCategory || "",
+        applicableCategory: typeof promo.applicableCategory === 'object' ? promo.applicableCategory._id : promo.applicableCategory || "",
         minimumPurchase: promo.minimumPurchase || 0,
         firstTimeOnly: promo.firstTimeOnly || false,
         maxUses: promo.maxUses || 0,
@@ -352,7 +352,10 @@ const PromoCodes = () => {
                     )}
                     {promo.applicableCategory && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100">
-                        {categories.find(c => c._id === promo.applicableCategory)?.name || promo.applicableCategory} only
+                        {(() => {
+                          const category = categories.find(c => c._id === (typeof promo.applicableCategory === 'object' ? promo.applicableCategory._id : promo.applicableCategory));
+                          return category ? category.name : (typeof promo.applicableCategory === 'object' ? promo.applicableCategory.name : promo.applicableCategory);
+                        })()} only
                       </span>
                     )}
                     {promo.firstTimeOnly && (

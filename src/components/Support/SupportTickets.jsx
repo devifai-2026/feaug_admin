@@ -11,6 +11,7 @@ import {
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import supportApi from "../../api/support.api";
+import { useToast } from "../../context/ToastContext";
 
 const STATUS_OPTIONS = [
   { value: "open", label: "Open", color: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -47,12 +48,7 @@ const SupportTickets = () => {
   const [updating, setUpdating] = useState(false);
   const [editStatus, setEditStatus] = useState("");
   const [editNotes, setEditNotes] = useState("");
-  const [toast, setToast] = useState(null);
-
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const { showToast } = useToast();
 
   const fetchTickets = useCallback(async () => {
     try {
@@ -125,19 +121,6 @@ const SupportTickets = () => {
 
   return (
     <>
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-[100] flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-in slide-in-from-right duration-300 ${
-          toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
-        }`}>
-          {toast.type === "success" ? (
-            <CheckCircleIcon className="h-4 w-4" />
-          ) : (
-            <XCircleIcon className="h-4 w-4" />
-          )}
-          {toast.message}
-        </div>
-      )}
 
       <div>
         <div className="max-w-6xl mx-auto">

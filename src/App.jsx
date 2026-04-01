@@ -43,6 +43,7 @@ import Settings from "./components/Settings/Settings";
 import SupportTickets from "./components/Support/SupportTickets";
 import Notifications from "./components/Notifications";
 import { SocketProvider } from "./context/SocketContext";
+import { Toaster } from "react-hot-toast";
 
 // Public route wrapper (redirects to dashboard if already logged in)
 const PublicRoute = ({ children }) => {
@@ -156,6 +157,7 @@ function App() {
         <SocketProvider>
           <div className="min-h-screen bg-gray-50">
             <AppContent />
+            <Toaster position="top-right" />
           </div>
         </SocketProvider>
       </AuthProvider>
