@@ -2,52 +2,25 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   ChatBubbleLeftRightIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   XCircleIcon,
   EyeIcon,
   XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import supportApi from "../../api/support.api";
 import { useToast } from "../../context/ToastContext";
-
-const STATUS_OPTIONS = [
-  { value: "open", label: "Open", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { value: "in_progress", label: "In Progress", color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  { value: "resolved", label: "Resolved", color: "bg-green-100 text-green-700 border-green-200" },
-  { value: "closed", label: "Closed", color: "bg-gray-100 text-gray-600 border-gray-200" },
-];
-
-const getStatusBadge = (status) => {
-  const opt = STATUS_OPTIONS.find((o) => o.value === status) || STATUS_OPTIONS[0];
-  return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${opt.color}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${
-        status === "open" ? "bg-blue-500" :
-        status === "in_progress" ? "bg-yellow-500" :
-        status === "resolved" ? "bg-green-500" : "bg-gray-400"
-      }`}></span>
-      {opt.label}
-    </span>
-  );
-};
 
 const SupportTickets = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [updating, setUpdating] = useState(false);
-  const [editStatus, setEditStatus] = useState("");
-  const [editNotes, setEditNotes] = useState("");
   const { showToast } = useToast();
 
   const fetchTickets = useCallback(async () => {
@@ -55,8 +28,9 @@ const SupportTickets = () => {
       setLoading(true);
       const params = { page, limit: 20 };
       if (search) params.search = search;
-      if (statusFilter) params.status = statusFilter;
       const response = await supportApi.getAllTickets(params);
+      console.log({response});
+      
       setTickets(response.data.tickets);
       setTotalPages(response.totalPages || 1);
       setTotal(response.total || 0);
@@ -67,7 +41,7 @@ const SupportTickets = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter]);
+  }, [page, search]);
 
   useEffect(() => {
     fetchTickets();
@@ -83,40 +57,14 @@ const SupportTickets = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const handleStatusFilterChange = (value) => {
-    setStatusFilter(value);
-    setPage(1);
-  };
-
-  const openTicketModal = async (ticket) => {
+  const openTicketModal = (ticket) => {
     setSelectedTicket(ticket);
-    setEditStatus(ticket.status);
-    setEditNotes(ticket.adminNotes || "");
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setSelectedTicket(null);
-  };
-
-  const handleUpdateTicket = async () => {
-    if (!selectedTicket) return;
-    setUpdating(true);
-    try {
-      await supportApi.updateTicket(selectedTicket._id, {
-        status: editStatus,
-        adminNotes: editNotes,
-      });
-      showToast("Ticket updated successfully");
-      closeModal();
-      fetchTickets();
-    } catch (err) {
-      console.error("Error updating ticket:", err);
-      showToast(err.response?.data?.message || "Failed to update ticket", "error");
-    } finally {
-      setUpdating(false);
-    }
   };
 
   return (
@@ -143,24 +91,11 @@ const SupportTickets = () => {
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, email, or subject..."
+                placeholder="Search by name, email, or message..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white"
               />
-            </div>
-            <div className="relative">
-              <FunnelIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => handleStatusFilterChange(e.target.value)}
-                className="pl-9 pr-8 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white appearance-none cursor-pointer"
-              >
-                <option value="">All Status</option>
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
             </div>
           </div>
 
@@ -203,8 +138,8 @@ const SupportTickets = () => {
                       <tr className="border-b border-gray-100 bg-gray-50/50">
                         <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</th>
                         <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Email</th>
-                        <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Subject</th>
-                        <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Message</th>
+                        <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Read</th>
                         <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Date</th>
                         <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
@@ -212,10 +147,10 @@ const SupportTickets = () => {
                     <tbody className="divide-y divide-gray-50">
                       {tickets.map((ticket) => (
                         <tr key={ticket._id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{ticket.name}</td>
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">{ticket.fullName}</td>
                           <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{ticket.email}</td>
-                          <td className="px-4 py-3 text-xs text-gray-700 max-w-[200px] truncate">{ticket.subject}</td>
-                          <td className="px-4 py-3">{getStatusBadge(ticket.status)}</td>
+                          <td className="px-4 py-3 text-xs text-gray-700 max-w-[200px] truncate">{ticket.message}</td>
+                          <td className="px-4 py-3">{ticket.isRead ? <CheckCircleIcon className="h-4 w-4 text-green-500" /> : <span className="text-xs text-gray-500">Unread</span>}</td>
                           <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
                             {new Date(ticket.createdAt).toLocaleDateString(undefined, {
                               year: "numeric",
@@ -296,7 +231,7 @@ const SupportTickets = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Name</p>
-                    <p className="text-sm font-medium text-gray-900">{selectedTicket.name}</p>
+                    <p className="text-sm font-medium text-gray-900">{selectedTicket.fullName}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Email</p>
@@ -304,8 +239,8 @@ const SupportTickets = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Subject</p>
-                  <p className="text-sm font-medium text-gray-900">{selectedTicket.subject}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                  <p className="text-sm font-medium text-gray-900">{selectedTicket.isRead ? "Read" : "Unread"}</p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Message</p>
@@ -317,50 +252,16 @@ const SupportTickets = () => {
 
               {/* Admin Controls */}
               <div className="border-t border-gray-100 pt-5 space-y-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Status
-                  </label>
-                  <select
-                    value={editStatus}
-                    onChange={(e) => setEditStatus(e.target.value)}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-white"
-                  >
-                    {STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Admin Notes
-                  </label>
-                  <textarea
-                    value={editNotes}
-                    onChange={(e) => setEditNotes(e.target.value)}
-                    placeholder="Add internal notes about this ticket..."
-                    rows={3}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-gray-50/50 resize-none"
-                  />
-                </div>
+                <p className="text-xs text-gray-500 italic">
+                  ℹ This ticket is currently in view-only mode. Additional fields will be available once the backend supports ticket management features.
+                </p>
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 px-4 py-2 rounded-lg text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                    className="flex-1 px-4 py-2 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleUpdateTicket}
-                    disabled={updating}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md shadow-indigo-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    {updating ? (
-                      <div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    ) : (
-                      "Save Changes"
-                    )}
+                    Close
                   </button>
                 </div>
               </div>
