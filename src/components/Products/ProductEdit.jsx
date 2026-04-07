@@ -232,6 +232,8 @@ const ProductEdit = () => {
       errors.basePrice = "Base price is required";
     if (!formData.sellingPrice || formData.sellingPrice < 0)
       errors.sellingPrice = "Selling price is required";
+    if (formData.basePrice && formData.sellingPrice && parseFloat(formData.basePrice) > parseFloat(formData.sellingPrice))
+      errors.basePrice = "Base price cannot be more than selling price";
     if (!formData.stockQuantity || formData.stockQuantity < 0)
       errors.stockQuantity = "Stock quantity is required";
     if (!formData.material) errors.material = "Material is required";
@@ -702,7 +704,7 @@ const ProductEdit = () => {
                 {/* Base Price */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Base Price (Cost) *
+                    Base Price (Cost) (INR) *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
@@ -715,17 +717,27 @@ const ProductEdit = () => {
                       onChange={handleInputChange}
                       onBlur={handleBlur}
                       min="0"
-                      className="w-full pl-8 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      className={`w-full pl-8 pr-4 py-2.5 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                        formData.basePrice && formData.sellingPrice && parseFloat(formData.basePrice) > parseFloat(formData.sellingPrice)
+                          ? "border-red-400 focus:ring-red-500 focus:border-red-500"
+                          : "border-gray-200"
+                      }`}
                       placeholder="0.00"
                       required
                     />
                   </div>
+                  {formData.basePrice && formData.sellingPrice && parseFloat(formData.basePrice) > parseFloat(formData.sellingPrice) && (
+                    <p className="text-xs text-red-600 font-medium mt-1 flex items-center">
+                      <ExclamationCircleIcon className="h-3.5 w-3.5 mr-1" />
+                      Cannot exceed selling price (₹{formData.sellingPrice})
+                    </p>
+                  )}
                 </div>
 
                 {/* Selling Price */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Selling Price *
+                    Selling Price (INR) *
                   </label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-medium">

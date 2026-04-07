@@ -28,7 +28,7 @@ const Settings = () => {
     try {
       setLoading(true);
       const response = await settingsApi.getSettings();
-      const data = response.data || response;
+      const data = response.data.settings || response;
       setFormData({
         gstRate: data.gstRate ?? "",
         cgstRate: data.cgstRate ?? "",
@@ -94,8 +94,17 @@ const Settings = () => {
     e.preventDefault();
     setSaving(true);
     try {
+      const gstRateValue = Number(formData.gstRate);
+      
+      // Validate GST Rate
+      if (gstRateValue > 18) {
+        showToast("GST Rate cannot be more than 18%", "warning");
+        setSaving(false);
+        return;
+      }
+
       const payload = {
-        gstRate: Number(formData.gstRate),
+        gstRate: gstRateValue,
         cgstRate: Number(formData.cgstRate),
         sgstRate: Number(formData.sgstRate),
         freeShippingThreshold: Number(formData.freeShippingThreshold),
@@ -155,7 +164,7 @@ const Settings = () => {
                   onChange={handleInputChange}
                   placeholder="e.g. 18"
                   min="0"
-                  max="100"
+                  max="18"
                   step="0.01"
                   className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all font-medium bg-gray-50/50"
                   required

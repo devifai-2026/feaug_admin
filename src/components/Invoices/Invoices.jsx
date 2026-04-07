@@ -238,11 +238,11 @@ const Invoices = () => {
       pdf.setFont("helvetica", "bold");
       pdf.text("From:", 20, 40);
       pdf.setFont("helvetica", "normal");
-      pdf.text("Your Company Name", 20, 45);
-      pdf.text("123 Business Street", 20, 50);
-      pdf.text("City, State 12345", 20, 55);
-      pdf.text("contact@yourcompany.com", 20, 60);
-      pdf.text("(123) 456-7890", 20, 65);
+      pdf.text("FEAUAGE", 20, 45);
+      pdf.text("Premium Jewelry Store", 20, 50);
+      pdf.text("123 Luxury Lane, Jewelry District", 20, 55);
+      pdf.text("Mumbai, Maharashtra, 400001", 20, 60);
+      
 
       // Invoice details box
       pdf.setFont("helvetica", "bold");
@@ -529,11 +529,10 @@ const Invoices = () => {
           <div class="info-grid">
             <div class="company-info">
               <div class="section-title">From</div>
-              <p><strong>Your Company Name</strong></p>
-              <p>123 Business Street</p>
-              <p>City, State 12345</p>
-              <p>contact@yourcompany.com</p>
-              <p>(123) 456-7890</p>
+              <p><strong>FEAUAGE</strong></p>
+              <p>Premium Jewelry Store</p>
+              <p>123 Luxury Lane, Jewelry District</p>
+              <p>Mumbai, Maharashtra, 400001</p>
             </div>
             
             <div class="client-info">

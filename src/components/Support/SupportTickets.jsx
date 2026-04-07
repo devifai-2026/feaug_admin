@@ -22,6 +22,7 @@ const SupportTickets = () => {
   const [total, setTotal] = useState(0);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [ticketLoading, setTicketLoading] = useState(false);
   const { showToast } = useToast();
 
   const fetchTickets = useCallback(async () => {
@@ -80,7 +81,9 @@ const SupportTickets = () => {
 
   const openTicketModal = async (ticket) => {
     try {
-      // Mark ticket as read
+      setTicketLoading(true);
+      
+      // Only call API if ticket is not read
       if (!ticket.isRead) {
         await supportApi.updateTicket(ticket._id, { isRead: true });
         
@@ -96,6 +99,8 @@ const SupportTickets = () => {
     } catch (err) {
       console.error("Error marking ticket as read:", err);
       showToast(err.response?.data?.message || "Failed to update ticket", "error");
+    } finally {
+      setTicketLoading(false);
     }
     
     setModalOpen(true);
@@ -208,7 +213,8 @@ const SupportTickets = () => {
                           <td className="px-4 py-3">
                             <button
                               onClick={() => openTicketModal(ticket)}
-                              className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded-md transition-colors"
+                              disabled={ticketLoading}
+                              className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="View & Edit"
                             >
                               <EyeIcon className="h-4 w-4" />

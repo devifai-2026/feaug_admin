@@ -71,20 +71,6 @@ const Login = () => {
     navigate('/forgot-password');
   };
 
-  const handleDemoLogin = async () => {
-    setEmail('admin@jewellery.com');
-    setPassword('admin@123');
-    
-    // Auto-submit after a short delay
-    setTimeout(() => {
-      const submitEvent = new Event('submit', { cancelable: true });
-      const form = document.querySelector('form');
-      if (form) {
-        form.dispatchEvent(submitEvent);
-      }
-    }, 100);
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
@@ -235,31 +221,6 @@ const Login = () => {
                 'Sign in'
               )}
             </button>
-
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Use Demo Credentials
-            </button>
-          </div>
-
-          {/* Demo credentials info */}
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <p className="text-sm font-medium text-blue-900 mb-2">Demo Credentials:</p>
-            <div className="space-y-1">
-              <p className="text-sm text-blue-800">
-                Email: <span className="font-mono bg-blue-100 px-2 py-1 rounded">admin@jewellery.com</span>
-              </p>
-              <p className="text-sm text-blue-800">
-                Password: <span className="font-mono bg-blue-100 px-2 py-1 rounded">admin@123</span>
-              </p>
-              <p className="text-xs text-blue-700 mt-2">
-                Click "Use Demo Credentials" button to auto-fill
-              </p>
-            </div>
           </div>
         </form>
 

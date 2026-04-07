@@ -10,11 +10,26 @@ const ExportOrderModal = ({ isOpen, onClose, onExport }) => {
     status: "",
     includeFields: ["all"],
   });
+  const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setError("");
+
+    // Validation: Check if dates are provided
+    if (!exportOptions.startDate || !exportOptions.endDate) {
+      setError("Please provide both start date and end date for export");
+      return;
+    }
+
+    // Validation: Check if end date is after start date
+    if (new Date(exportOptions.endDate) < new Date(exportOptions.startDate)) {
+      setError("End date must be after start date");
+      return;
+    }
+
     onExport(exportOptions);
   };
 
@@ -42,6 +57,11 @@ const ExportOrderModal = ({ isOpen, onClose, onExport }) => {
                 </div>
                 
                 <form onSubmit={handleSubmit}>
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm text-red-800">{error}</p>
+                    </div>
+                  )}
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
