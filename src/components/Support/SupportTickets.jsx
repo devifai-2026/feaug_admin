@@ -44,6 +44,26 @@ const SupportTickets = () => {
     }
   }, [page, search]);
 
+  const markAllAsRead = async () => {
+    try {
+      const unreadTickets = tickets.filter(t => !t.isRead);
+      if (unreadTickets.length === 0) {
+        showToast("All tickets are already read", "info");
+        return;
+      }
+
+      // Call the new API endpoint
+      await supportApi.markAllTicketsAsRead();
+
+      // Update local state
+      setTickets(tickets.map(t => ({ ...t, isRead: true })));
+      showToast("All tickets marked as read", "success");
+    } catch (err) {
+      console.error("Error marking all tickets as read:", err);
+      showToast(err.response?.data?.message || "Failed to mark tickets as read", "error");
+    }
+  };
+
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
@@ -102,6 +122,14 @@ const SupportTickets = () => {
                 Manage help center form submissions. {total > 0 && `(${total} total)`}
               </p>
             </div>
+            {tickets.some(t => !t.isRead) && (
+              <button
+                onClick={markAllAsRead}
+                className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+              >
+                Mark All as Read
+              </button>
+            )}
           </div>
 
           {/* Filters */}
