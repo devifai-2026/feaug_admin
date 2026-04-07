@@ -27,15 +27,28 @@ const authApi = {
         return response.data;
       }),
 
-  // Forgot password
-  forgotPassword: (email) => 
+  // Forgot password - sends 6-digit OTP to email
+  forgotPassword: (email) =>
     axiosInstance.post('/auth/forgot-password', { email })
       .then(response => response.data),
 
-  // Reset password
-  resetPassword: (token, passwords) => 
-    axiosInstance.patch(`/auth/reset-password/${token}`, passwords)
+  // Verify reset OTP
+  verifyResetOtp: (email, otp) =>
+    axiosInstance.post('/auth/verify-reset-otp', { email, otp })
       .then(response => response.data),
+
+  // Reset password - re-verifies OTP, sets new password, returns JWT
+  resetPassword: (email, otp, password) =>
+    axiosInstance.post('/auth/reset-password', { email, otp, password })
+      .then(response => {
+        if (response.data.token) {
+          localStorage.setItem('token', response.data.token);
+        }
+        if (response.data.data) {
+          localStorage.setItem('user', JSON.stringify(response.data.data));
+        }
+        return response.data;
+      }),
 
   // Verify email
   verifyEmail: (token) => 

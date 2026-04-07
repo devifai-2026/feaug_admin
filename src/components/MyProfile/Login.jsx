@@ -224,7 +224,7 @@ const Login = () => {
           </div>
         </form>
 
-        <div className="text-center mt-6 pt-6 border-t border-gray-200">
+        {/* <div className="text-center mt-6 pt-6 border-t border-gray-200">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
             <Link
@@ -237,7 +237,7 @@ const Login = () => {
           <p className="text-xs text-gray-500 mt-2">
             By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

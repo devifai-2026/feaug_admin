@@ -25,6 +25,9 @@ import Login from "./components/MyProfile/Login";
 import Signup from "./components/Auth/Signup";
 import VerifyEmail from "./components/Auth/VerifyEmail";
 import OTPPage from "./components/Auth/OTPPage";
+import ForgotPassword from "./components/Auth/ForgotPassword";
+import ForgotPasswordOTP from "./components/Auth/ForgotPasswordOTP";
+import ResetPassword from "./components/Auth/ResetPassword";
 import OrderView from "./components/Orders/OrderView";
 import OrderUpdate from "./components/Orders/OrderUpdate";
 import EditCategory from "./components/Categories/EditCategory";
@@ -91,6 +94,30 @@ function AppContent() {
         element={
           <PublicRoute>
             <OTPPage />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <ForgotPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password/verify-otp"
+        element={
+          <PublicRoute>
+            <ForgotPasswordOTP />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password/reset"
+        element={
+          <PublicRoute>
+            <ResetPassword />
           </PublicRoute>
         }
       />
