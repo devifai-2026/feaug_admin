@@ -7,6 +7,7 @@ import {
   XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import supportApi from "../../api/support.api";
 import { useToast } from "../../context/ToastContext";
@@ -57,8 +58,26 @@ const SupportTickets = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const openTicketModal = (ticket) => {
-    setSelectedTicket(ticket);
+  const openTicketModal = async (ticket) => {
+    try {
+      // Mark ticket as read
+      if (!ticket.isRead) {
+        await supportApi.updateTicket(ticket._id, { isRead: true });
+        
+        // Update local state
+        setTickets(tickets.map(t => 
+          t._id === ticket._id ? { ...t, isRead: true } : t
+        ));
+        setSelectedTicket({ ...ticket, isRead: true });
+        showToast("Ticket marked as read", "success");
+      } else {
+        setSelectedTicket(ticket);
+      }
+    } catch (err) {
+      console.error("Error marking ticket as read:", err);
+      showToast(err.response?.data?.message || "Failed to update ticket", "error");
+    }
+    
     setModalOpen(true);
   };
 
@@ -123,7 +142,7 @@ const SupportTickets = () => {
               </div>
               <h3 className="text-gray-900 font-bold text-sm mb-1">No Support Tickets</h3>
               <p className="text-gray-500 text-xs max-w-xs mx-auto">
-                {search || statusFilter
+                {search
                   ? "No tickets match your current filters."
                   : "No support tickets have been submitted yet."}
               </p>
