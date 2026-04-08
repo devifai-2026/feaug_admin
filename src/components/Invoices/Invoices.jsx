@@ -59,7 +59,8 @@ const Invoices = () => {
           response.data ||
           response.orders ||
           [];
-
+        console.log(ordersData,"ordersData");
+        
         // Transform orders to invoice format
         const invoicesData = ordersData.map((order) => {
           const shippingAddr =
@@ -93,6 +94,7 @@ const Invoices = () => {
               ).toISOString(),
             amount: `₹${Math.round(order.grandTotal || order.totalAmount || 0).toLocaleString("en-IN")}`,
             tax: `₹${Math.round(order.tax || order.taxAmount || 0).toLocaleString("en-IN")}`,
+            shippingCharge: `₹${Math.round(order.shippingCharge || 0).toLocaleString("en-IN")}`,
             subtotal: `₹${Math.round(order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)).toLocaleString("en-IN")}`,
             status:
               order.paymentStatus === "paid"
@@ -208,6 +210,7 @@ const Invoices = () => {
   };
 
   const downloadPDF = async (invoice) => {
+    console.log("Generating PDF for invoice:", invoice);
     setDownloading(invoice.id);
 
     try {
@@ -238,11 +241,11 @@ const Invoices = () => {
       pdf.setFont("helvetica", "bold");
       pdf.text("From:", 20, 40);
       pdf.setFont("helvetica", "normal");
-      pdf.text("Your Company Name", 20, 45);
-      pdf.text("123 Business Street", 20, 50);
-      pdf.text("City, State 12345", 20, 55);
-      pdf.text("contact@yourcompany.com", 20, 60);
-      pdf.text("(123) 456-7890", 20, 65);
+      pdf.text("FEAUAGE", 20, 45);
+      pdf.text("Premium Jewelry Store", 20, 50);
+      pdf.text("123 Luxury Lane, Jewelry District", 20, 55);
+      pdf.text("Mumbai, Maharashtra, 400001", 20, 60);
+      
 
       // Invoice details box
       pdf.setFont("helvetica", "bold");
@@ -310,7 +313,11 @@ const Invoices = () => {
       pdf.text(invoice.subtotal.replace("₹", "Rs "), 170, yPos);
 
       yPos += 8;
-      pdf.text("Tax (10%):", 140, yPos);
+      pdf.text("Shipping:", 140, yPos);
+      pdf.text(invoice.shippingCharge.replace("₹", "Rs "), 170, yPos);
+
+      yPos += 8;
+      pdf.text("Tax:", 140, yPos);
       pdf.text(invoice.tax.replace("₹", "Rs "), 170, yPos);
 
       yPos += 8;
@@ -529,11 +536,10 @@ const Invoices = () => {
           <div class="info-grid">
             <div class="company-info">
               <div class="section-title">From</div>
-              <p><strong>Your Company Name</strong></p>
-              <p>123 Business Street</p>
-              <p>City, State 12345</p>
-              <p>contact@yourcompany.com</p>
-              <p>(123) 456-7890</p>
+              <p><strong>FEAUAGE</strong></p>
+              <p>Premium Jewelry Store</p>
+              <p>123 Luxury Lane, Jewelry District</p>
+              <p>Mumbai, Maharashtra, 400001</p>
             </div>
             
             <div class="client-info">
@@ -607,7 +613,11 @@ const Invoices = () => {
               <div class="total-value">${invoice.subtotal}</div>
             </div>
             <div class="total-row">
-              <div class="total-label">Tax (10%):</div>
+              <div class="total-label">Shipping:</div>
+              <div class="total-value">${invoice.shippingCharge}</div>
+            </div>
+            <div class="total-row">
+              <div class="total-label">Tax:</div>
               <div class="total-value">${invoice.tax}</div>
             </div>
             <div class="total-row grand-total">

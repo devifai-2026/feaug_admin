@@ -13,6 +13,7 @@ import {
   EnvelopeIcon,
   TrashIcon,
   ArrowPathIcon,
+  KeyIcon,
 } from "@heroicons/react/24/outline";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -35,6 +36,10 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const handleChangePassword = () => {
+    navigate("/change-password");
+    setIsDropdownOpen(false);
+  };
   const handleProfile = () => {
     navigate("/my-profile");
     setIsDropdownOpen(false);
@@ -592,6 +597,20 @@ const Navbar = ({ sidebarOpen, toggleSidebar }) => {
                       <div className="font-medium">My Profile</div>
                       <div className="text-xs text-gray-500">
                         View and edit your profile
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="border-t border-gray-100 my-1"></div>
+                  <button
+                    onClick={handleChangePassword}
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <KeyIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    <div className="text-left">
+                      <div className="font-medium">Change Password</div>
+                      <div className="text-xs text-gray-500">
+                        Update your password
                       </div>
                     </div>
                   </button>

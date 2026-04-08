@@ -7,6 +7,7 @@ import {
   XMarkIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import supportApi from "../../api/support.api";
 import { useToast } from "../../context/ToastContext";
@@ -21,6 +22,7 @@ const SupportTickets = () => {
   const [total, setTotal] = useState(0);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [ticketLoading, setTicketLoading] = useState(false);
   const { showToast } = useToast();
 
   const fetchTickets = useCallback(async () => {
@@ -43,6 +45,26 @@ const SupportTickets = () => {
     }
   }, [page, search]);
 
+  const markAllAsRead = async () => {
+    try {
+      const unreadTickets = tickets.filter(t => !t.isRead);
+      if (unreadTickets.length === 0) {
+        showToast("All tickets are already read", "info");
+        return;
+      }
+
+      // Call the new API endpoint
+      await supportApi.markAllTicketsAsRead();
+
+      // Update local state
+      setTickets(tickets.map(t => ({ ...t, isRead: true })));
+      showToast("All tickets marked as read", "success");
+    } catch (err) {
+      console.error("Error marking all tickets as read:", err);
+      showToast(err.response?.data?.message || "Failed to mark tickets as read", "error");
+    }
+  };
+
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
@@ -57,8 +79,30 @@ const SupportTickets = () => {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const openTicketModal = (ticket) => {
-    setSelectedTicket(ticket);
+  const openTicketModal = async (ticket) => {
+    try {
+      setTicketLoading(true);
+      
+      // Only call API if ticket is not read
+      if (!ticket.isRead) {
+        await supportApi.updateTicket(ticket._id, { isRead: true });
+        
+        // Update local state
+        setTickets(tickets.map(t => 
+          t._id === ticket._id ? { ...t, isRead: true } : t
+        ));
+        setSelectedTicket({ ...ticket, isRead: true });
+        showToast("Ticket marked as read", "success");
+      } else {
+        setSelectedTicket(ticket);
+      }
+    } catch (err) {
+      console.error("Error marking ticket as read:", err);
+      showToast(err.response?.data?.message || "Failed to update ticket", "error");
+    } finally {
+      setTicketLoading(false);
+    }
+    
     setModalOpen(true);
   };
 
@@ -83,6 +127,14 @@ const SupportTickets = () => {
                 Manage help center form submissions. {total > 0 && `(${total} total)`}
               </p>
             </div>
+            {tickets.some(t => !t.isRead) && (
+              <button
+                onClick={markAllAsRead}
+                className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+              >
+                Mark All as Read
+              </button>
+            )}
           </div>
 
           {/* Filters */}
@@ -123,7 +175,7 @@ const SupportTickets = () => {
               </div>
               <h3 className="text-gray-900 font-bold text-sm mb-1">No Support Tickets</h3>
               <p className="text-gray-500 text-xs max-w-xs mx-auto">
-                {search || statusFilter
+                {search
                   ? "No tickets match your current filters."
                   : "No support tickets have been submitted yet."}
               </p>
@@ -161,7 +213,8 @@ const SupportTickets = () => {
                           <td className="px-4 py-3">
                             <button
                               onClick={() => openTicketModal(ticket)}
-                              className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded-md transition-colors"
+                              disabled={ticketLoading}
+                              className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               title="View & Edit"
                             >
                               <EyeIcon className="h-4 w-4" />

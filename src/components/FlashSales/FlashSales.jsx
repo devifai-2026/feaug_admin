@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import flashSaleApi from "../../api/flashSale.api";
 import s3Api from "../../api/s3.api";
+import { getAllPromoCodes } from "../../api/promoCodes.api";
 import { useToast } from "../../context/ToastContext";
 
 const defaultFormData = {
@@ -61,6 +62,9 @@ const FlashSales = () => {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
+  const [priceError, setPriceError] = useState("");
+  const [promoCodes, setPromoCodes] = useState([]);
+  const [promoCodesLoading, setPromoCodesLoading] = useState(false);
 
   const fetchFlashSales = async () => {
     try {
@@ -95,6 +99,21 @@ const FlashSales = () => {
     }
   };
 
+  const fetchPromoCodes = async () => {
+    try {
+      setPromoCodesLoading(true);
+      const response = await getAllPromoCodes();
+      const data = response.data || response;
+      setPromoCodes(Array.isArray(data) ? data : data.promoCodes || []);
+    } catch (err) {
+      console.error("Error fetching promo codes:", err);
+      showToast("Error fetching promo codes", "error");
+      setPromoCodes([]);
+    } finally {
+      setPromoCodesLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchFlashSales();
   }, [pagination.page, pagination.limit, searchQuery]);
@@ -124,6 +143,7 @@ const FlashSales = () => {
       setFormData({ ...defaultFormData });
       setImagePreview("");
     }
+    fetchPromoCodes();
     setIsModalOpen(true);
   };
 
@@ -132,14 +152,30 @@ const FlashSales = () => {
     setEditingFlashSale(null);
     setFormData({ ...defaultFormData });
     setImagePreview("");
+    setPriceError("");
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+    const updatedData = {
+      ...formData,
       [name]: type === "checkbox" ? checked : value,
-    }));
+    };
+    setFormData(updatedData);
+
+    // Validate price fields
+    if ((name === "price" || name === "originalPrice") && value) {
+      const price = Number(name === "price" ? value : updatedData.price);
+      const originalPrice = Number(
+        name === "originalPrice" ? value : updatedData.originalPrice
+      );
+
+      if (price && originalPrice && price > originalPrice) {
+        setPriceError("Sale price cannot be more than original price");
+      } else {
+        setPriceError("");
+      }
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -162,12 +198,21 @@ const FlashSales = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate price
+    const price = Number(formData.price);
+    const originalPrice = Number(formData.originalPrice);
+    if (price > originalPrice) {
+      setPriceError("Sale price cannot be more than original price");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
         ...formData,
-        price: Number(formData.price),
-        originalPrice: Number(formData.originalPrice),
+        price: price,
+        originalPrice: originalPrice,
         discountPercentage: formData.discountPercentage
           ? Number(formData.discountPercentage)
           : undefined,
@@ -242,6 +287,9 @@ const FlashSales = () => {
               <p className="text-xs text-gray-500 mt-0.5">
                 Manage flash sale campaigns with countdown timers and special
                 offers.
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Only Latest flash sale will be shown on the homepage.
               </p>
             </div>
 
@@ -538,7 +586,7 @@ const FlashSales = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      Sale Price
+                      Sale Price (INR)
                     </label>
                     <input
                       type="number"
@@ -554,7 +602,7 @@ const FlashSales = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      Original Price
+                      Original Price (INR)
                     </label>
                     <input
                       type="number"
@@ -569,6 +617,15 @@ const FlashSales = () => {
                     />
                   </div>
                 </div>
+
+                {/* Price Validation Error */}
+                {priceError && (
+                  <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
+                    <span className="text-[11px] font-semibold text-red-700">
+                      ⚠ {priceError}
+                    </span>
+                  </div>
+                )}
 
                 {/* Background Image Upload */}
                 <div>
@@ -621,14 +678,23 @@ const FlashSales = () => {
                     <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                       Promo Code (Optional)
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="promoCode"
                       value={formData.promoCode}
                       onChange={handleInputChange}
-                      placeholder="e.g. FLASH20"
                       className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-gray-50/50"
-                    />
+                      disabled={promoCodesLoading}
+                    >
+                      <option value="">
+                        {promoCodesLoading ? "Loading..." : "Select a promo code"}
+                      </option>
+                      {promoCodes.map((promo) => (
+                        <option key={promo._id} value={promo.code}>
+                          {promo.code}
+                          {promo.discount ? ` (${promo.discount}% off)` : ""}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -708,7 +774,7 @@ const FlashSales = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={submitting || uploading}
+                    disabled={submitting || uploading || !!priceError}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md shadow-indigo-100 transition-all active:scale-95 flex items-center justify-center gap-2"
                   >
                     {submitting ? (

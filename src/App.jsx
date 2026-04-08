@@ -25,6 +25,10 @@ import Login from "./components/MyProfile/Login";
 import Signup from "./components/Auth/Signup";
 import VerifyEmail from "./components/Auth/VerifyEmail";
 import OTPPage from "./components/Auth/OTPPage";
+import ForgotPassword from "./components/Auth/ForgotPassword";
+import ForgotPasswordOTP from "./components/Auth/ForgotPasswordOTP";
+import ResetPassword from "./components/Auth/ResetPassword";
+import ChangePassword from "./components/Auth/ChangePassword";
 import OrderView from "./components/Orders/OrderView";
 import OrderUpdate from "./components/Orders/OrderUpdate";
 import EditCategory from "./components/Categories/EditCategory";
@@ -94,6 +98,30 @@ function AppContent() {
           </PublicRoute>
         }
       />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <ForgotPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password/verify-otp"
+        element={
+          <PublicRoute>
+            <ForgotPasswordOTP />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/forgot-password/reset"
+        element={
+          <PublicRoute>
+            <ResetPassword />
+          </PublicRoute>
+        }
+      />
 
       {/* Protected Routes wrapped in AdminLayout */}
       <Route
@@ -141,6 +169,7 @@ function AppContent() {
         <Route path="/support-tickets" element={<SupportTickets />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/my-profile" element={<MyProfile />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/notifications" element={<Notifications />} />
       </Route>
 
