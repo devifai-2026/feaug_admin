@@ -59,7 +59,8 @@ const Invoices = () => {
           response.data ||
           response.orders ||
           [];
-
+        console.log(ordersData,"ordersData");
+        
         // Transform orders to invoice format
         const invoicesData = ordersData.map((order) => {
           const shippingAddr =
@@ -93,6 +94,7 @@ const Invoices = () => {
               ).toISOString(),
             amount: `₹${Math.round(order.grandTotal || order.totalAmount || 0).toLocaleString("en-IN")}`,
             tax: `₹${Math.round(order.tax || order.taxAmount || 0).toLocaleString("en-IN")}`,
+            shippingCharge: `₹${Math.round(order.shippingCharge || 0).toLocaleString("en-IN")}`,
             subtotal: `₹${Math.round(order.subtotal || (order.totalAmount || 0) - (order.taxAmount || 0)).toLocaleString("en-IN")}`,
             status:
               order.paymentStatus === "paid"
@@ -208,6 +210,7 @@ const Invoices = () => {
   };
 
   const downloadPDF = async (invoice) => {
+    console.log("Generating PDF for invoice:", invoice);
     setDownloading(invoice.id);
 
     try {
@@ -310,7 +313,11 @@ const Invoices = () => {
       pdf.text(invoice.subtotal.replace("₹", "Rs "), 170, yPos);
 
       yPos += 8;
-      pdf.text("Tax (10%):", 140, yPos);
+      pdf.text("Shipping:", 140, yPos);
+      pdf.text(invoice.shippingCharge.replace("₹", "Rs "), 170, yPos);
+
+      yPos += 8;
+      pdf.text("Tax:", 140, yPos);
       pdf.text(invoice.tax.replace("₹", "Rs "), 170, yPos);
 
       yPos += 8;
@@ -606,7 +613,11 @@ const Invoices = () => {
               <div class="total-value">${invoice.subtotal}</div>
             </div>
             <div class="total-row">
-              <div class="total-label">Tax (10%):</div>
+              <div class="total-label">Shipping:</div>
+              <div class="total-value">${invoice.shippingCharge}</div>
+            </div>
+            <div class="total-row">
+              <div class="total-label">Tax:</div>
               <div class="total-value">${invoice.tax}</div>
             </div>
             <div class="total-row grand-total">
