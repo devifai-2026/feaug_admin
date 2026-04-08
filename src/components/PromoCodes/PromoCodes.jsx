@@ -474,15 +474,16 @@ const PromoCodes = () => {
               {/* Applicable Category */}
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Applicable Category
+                  Applicable Category*
                 </label>
                 <select
                   name="applicableCategory"
                   value={formData.applicableCategory}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all bg-gray-50/50"
+                  required
                 >
-                  <option value="">All Categories</option>
+                  <option value="" disabled>Select a Category</option>
                   {categories.map((cat) => (
                     <option key={cat._id} value={cat._id}>
                       {cat.name}

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   HomeIcon,
   ChartBarIcon,
@@ -23,8 +24,30 @@ import {
   ChatBubbleLeftRightIcon, // For Support
 } from "@heroicons/react/24/outline";
 import { NavLink } from "react-router-dom";
+import supportApi from "../api/support.api";
 
 const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await supportApi.getAllTickets({ page: 1, limit: 100 });
+        const allTickets = response.data.tickets || [];
+        if (!cancelled) {
+          setUnreadCount(allTickets.filter((t) => !t.isRead).length);
+        }
+      } catch (err) {
+        console.error("Error fetching unread count:", err);
+      }
+    };
+    fetchUnreadCount();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const navigation = [
     { name: "Dashboard", icon: HomeIcon, to: "/" },
     { name: "Products", icon: ShoppingCartIcon, to: "/products" },
@@ -121,6 +144,19 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
                     />
                     {sidebarOpen && (
                       <span className="whitespace-nowrap">{item.name}</span>
+                    )}
+
+                    {/* Badge for Support */}
+                    {item.name === "Support" && unreadCount > 0 && (
+                      <span
+                        className={`inline-flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold ${
+                          sidebarOpen
+                            ? "ml-auto h-5 min-w-[20px] px-1.5"
+                            : "absolute -top-1 -right-1 h-4 min-w-[16px] px-1 text-[10px]"
+                        }`}
+                      >
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
                     )}
 
                     {/* Tooltip for collapsed sidebar */}

@@ -28,6 +28,7 @@ import OTPPage from "./components/Auth/OTPPage";
 import ForgotPassword from "./components/Auth/ForgotPassword";
 import ForgotPasswordOTP from "./components/Auth/ForgotPasswordOTP";
 import ResetPassword from "./components/Auth/ResetPassword";
+import ChangePassword from "./components/Auth/ChangePassword";
 import OrderView from "./components/Orders/OrderView";
 import OrderUpdate from "./components/Orders/OrderUpdate";
 import EditCategory from "./components/Categories/EditCategory";
@@ -168,6 +169,7 @@ function AppContent() {
         <Route path="/support-tickets" element={<SupportTickets />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/my-profile" element={<MyProfile />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/notifications" element={<Notifications />} />
       </Route>
 
