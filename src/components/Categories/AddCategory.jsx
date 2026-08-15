@@ -152,6 +152,11 @@ const AddCategory = () => {
       return
     }
 
+    // Show the chosen file immediately, before the network round-trip, so the
+    // admin can confirm they picked the right photo even if storage is down.
+    const localPreview = URL.createObjectURL(file)
+    setImagePreview(localPreview)
+
     try {
       setIsUploading(true)
       setUploadProgress(0)
@@ -166,14 +171,19 @@ const AddCategory = () => {
       // Update form data and preview with the S3 URL
       setFormData(prev => ({ ...prev, image: result.url }))
       setImagePreview(result.url) // Use the S3 URL for preview
+      URL.revokeObjectURL(localPreview)
 
       setUploadProgress(100)
       showToast('Image uploaded successfully', 'success')
 
     } catch (uploadError) {
       console.error('S3 upload error:', uploadError)
-      setS3UploadError(uploadError.message || 'Failed to upload image')
-      showToast('Failed to upload image. Please try again.', 'error')
+      // Surface the server's actual reason (e.g. "uploads are not configured")
+      // instead of only a generic retry message.
+      const reason = uploadError?.message || 'Failed to upload image'
+      setS3UploadError(reason)
+      setErrors(prev => ({ ...prev, image: reason }))
+      showToast(reason, 'error')
       setUploadProgress(0)
     } finally {
       setIsUploading(false)

@@ -125,7 +125,9 @@ const AddSubcategory = () => {
       showToast('Image(s) uploaded successfully', 'success')
     } catch (err) {
       console.error('Error uploading images:', err)
-      showToast(err.response?.data?.message || 'Failed to upload image(s)', 'error')
+      // axiosConfig rejects with a flattened {message,status}, so there is no
+      // .response here — check .message first or the real reason is lost.
+      showToast(err?.message || err.response?.data?.message || 'Failed to upload image(s)', 'error')
     } finally {
       setUploading(false)
       setUploadProgress(0)

@@ -63,9 +63,16 @@ const UserAdd = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Phone is digits only, max 10 — strip anything else as the user types so
+    // letters and separators can never reach the backend's 10-digit rule.
+    const nextValue = name === 'phone'
+      ? value.replace(/\D/g, '').slice(0, 10)
+      : value;
+
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: nextValue
     }));
 
     // Clear error for this field
@@ -93,8 +100,10 @@ const UserAdd = () => {
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
 
+    // Must be exactly 10 digits — the old regex allowed any length and any
+    // mix of separators, so "123" passed here and then failed server-side.
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!/^[\d\s\+\-\(\)]+$/.test(formData.phone)) newErrors.phone = 'Invalid phone number';
+    else if (!/^\d{10}$/.test(formData.phone)) newErrors.phone = 'Phone number must be exactly 10 digits';
 
     if (!formData.password) newErrors.password = 'Password is required';
     else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
