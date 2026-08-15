@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# local env — set VITE_API_URL per environment (see .env.example)
+.env
