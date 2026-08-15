@@ -1,0 +1,22 @@
+# Render Blueprint for the admin panel (static site).
+#
+# The rewrite below is what keeps deep links working: this is a single-page app
+# using BrowserRouter, so a reload on /categories has no matching file on disk.
+# Without the rewrite Render answers 404 instead of serving index.html and
+# letting the router resolve the path.
+#
+# public/_redirects carries the same rule for dashboard-created services.
+services:
+  - type: web
+    name: feauag-admin
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      # Inlined at BUILD time — changing it requires a rebuild, not a restart.
+      - key: VITE_API_URL
+        value: https://feauage-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
