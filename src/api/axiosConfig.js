@@ -1,9 +1,11 @@
 // src/api/axiosConfig.js
 import axios from 'axios';
 
-// Base configuration
-const API_BASE_URL = 'http://localhost:5001/api/v1'; // Update if your backend uses /api/v1
-// If your backend routes are directly at root, use: 'http://localhost:5000'
+// Base configuration.
+// Set VITE_API_URL to the backend origin (no trailing slash, no /api/v1) —
+// e.g. https://feauage-backend.onrender.com. Falls back to local dev.
+const API_ORIGIN = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_BASE_URL = `${API_ORIGIN.replace(/\/+$/, '')}/api/v1`;
 
 // Create axios instance with default config
 const axiosInstance = axios.create({

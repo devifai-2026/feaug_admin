@@ -190,7 +190,7 @@ const FlashSales = () => {
       showToast("Image uploaded successfully", "success");
     } catch (err) {
       console.error("Error uploading image:", err);
-      showToast("Failed to upload image", "error");
+      showToast(err?.message || "Failed to upload image", "error");
     } finally {
       setUploading(false);
     }

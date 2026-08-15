@@ -128,15 +128,21 @@ const Updates = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Preview the chosen file straight away, before the upload round-trip
+    const localPreview = URL.createObjectURL(file);
+    setImagePreview(localPreview);
+
     try {
       setUploading(true);
       const result = await s3Api.uploadImage(file, "updates");
       setFormData((prev) => ({ ...prev, image: result.url }));
       setImagePreview(result.url);
+      URL.revokeObjectURL(localPreview);
       showToast("Image uploaded successfully", "success");
     } catch (err) {
       console.error("Error uploading image:", err);
-      showToast("Failed to upload image", "error");
+      // Show the server's actual reason (e.g. uploads not configured)
+      showToast(err?.message || "Failed to upload image", "error");
     } finally {
       setUploading(false);
     }

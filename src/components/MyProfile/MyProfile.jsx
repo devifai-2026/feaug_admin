@@ -99,9 +99,15 @@ const MyProfile = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+
+    // Phone is digits only, max 10 (matches the backend's 10-digit rule)
+    const nextValue = name === "phone"
+      ? value.replace(/\D/g, "").slice(0, 10)
+      : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: nextValue,
     }));
 
     if (errors[name]) {
@@ -260,28 +266,16 @@ const MyProfile = () => {
     try {
       setUploading(true);
 
-      // Get presigned URL
-      const presignedResponse = await s3Api.getPresignedUrl({
-        fileName: file.name,
-        fileType: file.type,
-        folder: "profile-images",
-      });
-
-      // Upload to S3
-      await fetch(presignedResponse.data.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
-      });
+      // Upload through the backend (POST /admin/upload), which puts the file
+      // on S3 and returns its public URL.
+      const uploaded = await s3Api.uploadImage(file, "profile-images");
 
       // Update profile with new image URL
-      await profileApi.uploadProfileImage(presignedResponse.data.fileUrl);
+      await profileApi.uploadProfileImage(uploaded.url);
 
       setProfileData((prev) => ({
         ...prev,
-        profileImage: presignedResponse.data.fileUrl,
+        profileImage: uploaded.url,
       }));
 
       showToast("Profile picture updated successfully!", "success");
