@@ -59,6 +59,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
 
     { name: "Users", icon: UsersIcon, to: "/users" },
     { name: "Updates", icon: NewspaperIcon, to: "/updates" },
+    { name: "Reviews", icon: StarIcon, to: "/reviews" },
     { name: "Flash Sales", icon: BoltIcon, to: "/flash-sales" },
     { name: "Best Sellers", icon: StarIcon, to: "/best-sellers" },
     { name: "Featured", icon: SparklesIcon, to: "/featured" },

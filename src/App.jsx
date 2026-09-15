@@ -40,6 +40,7 @@ import AddBanner from "./components/Banners/AddBanner";
 import EditBanner from "./components/Banners/EditBanner";
 import PromoCodes from "./components/PromoCodes/PromoCodes";
 import Updates from "./components/Updates/Updates";
+import Reviews from "./components/Reviews/Reviews";
 import FlashSales from "./components/FlashSales/FlashSales";
 import BestSellers from "./components/BestSellers/BestSellers";
 import Featured from "./components/Featured/Featured";
@@ -163,6 +164,7 @@ function AppContent() {
 
         <Route path="/promo-codes" element={<PromoCodes />} />
         <Route path="/updates" element={<Updates />} />
+        <Route path="/reviews" element={<Reviews />} />
         <Route path="/flash-sales" element={<FlashSales />} />
         <Route path="/best-sellers" element={<BestSellers />} />
         <Route path="/featured" element={<Featured />} />

@@ -8,6 +8,12 @@ import {
 import settingsApi from "../../api/settings.api";
 import { useToast } from "../../context/ToastContext";
 
+const DEFAULT_PRODUCT_TABS = {
+  description: { enabled: true, label: "DESCRIPTION" },
+  details: { enabled: true, label: "DETAILS" },
+  reviews: { enabled: true, label: "REVIEWS" },
+};
+
 const Settings = () => {
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -22,6 +28,7 @@ const Settings = () => {
     metroShippingCharge: "",
     standardShippingCharge: "",
     metroPincodes: [],
+    productTabs: { ...DEFAULT_PRODUCT_TABS },
   });
 
   const fetchSettings = async () => {
@@ -37,6 +44,10 @@ const Settings = () => {
         metroShippingCharge: data.metroShippingCharge ?? "",
         standardShippingCharge: data.standardShippingCharge ?? "",
         metroPincodes: data.metroPincodes ?? [],
+        productTabs: {
+          ...DEFAULT_PRODUCT_TABS,
+          ...(data.productTabs || {}),
+        },
       });
     } catch (err) {
       console.error("Error fetching settings:", err);
@@ -111,6 +122,7 @@ const Settings = () => {
         metroShippingCharge: Number(formData.metroShippingCharge),
         standardShippingCharge: Number(formData.standardShippingCharge),
         metroPincodes: formData.metroPincodes,
+        productTabs: formData.productTabs,
       };
       await settingsApi.updateSettings(payload);
       showToast("Settings saved successfully", "success");
@@ -322,6 +334,71 @@ const Settings = () => {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Product page tabs */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900">Product page tabs</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Show, hide or rename the tabs on the storefront product page.
+              Description stays visible so the page always has content.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {[
+                { key: "description", locked: true },
+                { key: "details", locked: false },
+                { key: "reviews", locked: false },
+              ].map(({ key, locked }) => {
+                const tab = formData.productTabs?.[key] || DEFAULT_PRODUCT_TABS[key];
+                return (
+                  <div
+                    key={key}
+                    className="flex flex-wrap items-center gap-3 border border-gray-100 rounded-lg p-3"
+                  >
+                    <label className="flex items-center gap-2 min-w-[110px]">
+                      <input
+                        type="checkbox"
+                        checked={tab.enabled !== false}
+                        disabled={locked}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            productTabs: {
+                              ...prev.productTabs,
+                              [key]: { ...tab, enabled: e.target.checked },
+                            },
+                          }))
+                        }
+                        className="w-4 h-4 disabled:opacity-40"
+                      />
+                      <span className="text-sm font-medium text-gray-700 capitalize">
+                        {key}
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={tab.label ?? ""}
+                      maxLength={30}
+                      placeholder={DEFAULT_PRODUCT_TABS[key].label}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          productTabs: {
+                            ...prev.productTabs,
+                            [key]: { ...tab, label: e.target.value },
+                          },
+                        }))
+                      }
+                      className="flex-1 min-w-[160px] border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                    {locked && (
+                      <span className="text-xs text-gray-400">always shown</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Save Button */}
