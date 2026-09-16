@@ -377,15 +377,27 @@ const Categories = () => {
                 <div key={category._id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center">
-                      <div className={`h-12 w-12 rounded-lg ${getCategoryColor(category).split(' ')[0]} flex items-center justify-center`}>
-                        <FolderIcon className="h-6 w-6" />
-                      </div>
+                      {/* Show the category's own image when it has one, so the
+                          storefront tile is recognisable from this list; fall
+                          back to the folder icon otherwise. */}
+                      {category.image && category.image.startsWith('http') ? (
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          className="h-12 w-12 rounded-lg object-cover"
+                          onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        />
+                      ) : (
+                        <div className={`h-12 w-12 rounded-lg ${getCategoryColor(category).split(' ')[0]} flex items-center justify-center`}>
+                          <FolderIcon className="h-6 w-6" />
+                        </div>
+                      )}
                       <div className="ml-4">
                         <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
                         <p className="text-sm text-gray-500 line-clamp-2">{category.description || 'No description'}</p>
                       </div>
                     </div>
-                    {/* <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
                       <Link
                         to={`/categories/edit/${category._id}`}
                         className="p-1 text-blue-600 hover:text-blue-800"
@@ -401,7 +413,7 @@ const Categories = () => {
                       >
                         <TrashIcon className="h-5 w-5" />
                       </button>
-                    </div> */}
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -461,9 +473,9 @@ const Categories = () => {
                       Status
                     </th>
 
-                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
-                    </th> */}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -500,7 +512,7 @@ const Categories = () => {
                         </span>
                       </td>
 
-                      {/* <td className="px-6 py-4">
+                      <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
                           <Link
                             to={`/categories/edit/${category._id}`}
@@ -510,12 +522,12 @@ const Categories = () => {
                             <PencilIcon className="h-5 w-5" />
                           </Link>
                           <button
-                                  onClick={() => handleViewSubcategories(category)}
-                                  className="text-green-600 hover:text-green-800"
-                                  title="View Subcategories"
-                                >
-                                  <FolderIcon className="h-5 w-5" />
-                                </button>
+                            onClick={() => handleViewSubcategories(category)}
+                            className="text-green-600 hover:text-green-800"
+                            title="View Subcategories"
+                          >
+                            <FolderIcon className="h-5 w-5" />
+                          </button>
                           <button
                             className={`${category.productCount > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-red-800'}`}
                             title={category.productCount > 0 ? 'Cannot delete category with products' : 'Delete'}
@@ -525,7 +537,7 @@ const Categories = () => {
                             <TrashIcon className="h-5 w-5" />
                           </button>
                         </div>
-                      </td> */}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
