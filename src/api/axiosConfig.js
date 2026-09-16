@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Base configuration.
 // Set VITE_API_URL to the backend origin (no trailing slash, no /api/v1) —
-// e.g. https://feauage-backend.onrender.com. Falls back to local dev.
+// e.g. https://feauage-backend.vercel.app. Falls back to local dev.
 const API_ORIGIN = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const API_BASE_URL = `${API_ORIGIN.replace(/\/+$/, '')}/api/v1`;
 

@@ -3,6 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LockClosedIcon, EnvelopeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 
+// Dev-only convenience: the seeded admin account from the backend's
+// src/seeds/seedData.js. Gated on import.meta.env.DEV so the block is dropped
+// from production builds.
+const DEV_CREDENTIALS = {
+  email: 'admin@jewellery.com',
+  password: 'admin@123',
+};
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -10,6 +18,7 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState('');
   
   const { login, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
@@ -67,6 +76,27 @@ const Login = () => {
     }
   };
 
+  const copyToClipboard = async (label, value) => {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      // clipboard API needs a secure context; fall back to a temp textarea
+      const el = document.createElement('textarea');
+      el.value = value;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopied(label);
+    setTimeout(() => setCopied(''), 1500);
+  };
+
+  const fillDevCredentials = () => {
+    setEmail(DEV_CREDENTIALS.email);
+    setPassword(DEV_CREDENTIALS.password);
+  };
+
   const handleForgotPassword = () => {
     navigate('/forgot-password');
   };
@@ -85,6 +115,46 @@ const Login = () => {
             Sign in to your account to continue
           </p>
         </div>
+
+        {import.meta.env.DEV && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                Dev credentials
+              </p>
+              <button
+                type="button"
+                onClick={fillDevCredentials}
+                className="text-xs font-medium text-amber-900 underline hover:text-amber-700"
+              >
+                Fill form
+              </button>
+            </div>
+
+            {[
+              { label: 'Email', value: DEV_CREDENTIALS.email },
+              { label: 'Password', value: DEV_CREDENTIALS.password },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between gap-2 py-1">
+                <span className="text-xs text-amber-800 w-16 shrink-0">{label}</span>
+                <code className="flex-1 select-all rounded bg-white px-2 py-1 font-mono text-xs text-gray-900 border border-amber-200 overflow-x-auto">
+                  {value}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(label, value)}
+                  className="shrink-0 rounded border border-amber-300 bg-white px-2 py-1 text-xs font-medium text-amber-900 hover:bg-amber-100"
+                >
+                  {copied === label ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+            ))}
+
+            <p className="mt-2 text-[11px] text-amber-700">
+              Seeded admin account — shown in development only.
+            </p>
+          </div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (

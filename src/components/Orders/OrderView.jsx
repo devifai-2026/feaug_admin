@@ -653,7 +653,9 @@ const OrderView = () => {
                             !imageUrl.startsWith("http") &&
                             !imageUrl.startsWith("data:")
                           ) {
-                            imageUrl = `http://localhost:5001${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+                            const apiOrigin =
+                              import.meta.env.VITE_API_URL || "http://localhost:5001";
+                            imageUrl = `${apiOrigin}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
                           }
 
                           return imageUrl ? (
