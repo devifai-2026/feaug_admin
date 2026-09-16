@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { API_ORIGIN } from "../../api/axiosConfig";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -653,9 +654,7 @@ const OrderView = () => {
                             !imageUrl.startsWith("http") &&
                             !imageUrl.startsWith("data:")
                           ) {
-                            const apiOrigin =
-                              import.meta.env.VITE_API_URL || "http://localhost:5001";
-                            imageUrl = `${apiOrigin}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+                            imageUrl = `${API_ORIGIN}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
                           }
 
                           return imageUrl ? (

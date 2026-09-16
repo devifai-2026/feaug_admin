@@ -1,10 +1,18 @@
 // src/api/axiosConfig.js
 import axios from 'axios';
 
-// Base configuration.
-// Set VITE_API_URL to the backend origin (no trailing slash, no /api/v1) —
-// e.g. https://feauage-backend.vercel.app. Falls back to local dev.
-const API_ORIGIN = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// Base configuration — hardcoded on purpose, no environment variable involved.
+// The origin is chosen by where the page is served from: localhost talks to a
+// local backend, every other host talks to production. Change
+// PRODUCTION_API_ORIGIN here to repoint a deployment.
+const PRODUCTION_API_ORIGIN = 'https://feauage-backend.vercel.app';
+const LOCAL_API_ORIGIN = 'http://localhost:5001';
+
+const isLocalhost =
+  typeof window !== 'undefined' &&
+  /^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+
+export const API_ORIGIN = isLocalhost ? LOCAL_API_ORIGIN : PRODUCTION_API_ORIGIN;
 const API_BASE_URL = `${API_ORIGIN.replace(/\/+$/, '')}/api/v1`;
 
 // Create axios instance with default config

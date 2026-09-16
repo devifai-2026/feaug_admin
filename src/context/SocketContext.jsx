@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
+import { API_ORIGIN } from "../api/axiosConfig";
 
 const SocketContext = createContext(null);
 
@@ -30,7 +31,7 @@ export const SocketProvider = ({ children }) => {
     }
 
     // Get API URL from environment or use default
-    const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+    const SOCKET_URL = API_ORIGIN;
     const token = localStorage.getItem("token");
 
     if (!token) {
