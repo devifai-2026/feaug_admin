@@ -5,7 +5,7 @@ import axios from 'axios';
 // The origin is chosen by where the page is served from: localhost talks to a
 // local backend, every other host talks to production. Change
 // PRODUCTION_API_ORIGIN here to repoint a deployment.
-const PRODUCTION_API_ORIGIN = 'https://feauage-backend.vercel.app';
+const PRODUCTION_API_ORIGIN = 'https://feauage-backend.onrender.com';
 const LOCAL_API_ORIGIN = 'http://localhost:5001';
 
 const isLocalhost =
