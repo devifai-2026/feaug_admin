@@ -3,9 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LockClosedIcon, EnvelopeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 
-// Dev-only convenience: the seeded admin account from the backend's
-// src/seeds/seedData.js. Gated on import.meta.env.DEV so the block is dropped
-// from production builds.
+// Demo convenience: the seeded admin account from the backend's
+// src/seeds/seedData.js. Shown in every build, including production, so the
+// deployed demo can be signed into without sharing credentials out of band.
+// Remove this block before this panel guards anything real.
 const DEV_CREDENTIALS = {
   email: 'admin@jewellery.com',
   password: 'admin@123',
@@ -116,11 +117,11 @@ const Login = () => {
           </p>
         </div>
 
-        {import.meta.env.DEV && (
+        {(
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                Dev credentials
+                Demo credentials
               </p>
               <button
                 type="button"
@@ -151,7 +152,7 @@ const Login = () => {
             ))}
 
             <p className="mt-2 text-[11px] text-amber-700">
-              Seeded admin account — shown in development only.
+              Seeded demo admin account.
             </p>
           </div>
         )}
