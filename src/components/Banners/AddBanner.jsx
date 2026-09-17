@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import bannerApi from "../../api/banners.api";
+import LinkTargetPicker from "./LinkTargetPicker";
 import productApi from "../../api/product.api";
 import { getAllPromoCodes } from "../../api/promoCodes.api";
 import s3Api from "../../api/s3.api";
@@ -148,6 +149,11 @@ const AddBanner = () => {
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
+      // Changing the link type invalidates any id picked for the old type —
+      // clear it so a product id can't be saved against a category link.
+      ...(name === "linkType" && value !== prev.linkType
+        ? { linkTarget: "" }
+        : {}),
     }));
 
     if (errors[name]) {
@@ -890,30 +896,14 @@ const AddBanner = () => {
                 </select>
               </div>
 
-              {formData.linkType !== "none" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Link Target *
-                  </label>
-                  <input
-                    type="text"
-                    name="linkTarget"
-                    value={formData.linkTarget}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.linkTarget ? "border-red-500" : "border-gray-300"}`}
-                    placeholder={
-                      formData.linkType === "url"
-                        ? "https://example.com"
-                        : "Enter ID"
-                    }
-                  />
-                  {errors.linkTarget && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.linkTarget}
-                    </p>
-                  )}
-                </div>
-              )}
+              <LinkTargetPicker
+                linkType={formData.linkType}
+                value={formData.linkTarget}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, linkTarget: val }))
+                }
+                error={errors.linkTarget}
+              />
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">

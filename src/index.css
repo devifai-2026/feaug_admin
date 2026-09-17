@@ -1,3 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap");
+
+/* Passenger Display — brand/display face, self-hosted from public/fonts.
+   Mirrors the storefront so both apps share one type system. */
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Extralight.otf") format("opentype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Semibold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 800. `font-black` (900) has no real cut in this family — it falls back to
+   this and is synthesized by the browser. */
+@font-face {
+  font-family: "Passenger Display";
+  src: url("/fonts/PassengerDisplay-Extrabold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Body copy, tables and form controls: Poppins. */
+  html {
+    font-family: "Poppins", sans-serif;
+  }
+
+  /* Headings take the display face. Dense data UI (tables, labels, inputs)
+     is deliberately left on Poppins for legibility at small sizes. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Passenger Display", "Poppins", sans-serif;
+  }
+}
